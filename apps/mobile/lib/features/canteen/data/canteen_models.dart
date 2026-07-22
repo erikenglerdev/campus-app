@@ -39,10 +39,9 @@ class Canteen {
     );
   }
 
-  static List<Canteen> listFromJson(Object? json) => asList(json)
-      .map(Canteen.fromJson)
-      .whereType<Canteen>()
-      .toList(growable: false);
+  static List<Canteen> listFromJson(Object? json) => asList(
+    json,
+  ).map(Canteen.fromJson).whereType<Canteen>().toList(growable: false);
 }
 
 /// Ingredient or marker label. Both namespaces arrive in one list and are told
@@ -179,10 +178,9 @@ class Meal {
           .map(MealMarker.fromJson)
           .whereType<MealMarker>()
           .toList(growable: false),
-      prices: asList(map['prices'])
-          .map(MealPrice.fromJson)
-          .whereType<MealPrice>()
-          .toList(growable: false),
+      prices: asList(
+        map['prices'],
+      ).map(MealPrice.fromJson).whereType<MealPrice>().toList(growable: false),
     );
   }
 
@@ -255,10 +253,7 @@ class CanteenMenu {
     final String? slug = asString(canteen?['slug']);
     if (slug == null) return null;
     final List<MenuDay> days =
-        asList(map['days'])
-            .map(MenuDay.fromJson)
-            .whereType<MenuDay>()
-            .toList()
+        asList(map['days']).map(MenuDay.fromJson).whereType<MenuDay>().toList()
           ..sort((MenuDay a, MenuDay b) => a.date.compareTo(b.date));
     return CanteenMenu(
       canteenSlug: slug,

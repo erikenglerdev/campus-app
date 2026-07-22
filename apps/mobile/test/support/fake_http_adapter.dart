@@ -70,15 +70,13 @@ ApiClient fakeApiClient(FakeHttpAdapter adapter) {
 }
 
 /// Wraps a payload in the API's `{ data, meta }` envelope.
-Map<String, dynamic> envelope(
-  Object? data, {
-  Map<String, dynamic>? meta,
-}) => <String, dynamic>{
-  'data': data,
-  'meta': <String, dynamic>{
-    'requestedLocale': 'de',
-    'resolvedLocale': 'de',
-    'translationFallback': false,
-    ...?meta,
-  },
-};
+Map<String, dynamic> envelope(Object? data, {Map<String, dynamic>? meta}) =>
+    <String, dynamic>{
+      'data': data,
+      'meta': <String, dynamic>{
+        'requestedLocale': 'de',
+        'resolvedLocale': 'de',
+        'translationFallback': false,
+        ...?meta,
+      },
+    };

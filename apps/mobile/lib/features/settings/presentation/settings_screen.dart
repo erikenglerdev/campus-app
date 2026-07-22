@@ -31,10 +31,11 @@ class SettingsScreen extends ConsumerWidget {
     final List<Canteen> canteens =
         ref.watch(canteensProvider).value?.value ?? const <Canteen>[];
     final String? canteenSlug = ref.watch(selectedCanteenSlugProvider);
-    final String canteenName = canteens
-        .where((Canteen canteen) => canteen.slug == canteenSlug)
-        .map((Canteen canteen) => canteen.displayName)
-        .firstOrNull ??
+    final String canteenName =
+        canteens
+            .where((Canteen canteen) => canteen.slug == canteenSlug)
+            .map((Canteen canteen) => canteen.displayName)
+            .firstOrNull ??
         l10n.settingsPreferredCanteenNone;
 
     return Scaffold(
@@ -85,7 +86,6 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
   }
-
 }
 
 class _SectionHeader extends StatelessWidget {

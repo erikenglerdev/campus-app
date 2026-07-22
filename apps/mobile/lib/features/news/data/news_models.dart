@@ -129,8 +129,9 @@ class NewsImage {
   final int? width;
   final int? height;
 
-  double? get aspectRatio =>
-      (width != null && height != null && height! > 0) ? width! / height! : null;
+  double? get aspectRatio => (width != null && height != null && height! > 0)
+      ? width! / height!
+      : null;
 
   static NewsImage? fromJson(Object? json) {
     final Map<String, dynamic>? map = asJsonMap(json);
@@ -213,10 +214,9 @@ class NewsArticle {
     );
   }
 
-  static List<NewsArticle> listFromJson(Object? json) => asList(json)
-      .map(NewsArticle.fromJson)
-      .whereType<NewsArticle>()
-      .toList(growable: false);
+  static List<NewsArticle> listFromJson(Object? json) => asList(
+    json,
+  ).map(NewsArticle.fromJson).whereType<NewsArticle>().toList(growable: false);
 }
 
 /// One page of the news list plus the pagination metadata.

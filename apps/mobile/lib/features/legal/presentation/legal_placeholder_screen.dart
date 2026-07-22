@@ -57,10 +57,7 @@ class LegalPlaceholderScreen extends StatelessWidget {
           const SizedBox(height: AppSpacing.xl),
           Semantics(
             header: true,
-            child: Text(
-              l10n.aboutIndependenceTitle,
-              style: text.titleMedium,
-            ),
+            child: Text(l10n.aboutIndependenceTitle, style: text.titleMedium),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(l10n.aboutIndependenceNotice, style: text.bodyMedium),

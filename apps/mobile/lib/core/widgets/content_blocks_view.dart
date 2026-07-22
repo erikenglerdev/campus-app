@@ -149,7 +149,8 @@ class _ContentBlocksViewState extends ConsumerState<ContentBlocksView> {
         return RemoteImage(
           url: block.url,
           alternativeText: block.alternativeText,
-          aspectRatio: (block.width != null && block.height != null && block.height! > 0)
+          aspectRatio:
+              (block.width != null && block.height != null && block.height! > 0)
               ? block.width! / block.height!
               : null,
         );
@@ -167,7 +168,9 @@ class _ContentBlocksViewState extends ConsumerState<ContentBlocksView> {
     for (final InlineNode node in nodes) {
       switch (node) {
         case InlineText():
-          spans.add(TextSpan(text: node.text, style: _styleFor(node, baseStyle)));
+          spans.add(
+            TextSpan(text: node.text, style: _styleFor(node, baseStyle)),
+          );
         case InlineLink():
           final TapGestureRecognizer recognizer = TapGestureRecognizer()
             ..onTap = () => _open(node.url);

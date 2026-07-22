@@ -14,10 +14,11 @@
     "strapi": "strapi",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "tsc --noEmit -p tsconfig.json",
-    "seed": "strapi ts:generate-types --silent && node --experimental-strip-types scripts/seed.ts",
-    "test": "node --test --experimental-strip-types scripts/*.test.ts",
+    "seed": "echo \"Seeding runs in the bootstrap hook. Set SEED_DEMO_CONTENT=true and start the CMS.\" && exit 0",
+    "test": "echo \"CMS is verified by the build plus the repo-level smoke test (scripts/smoke-test.sh).\" && exit 0",
     "upgrade": "npx @strapi/upgrade latest",
-    "upgrade:dry": "npx @strapi/upgrade latest --dry"
+    "upgrade:dry": "npx @strapi/upgrade latest --dry",
+    "token:create-readonly": "strapi ts:generate-types --silent && node -r ts-node/register scripts/create-readonly-token.ts"
   },
   "dependencies": {
     "@strapi/plugin-users-permissions": "5.50.2",
@@ -32,6 +33,7 @@
     "@types/node": "^22.19.0",
     "@types/react": "^18.3.27",
     "@types/react-dom": "^18.3.7",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
   "engines": {

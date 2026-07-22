@@ -207,7 +207,6 @@ class ChannelSubscriptionController extends Notifier<ChannelSubscriptionState> {
 
 final NotifierProvider<ChannelSubscriptionController, ChannelSubscriptionState>
 channelSubscriptionProvider =
-    NotifierProvider<
-      ChannelSubscriptionController,
-      ChannelSubscriptionState
-    >(ChannelSubscriptionController.new);
+    NotifierProvider<ChannelSubscriptionController, ChannelSubscriptionState>(
+      ChannelSubscriptionController.new,
+    );

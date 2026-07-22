@@ -3,6 +3,7 @@
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 
 import 'app/campus_app.dart';
 import 'core/cache/cache_providers.dart';
@@ -25,7 +26,7 @@ Future<void> main() async {
 
   runApp(
     ProviderScope(
-      overrides: [
+      overrides: <Override>[
         keyValueStoreProvider.overrideWithValue(keyValueStore),
         contentCacheProvider.overrideWithValue(contentCache),
       ],

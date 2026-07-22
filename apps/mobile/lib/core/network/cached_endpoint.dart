@@ -34,11 +34,14 @@ class CachedEndpoint {
         query: query,
         locale: locale,
       );
-      await cache.write(cacheKey, <String, dynamic>{
-        'data': response.data,
-        'meta': response.meta.toJson(),
-      });
-      return Loaded<T>(value: parse(response.data), meta: response.meta);
+      final Loaded<T> loaded = Loaded<T>(
+        value: parse(response.data),
+        meta: response.meta,
+      );
+      // Storing is best effort and happens *after* the value was parsed, so a
+      // failing cache can never turn a good network response into an error.
+      await _writeCache(cacheKey, response);
+      return loaded;
     } catch (error) {
       if (!allowCacheFallback) rethrow;
       final Loaded<T>? cached = await _readCache<T>(cacheKey, parse);
@@ -47,13 +50,28 @@ class CachedEndpoint {
     }
   }
 
+  Future<void> _writeCache(
+    String cacheKey,
+    ApiResponse<Object?> response,
+  ) async {
+    try {
+      await cache.write(cacheKey, <String, dynamic>{
+        'data': response.data,
+        'meta': response.meta.toJson(),
+      });
+    } catch (_) {
+      // A cache that refuses to store is an optimisation that is unavailable,
+      // never a user visible error.
+    }
+  }
+
   Future<Loaded<T>?> _readCache<T>(
     String cacheKey,
     T Function(Object? data) parse,
   ) async {
-    final CacheEntry? entry = await cache.read(cacheKey);
-    if (entry == null) return null;
     try {
+      final CacheEntry? entry = await cache.read(cacheKey);
+      if (entry == null) return null;
       return Loaded<T>(
         value: parse(entry.payload['data']),
         meta: ApiMeta.fromJson(asJsonMap(entry.payload['meta'])),
@@ -61,7 +79,8 @@ class CachedEndpoint {
         cachedAt: entry.cachedAt,
       );
     } catch (_) {
-      // A cached document that no longer parses is simply ignored.
+      // An unreadable or no longer parseable cache entry is simply ignored;
+      // the caller falls back to the original network error.
       return null;
     }
   }

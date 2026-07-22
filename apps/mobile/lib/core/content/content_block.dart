@@ -38,7 +38,9 @@ sealed class InlineNode {
         // Defence in depth: the API already restricts link schemes, the client
         // refuses anything else a second time.
         if (!SafeLinkLauncher.isAllowed(url)) {
-          return InlineText(text: children.map((InlineText t) => t.text).join());
+          return InlineText(
+            text: children.map((InlineText t) => t.text).join(),
+          );
         }
         return InlineLink(url: url!, children: children);
       default:
@@ -46,10 +48,9 @@ sealed class InlineNode {
     }
   }
 
-  static List<InlineNode> parseInline(Object? json) => asList(json)
-      .map(InlineNode.fromJson)
-      .whereType<InlineNode>()
-      .toList(growable: false);
+  static List<InlineNode> parseInline(Object? json) => asList(
+    json,
+  ).map(InlineNode.fromJson).whereType<InlineNode>().toList(growable: false);
 }
 
 class InlineText extends InlineNode {
@@ -116,10 +117,9 @@ sealed class ContentBlock {
         if (children.isEmpty) return null;
         return QuoteBlock(children);
       case 'list':
-        final List<ListItemBlock> items = asList(map['children'])
-            .map(_fromJson)
-            .whereType<ListItemBlock>()
-            .toList(growable: false);
+        final List<ListItemBlock> items = asList(
+          map['children'],
+        ).map(_fromJson).whereType<ListItemBlock>().toList(growable: false);
         if (items.isEmpty) return null;
         return ListBlock(
           ordered: asString(map['format']) == 'ordered',

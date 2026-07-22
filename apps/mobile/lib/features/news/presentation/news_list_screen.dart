@@ -46,16 +46,15 @@ class NewsListScreen extends ConsumerWidget {
         child: switch (feed) {
           AsyncLoading<Loaded<NewsPage>>() when !feed.hasValue =>
             const LoadingView(),
-          AsyncError<Loaded<NewsPage>>(:final Object error) =>
-            _scrollable(
-              child: ErrorView(
-                failure: error,
-                onRetry: () {
-                  ref.invalidate(newsChannelsProvider);
-                  ref.invalidate(newsFeedProvider);
-                },
-              ),
+          AsyncError<Loaded<NewsPage>>(:final Object error) => _scrollable(
+            child: ErrorView(
+              failure: error,
+              onRetry: () {
+                ref.invalidate(newsChannelsProvider);
+                ref.invalidate(newsFeedProvider);
+              },
             ),
+          ),
           _ => _NewsListBody(loaded: feed.requireValue),
         },
       ),
@@ -63,17 +62,20 @@ class NewsListScreen extends ConsumerWidget {
   }
 
   /// Empty and error states must stay pull-to-refreshable.
-  static Widget _scrollable({required Widget child}) {
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        return SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: child,
-          ),
-        );
-      },
+  ///
+  /// Uses [SliverFillRemaining] rather than a `SingleChildScrollView` with a
+  /// `ConstrainedBox(minHeight:)`: that combination leaves the child's height
+  /// unbounded, so a centred state could not use `Expanded` and threw a layout
+  /// assertion. `hasScrollBody: false` hands the child a BOUNDED height equal
+  /// to the remaining viewport, which is exactly what a centred empty state
+  /// needs, while the scroll view keeps pull-to-refresh working.
+  static Widget _scrollable({required Widget child, Widget? header}) {
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: <Widget>[
+        if (header != null) SliverToBoxAdapter(child: header),
+        SliverFillRemaining(hasScrollBody: false, child: child),
+      ],
     );
   }
 }
@@ -119,16 +121,13 @@ class _NewsListBody extends ConsumerWidget {
         );
       }
       return NewsListScreen._scrollable(
-        child: Column(
-          children: <Widget>[
-            if (loaded.fromCache)
-              Padding(
+        header: loaded.fromCache
+            ? Padding(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 child: OfflineNotice(cachedAt: loaded.cachedAt),
-              ),
-            Expanded(child: empty),
-          ],
-        ),
+              )
+            : null,
+        child: empty,
       );
     }
 

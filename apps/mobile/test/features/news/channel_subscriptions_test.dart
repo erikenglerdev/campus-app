@@ -7,6 +7,7 @@ import 'package:campus_koethen/core/prefs/settings_controller.dart';
 import 'package:campus_koethen/features/news/application/channel_subscriptions.dart';
 import 'package:campus_koethen/features/news/data/news_models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 NewsChannel channel(
@@ -31,15 +32,14 @@ ProviderContainer containerWith(KeyValueStore store) {
 void main() {
   group('ChannelSubscriptionRules.reconcile', () {
     test('applies defaultSubscribed on a slug\'s first ever appearance', () {
-      final ChannelSubscriptionState state =
-          ChannelSubscriptionRules.reconcile(
-            ChannelSubscriptionState.empty,
-            <NewsChannel>[
-              channel('campus-news', defaultSubscribed: true),
-              channel('fb5-news', defaultSubscribed: true),
-              channel('quiet-channel'),
-            ],
-          );
+      final ChannelSubscriptionState state = ChannelSubscriptionRules.reconcile(
+        ChannelSubscriptionState.empty,
+        <NewsChannel>[
+          channel('campus-news', defaultSubscribed: true),
+          channel('fb5-news', defaultSubscribed: true),
+          channel('quiet-channel'),
+        ],
+      );
 
       expect(state.selectedSlugs, <String>{'campus-news', 'fb5-news'});
       expect(state.seenSlugs, <String>{
@@ -185,7 +185,7 @@ void main() {
   group('ChannelSubscriptionStorage', () {
     test('round-trips a state', () async {
       final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-      const ChannelSubscriptionStorage storage = ChannelSubscriptionStorage(
+      final ChannelSubscriptionStorage storage = ChannelSubscriptionStorage(
         store,
       );
 
@@ -210,16 +210,14 @@ void main() {
       ]);
 
       expect(
-        const ChannelSubscriptionStorage(store).load(),
+        ChannelSubscriptionStorage(store).load(),
         ChannelSubscriptionState.empty,
       );
     });
 
     test('tolerates a completely empty store', () {
       expect(
-        const ChannelSubscriptionStorage(
-          InMemoryKeyValueStore(),
-        ).load(),
+        ChannelSubscriptionStorage(InMemoryKeyValueStore()).load(),
         ChannelSubscriptionState.empty,
       );
     });
@@ -243,10 +241,9 @@ void main() {
 
       // "Restart": a fresh container reading the same store.
       final ProviderContainer second = containerWith(store);
-      expect(
-        second.read(channelSubscriptionProvider).selectedSlugs,
-        <String>{'campus-news'},
-      );
+      expect(second.read(channelSubscriptionProvider).selectedSlugs, <String>{
+        'campus-news',
+      });
 
       // A later fetch must not bring the deselected channel back.
       await second
@@ -255,10 +252,9 @@ void main() {
             channel('campus-news', defaultSubscribed: true),
             channel('fb5-news', defaultSubscribed: true),
           ]);
-      expect(
-        second.read(channelSubscriptionProvider).selectedSlugs,
-        <String>{'campus-news'},
-      );
+      expect(second.read(channelSubscriptionProvider).selectedSlugs, <String>{
+        'campus-news',
+      });
     });
 
     test('supports deselecting every channel', () async {
@@ -273,7 +269,10 @@ void main() {
       ]);
       await controller.setSubscribed('campus-news', subscribed: false);
 
-      expect(container.read(channelSubscriptionProvider).selectedSlugs, isEmpty);
+      expect(
+        container.read(channelSubscriptionProvider).selectedSlugs,
+        isEmpty,
+      );
       expect(
         ChannelSubscriptionRules.queryValue(
           available: <NewsChannel>[channel('campus-news')],

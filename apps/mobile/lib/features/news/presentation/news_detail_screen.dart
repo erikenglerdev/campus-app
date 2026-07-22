@@ -109,10 +109,14 @@ class _ArticleBody extends ConsumerWidget {
         ],
         const SizedBox(height: AppSpacing.lg),
         ContentBlocksView(blocks: article.content),
-        if (article.sourceName != null || article.sourceUrl != null) ...<Widget>[
+        if (article.sourceName != null ||
+            article.sourceUrl != null) ...<Widget>[
           const Divider(),
           if (article.sourceName != null)
-            Text(l10n.newsSourceLabel(article.sourceName!), style: text.bodySmall),
+            Text(
+              l10n.newsSourceLabel(article.sourceName!),
+              style: text.bodySmall,
+            ),
           if (article.sourceUrl != null)
             Align(
               alignment: AlignmentDirectional.centerStart,

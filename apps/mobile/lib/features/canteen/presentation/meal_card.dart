@@ -175,9 +175,7 @@ class _PriceList extends StatelessWidget {
                     : l10n.canteenPriceSemanticLabel(price.label, formatted),
                 excludeSemantics: true,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: AppSpacing.xxs,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
                   child: Row(
                     children: <Widget>[
                       if (emphasised) ...<Widget>[

@@ -10,25 +10,35 @@ import 'package:campus_koethen/core/theme/app_theme.dart';
 import 'package:campus_koethen/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 /// Pumps a single screen with the full localisation and theme setup.
 ///
 /// Defaults to an in-memory key/value store and an in-memory cache, so no test
 /// ever touches the file system.
+///
+/// The store and cache are dedicated PARAMETERS rather than entries in
+/// [overrides]: Riverpod asserts when the same provider is overridden twice in
+/// one container, so a caller supplying its own via [overrides] would collide
+/// with the defaults below. Passing them here makes that impossible.
 Future<ProviderContainer> pumpScreen(
   WidgetTester tester,
   Widget child, {
   List<Override> overrides = const <Override>[],
+  KeyValueStore? keyValueStore,
+  ContentCache? contentCache,
   Locale locale = AppLocales.german,
   ThemeMode themeMode = ThemeMode.light,
   TextScaler textScaler = TextScaler.noScaling,
 }) async {
   final ProviderContainer container = ProviderContainer(
     overrides: <Override>[
-      keyValueStoreProvider.overrideWithValue(InMemoryKeyValueStore()),
+      keyValueStoreProvider.overrideWithValue(
+        keyValueStore ?? InMemoryKeyValueStore(),
+      ),
       contentCacheProvider.overrideWithValue(
-        SafeContentCache(MemoryContentCache()),
+        contentCache ?? SafeContentCache(MemoryContentCache()),
       ),
       ...overrides,
     ],

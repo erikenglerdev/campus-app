@@ -28,8 +28,7 @@ final FutureProvider<Loaded<List<NewsChannel>>> newsChannelsProvider =
 /// there are no channels at all.
 final Provider<String?> newsChannelQueryProvider = Provider<String?>((Ref ref) {
   final List<NewsChannel> channels =
-      ref.watch(newsChannelsProvider).value?.value ??
-      const <NewsChannel>[];
+      ref.watch(newsChannelsProvider).value?.value ?? const <NewsChannel>[];
   final ChannelSubscriptionState subscriptions = ref.watch(
     channelSubscriptionProvider,
   );
@@ -76,13 +75,12 @@ final FutureProvider<Loaded<NewsPage>> newsFeedProvider =
     });
 
 /// A single article including its rich text content.
-final newsArticleProvider =
-    FutureProvider.family<Loaded<NewsArticle>, String>((
-      Ref ref,
-      String slug,
-    ) async {
-      final String locale = ref.watch(localeCodeProvider);
-      return ref
-          .watch(newsRepositoryProvider)
-          .fetchArticle(locale: locale, slug: slug);
-    });
+final newsArticleProvider = FutureProvider.family<Loaded<NewsArticle>, String>((
+  Ref ref,
+  String slug,
+) async {
+  final String locale = ref.watch(localeCodeProvider);
+  return ref
+      .watch(newsRepositoryProvider)
+      .fetchArticle(locale: locale, slug: slug);
+});

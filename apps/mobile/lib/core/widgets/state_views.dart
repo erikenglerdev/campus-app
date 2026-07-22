@@ -69,11 +69,7 @@ class EmptyView extends StatelessWidget {
               color: colors.textSecondary,
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text(
-              title,
-              style: text.titleMedium,
-              textAlign: TextAlign.center,
-            ),
+            Text(title, style: text.titleMedium, textAlign: TextAlign.center),
             const SizedBox(height: AppSpacing.sm),
             Text(
               message,

@@ -53,7 +53,13 @@ class CanteenPickerList extends ConsumerWidget {
           onRetry: () => ref.invalidate(canteensProvider),
         ),
       ),
-      _ => _buildList(context, ref, l10n, canteens.requireValue.value, selected),
+      _ => _buildList(
+        context,
+        ref,
+        l10n,
+        canteens.requireValue.value,
+        selected,
+      ),
     };
   }
 

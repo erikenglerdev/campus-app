@@ -41,10 +41,9 @@ final canteenMenuProvider = FutureProvider.family<Loaded<CanteenMenu>, String>((
   String slug,
 ) async {
   final String locale = ref.watch(localeCodeProvider);
-  return ref.watch(canteenRepositoryProvider).fetchMenu(
-    locale: locale,
-    slug: slug,
-  );
+  return ref
+      .watch(canteenRepositoryProvider)
+      .fetchMenu(locale: locale, slug: slug);
 });
 
 /// The day the canteen screen currently shows. Defaults to today.
@@ -63,7 +62,6 @@ class SelectedMenuDayController extends Notifier<DateTime> {
 }
 
 final NotifierProvider<SelectedMenuDayController, DateTime>
-selectedMenuDayProvider =
-    NotifierProvider<SelectedMenuDayController, DateTime>(
-      SelectedMenuDayController.new,
-    );
+selectedMenuDayProvider = NotifierProvider<SelectedMenuDayController, DateTime>(
+  SelectedMenuDayController.new,
+);

@@ -41,25 +41,25 @@ class NewsRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
-    final Loaded<List<NewsArticle>> loaded = await _endpoint
-        .load<List<NewsArticle>>(
-          path: '/news',
-          cacheKey: CacheKeys.newsFirstPage(
-            locale,
-            channelsParameter == null || channelsParameter.isEmpty
-                ? const <String>[]
-                : channelsParameter.split(','),
-          ),
-          locale: locale,
-          query: <String, Object?>{
-            'channels': channelsParameter,
-            'page': page,
-            'pageSize': pageSize,
-          },
-          parse: NewsArticle.listFromJson,
-          // Only the first page is cached; deeper pages always need the network.
-          allowCacheFallback: page == 1,
-        );
+    final Loaded<List<NewsArticle>>
+    loaded = await _endpoint.load<List<NewsArticle>>(
+      path: '/news',
+      cacheKey: CacheKeys.newsFirstPage(
+        locale,
+        channelsParameter == null || channelsParameter.isEmpty
+            ? const <String>[]
+            : channelsParameter.split(','),
+      ),
+      locale: locale,
+      query: <String, Object?>{
+        'channels': channelsParameter,
+        'page': page,
+        'pageSize': pageSize,
+      },
+      parse: NewsArticle.listFromJson,
+      // Only the first page is cached; deeper pages always need the network.
+      allowCacheFallback: page == 1,
+    );
 
     return loaded.map(
       (List<NewsArticle> articles) => NewsPage(
@@ -89,9 +89,10 @@ class NewsRepository {
   }
 }
 
-final Provider<NewsRepository> newsRepositoryProvider = Provider<NewsRepository>(
-  (Ref ref) => NewsRepository(
-    client: ref.watch(apiClientProvider),
-    cache: ref.watch(contentCacheProvider),
-  ),
-);
+final Provider<NewsRepository> newsRepositoryProvider =
+    Provider<NewsRepository>(
+      (Ref ref) => NewsRepository(
+        client: ref.watch(apiClientProvider),
+        cache: ref.watch(contentCacheProvider),
+      ),
+    );

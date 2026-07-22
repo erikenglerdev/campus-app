@@ -60,7 +60,13 @@ class ChannelPickerList extends ConsumerWidget {
           onRetry: () => ref.invalidate(newsChannelsProvider),
         ),
       ),
-      _ => _buildList(context, ref, l10n, channels.requireValue.value, subscriptions),
+      _ => _buildList(
+        context,
+        ref,
+        l10n,
+        channels.requireValue.value,
+        subscriptions,
+      ),
     };
   }
 

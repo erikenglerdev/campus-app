@@ -18,7 +18,12 @@ class _Pair {
 
 List<_Pair> _pairsFor(AppColors c) => <_Pair>[
   // Body copy.
-  _Pair('textPrimary on background', c.textPrimary, c.background, Contrast.aaBody),
+  _Pair(
+    'textPrimary on background',
+    c.textPrimary,
+    c.background,
+    Contrast.aaBody,
+  ),
   _Pair('textPrimary on surface', c.textPrimary, c.surface, Contrast.aaBody),
   _Pair(
     'textSecondary on background',
@@ -26,7 +31,12 @@ List<_Pair> _pairsFor(AppColors c) => <_Pair>[
     c.background,
     Contrast.aaBody,
   ),
-  _Pair('textSecondary on surface', c.textSecondary, c.surface, Contrast.aaBody),
+  _Pair(
+    'textSecondary on surface',
+    c.textSecondary,
+    c.surface,
+    Contrast.aaBody,
+  ),
   _Pair(
     'onSurfaceVariant on surfaceVariant',
     c.onSurfaceVariant,
@@ -119,7 +129,10 @@ void main() {
         Contrast.relativeLuminance(AppColors.dark.background),
         lessThan(0.05),
       );
-      expect(Contrast.relativeLuminance(AppColors.dark.surface), lessThan(0.06));
+      expect(
+        Contrast.relativeLuminance(AppColors.dark.surface),
+        lessThan(0.06),
+      );
       expect(
         Contrast.relativeLuminance(AppColors.dark.surface),
         greaterThan(Contrast.relativeLuminance(AppColors.dark.background)),

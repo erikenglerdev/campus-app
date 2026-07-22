@@ -53,7 +53,9 @@ class StatusBanner extends StatelessWidget {
         decoration: BoxDecoration(
           color: colors.surface,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border(left: BorderSide(color: accent, width: AppSizes.statusBar)),
+          border: Border(
+            left: BorderSide(color: accent, width: AppSizes.statusBar),
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -68,7 +70,9 @@ class StatusBanner extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       title,
-                      style: text.titleSmall?.copyWith(color: colors.textPrimary),
+                      style: text.titleSmall?.copyWith(
+                        color: colors.textPrimary,
+                      ),
                     ),
                     if (message != null) ...<Widget>[
                       const SizedBox(height: AppSpacing.xxs),

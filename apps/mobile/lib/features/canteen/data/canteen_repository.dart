@@ -41,9 +41,7 @@ class CanteenRepository {
     DateTime? from,
   }) {
     final DateTime start = _atMidnight(from ?? DateTime.now());
-    final DateTime end = start.add(
-      const Duration(days: cachedWindowDays - 1),
-    );
+    final DateTime end = start.add(const Duration(days: cachedWindowDays - 1));
     return _endpoint.load<CanteenMenu>(
       path: '/canteens/$slug/menu',
       cacheKey: CacheKeys.canteenMenu(locale, slug),
