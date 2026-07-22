@@ -1,0 +1,389 @@
+{
+  "@@locale": "de",
+
+  "appTitle": "Campus Köthen",
+  "@appTitle": {
+    "description": "Sichtbarer Name der App."
+  },
+
+  "navNews": "News",
+  "@navNews": {
+    "description": "Label des News-Tabs in der unteren Navigation."
+  },
+  "navCanteen": "Mensa",
+  "@navCanteen": {
+    "description": "Label des Mensa-Tabs in der unteren Navigation."
+  },
+  "navContacts": "Kontakte",
+  "@navContacts": {
+    "description": "Label des Kontakte-Tabs in der unteren Navigation."
+  },
+  "navSettings": "Einstellungen",
+  "@navSettings": {
+    "description": "Label des Einstellungen-Tabs in der unteren Navigation."
+  },
+  "navigationSemanticLabel": "Hauptnavigation",
+  "@navigationSemanticLabel": {
+    "description": "Screenreader-Label der unteren Navigationsleiste."
+  },
+
+  "actionRetry": "Erneut versuchen",
+  "@actionRetry": {},
+  "actionRefresh": "Aktualisieren",
+  "@actionRefresh": {},
+  "actionClose": "Schließen",
+  "@actionClose": {},
+  "actionBack": "Zurück",
+  "@actionBack": {},
+  "actionOpenExternally": "Extern öffnen",
+  "@actionOpenExternally": {},
+  "actionSelect": "Auswählen",
+  "@actionSelect": {},
+
+  "commonLoading": "Wird geladen …",
+  "@commonLoading": {},
+  "commonLoadingSemanticLabel": "Inhalte werden geladen",
+  "@commonLoadingSemanticLabel": {},
+
+  "errorGenericTitle": "Etwas ist schiefgelaufen",
+  "@errorGenericTitle": {},
+  "errorGenericMessage": "Die Inhalte konnten nicht geladen werden. Bitte versuche es erneut.",
+  "@errorGenericMessage": {},
+  "errorNetworkMessage": "Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung.",
+  "@errorNetworkMessage": {},
+  "errorTimeoutMessage": "Die Anfrage hat zu lange gedauert. Bitte versuche es erneut.",
+  "@errorTimeoutMessage": {},
+  "errorNotFoundMessage": "Der angeforderte Inhalt wurde nicht gefunden.",
+  "@errorNotFoundMessage": {},
+  "errorServerMessage": "Der Dienst ist gerade nicht erreichbar. Bitte versuche es später erneut.",
+  "@errorServerMessage": {},
+  "errorLinkNotOpened": "Der Link konnte nicht geöffnet werden.",
+  "@errorLinkNotOpened": {},
+  "errorLinkBlocked": "Dieser Link wurde aus Sicherheitsgründen nicht geöffnet.",
+  "@errorLinkBlocked": {},
+
+  "offlineCachedTitle": "Offline gespeicherte Inhalte",
+  "@offlineCachedTitle": {},
+  "offlineCachedAt": "Zuletzt geladen: {timestamp}",
+  "@offlineCachedAt": {
+    "description": "timestamp wird von AppDateFormats locale-gerecht vorformatiert.",
+    "placeholders": {
+      "timestamp": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineCachedUnknownTime": "Zuletzt geladen: unbekannt",
+  "@offlineCachedUnknownTime": {},
+
+  "newsTitle": "News",
+  "@newsTitle": {},
+  "newsEmptyTitle": "Keine Beiträge",
+  "@newsEmptyTitle": {},
+  "newsEmptyMessage": "In den ausgewählten Kanälen gibt es derzeit keine Beiträge.",
+  "@newsEmptyMessage": {},
+  "newsNoChannelsSelectedTitle": "Keine Kanäle ausgewählt",
+  "@newsNoChannelsSelectedTitle": {},
+  "newsNoChannelsSelectedMessage": "Du hast alle News-Kanäle abgewählt. Wähle mindestens einen Kanal aus, um Beiträge zu sehen.",
+  "@newsNoChannelsSelectedMessage": {},
+  "newsNoChannelsAvailableTitle": "Keine Kanäle verfügbar",
+  "@newsNoChannelsAvailableTitle": {},
+  "newsNoChannelsAvailableMessage": "Zurzeit sind keine News-Kanäle vorhanden.",
+  "@newsNoChannelsAvailableMessage": {},
+  "newsChannelPickerTitle": "Kanäle",
+  "@newsChannelPickerTitle": {},
+  "newsChannelPickerTooltip": "Kanäle auswählen",
+  "@newsChannelPickerTooltip": {},
+  "newsChannelSelected": "Kanal {name} abonniert",
+  "@newsChannelSelected": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "newsChannelDeselected": "Kanal {name} nicht abonniert",
+  "@newsChannelDeselected": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "newsPinnedLabel": "Angepinnt",
+  "@newsPinnedLabel": {},
+  "newsPublishedAt": "Veröffentlicht am {date}",
+  "@newsPublishedAt": {
+    "description": "date wird von AppDateFormats locale-gerecht vorformatiert.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "newsAuthorsLabel": "Von {authors}",
+  "@newsAuthorsLabel": {
+    "placeholders": {
+      "authors": {
+        "type": "String"
+      }
+    }
+  },
+  "newsSourceLabel": "Quelle: {source}",
+  "@newsSourceLabel": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "newsOpenSource": "Quelle öffnen",
+  "@newsOpenSource": {},
+  "newsArticleSemanticLabel": "Beitrag {title}, veröffentlicht am {date}",
+  "@newsArticleSemanticLabel": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "newsChannelCountLabel": "{count, plural, =0{Keine Kanäle ausgewählt} =1{1 Kanal ausgewählt} other{{count} Kanäle ausgewählt}}",
+  "@newsChannelCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newsTranslationFallbackHint": "Für diesen Inhalt liegt noch keine englische Fassung vor. Angezeigt wird der deutsche Originaltext.",
+  "@newsTranslationFallbackHint": {},
+
+  "canteenTitle": "Mensa",
+  "@canteenTitle": {},
+  "canteenPickerTitle": "Mensa wählen",
+  "@canteenPickerTitle": {},
+  "canteenPickerTooltip": "Mensa wechseln",
+  "@canteenPickerTooltip": {},
+  "canteenNoCanteensTitle": "Keine Mensa verfügbar",
+  "@canteenNoCanteensTitle": {},
+  "canteenNoCanteensMessage": "Zurzeit sind keine Mensen hinterlegt.",
+  "@canteenNoCanteensMessage": {},
+  "canteenNoMealsTitle": "Kein Angebot",
+  "@canteenNoMealsTitle": {},
+  "canteenNoMealsMessage": "Für diesen Tag ist kein Speisenangebot hinterlegt.",
+  "@canteenNoMealsMessage": {},
+  "canteenPreviousDay": "Vorheriger Tag",
+  "@canteenPreviousDay": {},
+  "canteenNextDay": "Nächster Tag",
+  "@canteenNextDay": {},
+  "canteenDayLabel": "{date}",
+  "@canteenDayLabel": {
+    "description": "date wird von AppDateFormats locale-gerecht vorformatiert.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "canteenSprintLabel": "Sprint",
+  "@canteenSprintLabel": {
+    "description": "Kennzeichnung eines Sprint-Gerichts."
+  },
+  "canteenSprintSemanticLabel": "Sprint-Angebot",
+  "@canteenSprintSemanticLabel": {},
+  "canteenExtrasLabel": "Beilagen",
+  "@canteenExtrasLabel": {},
+  "canteenMarkersLabel": "Marker",
+  "@canteenMarkersLabel": {},
+  "canteenIngredientsLabel": "Zutaten",
+  "@canteenIngredientsLabel": {},
+  "canteenPricesLabel": "Preise",
+  "@canteenPricesLabel": {},
+  "canteenPriceSemanticLabel": "{group}: {price}",
+  "@canteenPriceSemanticLabel": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "canteenPriceStudentSemanticLabel": "Studierendenpreis, {group}: {price}",
+  "@canteenPriceStudentSemanticLabel": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "canteenPriceMissing": "kein Preis hinterlegt",
+  "@canteenPriceMissing": {},
+  "canteenLastSyncAt": "Zuletzt aktualisiert: {timestamp}",
+  "@canteenLastSyncAt": {
+    "description": "timestamp wird von AppDateFormats locale-gerecht vorformatiert.",
+    "placeholders": {
+      "timestamp": {
+        "type": "String"
+      }
+    }
+  },
+  "canteenNeverSynced": "Noch nie erfolgreich aktualisiert",
+  "@canteenNeverSynced": {},
+  "canteenStaleTitle": "Daten möglicherweise veraltet",
+  "@canteenStaleTitle": {},
+  "canteenStaleMessage": "Der Speiseplan konnte länger nicht aktualisiert werden. Angaben können vom Aushang abweichen.",
+  "@canteenStaleMessage": {},
+  "canteenSourceLanguageHint": "Gerichtsnamen stammen unverändert aus der deutschsprachigen Quelle und werden nicht übersetzt.",
+  "@canteenSourceLanguageHint": {},
+  "canteenMealSemanticLabel": "Gericht {name}",
+  "@canteenMealSemanticLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "contactsTitle": "Kontakte",
+  "@contactsTitle": {},
+  "contactsEmptyTitle": "Keine Kontaktbereiche",
+  "@contactsEmptyTitle": {},
+  "contactsEmptyMessage": "Zurzeit sind keine Anlaufstellen hinterlegt.",
+  "@contactsEmptyMessage": {},
+  "contactsDemoBadge": "Demo-Inhalt",
+  "@contactsDemoBadge": {},
+  "contactsDemoHint": "Dieser Bereich enthält vorläufige Demo-Daten. Die Angaben sind noch nicht freigegeben.",
+  "@contactsDemoHint": {},
+  "contactPersonsLabel": "Ansprechpersonen",
+  "@contactPersonsLabel": {},
+  "contactNoPersonsMessage": "Für diesen Bereich ist keine einzelne Ansprechperson hinterlegt. Nutze die allgemeinen Kontaktwege.",
+  "@contactNoPersonsMessage": {},
+  "contactNoContactDetailsMessage": "Für diesen Bereich sind noch keine Kontaktwege hinterlegt.",
+  "@contactNoContactDetailsMessage": {},
+  "contactPersonCount": "{count, plural, =0{Keine Ansprechperson} =1{1 Ansprechperson} other{{count} Ansprechpersonen}}",
+  "@contactPersonCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "contactEmailLabel": "E-Mail",
+  "@contactEmailLabel": {},
+  "contactPhoneLabel": "Telefon",
+  "@contactPhoneLabel": {},
+  "contactWebsiteLabel": "Website",
+  "@contactWebsiteLabel": {},
+  "contactAppointmentLabel": "Termin vereinbaren",
+  "@contactAppointmentLabel": {},
+  "contactAddressLabel": "Adresse",
+  "@contactAddressLabel": {},
+  "contactOpeningHoursLabel": "Öffnungszeiten",
+  "@contactOpeningHoursLabel": {},
+  "contactAreaSemanticLabel": "Kontaktbereich {name}",
+  "@contactAreaSemanticLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "settingsTitle": "Einstellungen",
+  "@settingsTitle": {},
+  "settingsSectionAppearance": "Darstellung",
+  "@settingsSectionAppearance": {},
+  "settingsSectionContent": "Inhalte",
+  "@settingsSectionContent": {},
+  "settingsSectionLegal": "Rechtliches",
+  "@settingsSectionLegal": {},
+  "settingsLanguage": "Sprache",
+  "@settingsLanguage": {},
+  "settingsLanguageSystem": "Systemsprache",
+  "@settingsLanguageSystem": {},
+  "settingsLanguageGerman": "Deutsch",
+  "@settingsLanguageGerman": {},
+  "settingsLanguageEnglish": "Englisch",
+  "@settingsLanguageEnglish": {},
+  "settingsTheme": "Erscheinungsbild",
+  "@settingsTheme": {},
+  "settingsThemeSystem": "Systemeinstellung",
+  "@settingsThemeSystem": {},
+  "settingsThemeLight": "Hell",
+  "@settingsThemeLight": {},
+  "settingsThemeDark": "Dunkel",
+  "@settingsThemeDark": {},
+  "settingsChannels": "News-Kanäle",
+  "@settingsChannels": {},
+  "settingsChannelsSubtitle": "Wähle aus, welche Kanäle in der News-Liste erscheinen.",
+  "@settingsChannelsSubtitle": {},
+  "settingsPreferredCanteen": "Bevorzugte Mensa",
+  "@settingsPreferredCanteen": {},
+  "settingsPreferredCanteenNone": "Keine Auswahl",
+  "@settingsPreferredCanteenNone": {},
+  "settingsAbout": "Über diese App",
+  "@settingsAbout": {},
+  "settingsImprint": "Impressum",
+  "@settingsImprint": {},
+  "settingsPrivacy": "Datenschutz",
+  "@settingsPrivacy": {},
+
+  "aboutTitle": "Über diese App",
+  "@aboutTitle": {},
+  "aboutVersion": "Version {version} ({build})",
+  "@aboutVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutLicenseLabel": "Lizenz",
+  "@aboutLicenseLabel": {},
+  "aboutLicenseValue": "AGPL-3.0-only",
+  "@aboutLicenseValue": {
+    "description": "SPDX-Kennung der Projektlizenz. Wird nicht übersetzt."
+  },
+  "aboutCopyright": "Copyright © 2026 Erik Engler and Jona Sommer",
+  "@aboutCopyright": {
+    "description": "Urheberrechtsvermerk. Wird nicht übersetzt."
+  },
+  "aboutIndependenceTitle": "Unabhängigkeitshinweis",
+  "@aboutIndependenceTitle": {},
+  "aboutIndependenceNotice": "Campus Köthen ist eine unabhängige, inoffizielle Campus-App. Sie wird weder von der Hochschule Anhalt entwickelt oder betrieben noch von ihr offiziell unterstützt. Die Nennung der Hochschule und ihrer Einrichtungen dient ausschließlich der sachlichen Zuordnung öffentlich zugänglicher Informationen.",
+  "@aboutIndependenceNotice": {
+    "description": "Kanonischer Unabhängigkeitshinweis. Wortlaut ist verbindlich und darf nicht verändert werden."
+  },
+  "aboutOpenSourceLicenses": "Open-Source-Lizenzen",
+  "@aboutOpenSourceLicenses": {},
+  "aboutFontNotice": "Schriftart Manrope, lizenziert unter der SIL Open Font License 1.1.",
+  "@aboutFontNotice": {},
+
+  "imprintTitle": "Impressum",
+  "@imprintTitle": {},
+  "privacyTitle": "Datenschutz",
+  "@privacyTitle": {},
+  "legalPlaceholderBadge": "Platzhalter",
+  "@legalPlaceholderBadge": {},
+  "legalPlaceholderTitle": "Inhalt noch nicht final",
+  "@legalPlaceholderTitle": {},
+  "imprintPlaceholderBody": "Diese Seite ist ein Platzhalter. Ein rechtsverbindliches Impressum liegt noch nicht vor. Es werden hier bewusst keine Adressen, Namen oder Kontaktdaten genannt.",
+  "@imprintPlaceholderBody": {},
+  "privacyPlaceholderBody": "Diese Seite ist ein Platzhalter. Eine rechtsverbindliche Datenschutzerklärung liegt noch nicht vor. Es werden hier bewusst keine Angaben zu Verantwortlichen oder Verarbeitungszwecken gemacht.",
+  "@privacyPlaceholderBody": {},
+  "legalOperatorNotConfirmed": "Der Betreiber der App ist noch nicht bestätigt. Solange das nicht geklärt ist, wird an dieser Stelle keine verantwortliche Stelle benannt.",
+  "@legalOperatorNotConfirmed": {},
+  "legalNotPublishedHint": "Die App befindet sich in Entwicklung und ist nicht veröffentlicht.",
+  "@legalNotPublishedHint": {}
+}

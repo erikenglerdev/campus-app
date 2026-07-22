@@ -1,0 +1,101 @@
+// Campus Köthen App · AGPL-3.0-only
+// Copyright © 2026 Erik Engler and Jona Sommer
+
+import 'package:flutter/material.dart' show ThemeMode;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../locale/locale_mode.dart';
+import 'key_value_store.dart';
+import 'preference_keys.dart';
+
+/// All locally persisted user settings that are plain scalars.
+class AppSettings {
+  const AppSettings({
+    this.localeMode = LocaleMode.system,
+    this.themeMode = ThemeMode.system,
+    this.preferredCanteenSlug,
+  });
+
+  final LocaleMode localeMode;
+  final ThemeMode themeMode;
+
+  /// Slug of the canteen the user prefers, or `null` for "not chosen yet".
+  final String? preferredCanteenSlug;
+
+  AppSettings copyWith({
+    LocaleMode? localeMode,
+    ThemeMode? themeMode,
+    String? preferredCanteenSlug,
+    bool clearPreferredCanteen = false,
+  }) {
+    return AppSettings(
+      localeMode: localeMode ?? this.localeMode,
+      themeMode: themeMode ?? this.themeMode,
+      preferredCanteenSlug: clearPreferredCanteen
+          ? null
+          : (preferredCanteenSlug ?? this.preferredCanteenSlug),
+    );
+  }
+}
+
+/// The key/value store used for scalar settings.
+///
+/// Overridden in `main()` with the real `shared_preferences` backed store and
+/// in tests with [InMemoryKeyValueStore].
+final Provider<KeyValueStore> keyValueStoreProvider = Provider<KeyValueStore>(
+  (Ref ref) => InMemoryKeyValueStore(),
+);
+
+/// Reads and writes [AppSettings].
+class SettingsController extends Notifier<AppSettings> {
+  KeyValueStore get _store => ref.read(keyValueStoreProvider);
+
+  @override
+  AppSettings build() {
+    final KeyValueStore store = ref.watch(keyValueStoreProvider);
+    return AppSettings(
+      localeMode: LocaleMode.fromStorage(
+        store.getString(PreferenceKeys.localeMode),
+      ),
+      themeMode: _themeModeFromStorage(
+        store.getString(PreferenceKeys.themeMode),
+      ),
+      preferredCanteenSlug: store.getString(PreferenceKeys.preferredCanteen),
+    );
+  }
+
+  Future<void> setLocaleMode(LocaleMode mode) async {
+    state = state.copyWith(localeMode: mode);
+    await _store.setString(PreferenceKeys.localeMode, mode.storageValue);
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    state = state.copyWith(themeMode: mode);
+    await _store.setString(PreferenceKeys.themeMode, _themeModeToStorage(mode));
+  }
+
+  Future<void> setPreferredCanteen(String? slug) async {
+    if (slug == null) {
+      state = state.copyWith(clearPreferredCanteen: true);
+      await _store.remove(PreferenceKeys.preferredCanteen);
+      return;
+    }
+    state = state.copyWith(preferredCanteenSlug: slug);
+    await _store.setString(PreferenceKeys.preferredCanteen, slug);
+  }
+
+  static ThemeMode _themeModeFromStorage(String? value) => switch (value) {
+    'light' => ThemeMode.light,
+    'dark' => ThemeMode.dark,
+    _ => ThemeMode.system,
+  };
+
+  static String _themeModeToStorage(ThemeMode mode) => switch (mode) {
+    ThemeMode.light => 'light',
+    ThemeMode.dark => 'dark',
+    ThemeMode.system => 'system',
+  };
+}
+
+final NotifierProvider<SettingsController, AppSettings> settingsProvider =
+    NotifierProvider<SettingsController, AppSettings>(SettingsController.new);

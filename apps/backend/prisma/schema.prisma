@@ -1,0 +1,144 @@
+// Campus Köthen — operational database (campus_app_<env>)
+//
+// This database holds ONLY imported canteen data and synchronisation state.
+// Editorial content lives in Strapi and is never mirrored here.
+//
+// Money is Decimal, never Float.
+// The source image URL (food.image_url) is deliberately NOT modelled: canteen
+// images are not used anywhere in this project.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// Prisma 7 no longer accepts `url` here. The migration connection string lives
+// in prisma.config.ts; the runtime client uses the @prisma/adapter-pg driver
+// adapter (see src/prisma/prisma.service.ts).
+datasource db {
+  provider = "postgresql"
+}
+
+/// A canteen. Seeded idempotently from canteens.config.ts so that adding a
+/// canteen needs a backend config change and a deployment — never an app release.
+model Canteen {
+  id               String  @id @default(uuid())
+  /// Stable public identifier used by the API and the app.
+  slug             String  @unique
+  /// location_id of the upstream source. Never exposed through the API.
+  sourceLocationId Int     @unique
+  displayNameDe    String
+  displayNameEn    String
+  campusLabelDe    String
+  campusLabelEn    String
+  active           Boolean @default(true)
+  sortOrder        Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  meals    Meal[]
+  syncRuns SyncRun[]
+
+  @@index([active, sortOrder])
+  @@map("canteens")
+}
+
+/// A single dish on a single day at a single canteen.
+model Meal {
+  id String @id @default(uuid())
+
+  /// Stable upsert key: `data[].id` from the source. Guarantees that repeating
+  /// an import updates rather than duplicates.
+  sourcePlanId Int  @unique
+  sourceFoodId Int?
+
+  canteenId String
+  canteen   Canteen @relation(fields: [canteenId], references: [id], onDelete: Cascade)
+
+  /// Calendar date, no time component.
+  date      DateTime @db.Date
+  counterId Int?
+  isSprint  Boolean  @default(false)
+
+  /// Text exactly as provided by the German-language source. Never translated.
+  name     String
+  subtitle String?
+
+  /// Non-empty extra_1..extra_4 values.
+  extras String[] @default([])
+
+  /// Raw codes from `food.ingredients`. NOTE: the source mixes ingredient codes
+  /// and marker codes in this one array, so resolution must consult both
+  /// dictionaries — see IngredientDefinition.kind.
+  ingredientCodes String[] @default([])
+
+  prices MealPrice[]
+
+  sourceUpdatedAt DateTime?
+  importedAt      DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([canteenId, date])
+  @@index([date])
+  @@map("meals")
+}
+
+/// One price group of one meal. Modelled relationally so that ALL price groups
+/// the source offers are stored, and a missing group is simply an absent row —
+/// no price is ever estimated or defaulted.
+model MealPrice {
+  id     String @id @default(uuid())
+  mealId String
+  meal   Meal   @relation(fields: [mealId], references: [id], onDelete: Cascade)
+
+  /// Stable technical key: "student" | "employee" | "guest".
+  group  String
+  /// Money as Decimal — never Float.
+  amount Decimal @db.Decimal(6, 2)
+
+  @@unique([mealId, group])
+  @@map("meal_prices")
+}
+
+/// Label dictionary for ingredient and marker codes, imported from `meta`.
+/// The source publishes German labels only; labelEn stays null unless a
+/// human-maintained translation exists. Nothing is machine-translated.
+model IngredientDefinition {
+  code    String  @id
+  labelDe String
+  labelEn String?
+  /// "ingredient" | "marker"
+  kind    String
+
+  updatedAt DateTime @updatedAt
+
+  @@map("ingredient_definitions")
+}
+
+/// Audit trail of every synchronisation attempt. `lastSuccessfulSyncAt` is
+/// derived from the most recent run with status = "success".
+model SyncRun {
+  id     String @id @default(uuid())
+  source String @default("meine-mensa")
+
+  canteenId String?
+  canteen   Canteen? @relation(fields: [canteenId], references: [id], onDelete: SetNull)
+
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  /// "running" | "success" | "empty" | "failed"
+  status String
+
+  recordsReceived Int @default(0)
+  recordsUpserted Int @default(0)
+  recordsRejected Int @default(0)
+
+  /// Short, non-sensitive error summary. Never contains tokens or URLs with credentials.
+  errorMessage String?
+
+  @@index([canteenId, status, startedAt])
+  @@index([status, startedAt])
+  @@map("sync_runs")
+}

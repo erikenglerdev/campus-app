@@ -1,0 +1,60 @@
+name: campus_koethen
+description: "Campus Köthen — an independent, unofficial campus app."
+# Campus Köthen App · AGPL-3.0-only
+# Copyright © 2026 Erik Engler and Jona Sommer
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^3.0.3
+
+  # Routing
+  go_router: ^17.2.1
+
+  # Networking
+  dio: ^5.9.0
+
+  # Content cache
+  hive_ce: ^2.15.0
+  hive_ce_flutter: ^2.3.4
+
+  # Small scalar settings
+  shared_preferences: ^2.5.3
+
+  # Formatting / i18n
+  intl: any
+
+  # Safe OS actions for links
+  url_launcher: ^6.3.2
+
+  # App version for the About screen
+  package_info_plus: ^9.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  fonts:
+    # Manrope — SIL Open Font License 1.1 (see assets/fonts/OFL.txt).
+    # Bundled locally on purpose: the app never fetches fonts at runtime.
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-Variable.ttf
+
+  assets:
+    - assets/fonts/OFL.txt

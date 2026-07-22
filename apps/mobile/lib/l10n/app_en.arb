@@ -1,0 +1,260 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Campus Köthen",
+
+  "navNews": "News",
+  "navCanteen": "Canteen",
+  "navContacts": "Contacts",
+  "navSettings": "Settings",
+  "navigationSemanticLabel": "Main navigation",
+
+  "actionRetry": "Try again",
+  "actionRefresh": "Refresh",
+  "actionClose": "Close",
+  "actionBack": "Back",
+  "actionOpenExternally": "Open externally",
+  "actionSelect": "Select",
+
+  "commonLoading": "Loading …",
+  "commonLoadingSemanticLabel": "Content is loading",
+
+  "errorGenericTitle": "Something went wrong",
+  "errorGenericMessage": "The content could not be loaded. Please try again.",
+  "errorNetworkMessage": "No connection to the server. Please check your internet connection.",
+  "errorTimeoutMessage": "The request took too long. Please try again.",
+  "errorNotFoundMessage": "The requested content could not be found.",
+  "errorServerMessage": "The service is currently unavailable. Please try again later.",
+  "errorLinkNotOpened": "The link could not be opened.",
+  "errorLinkBlocked": "This link was not opened for security reasons.",
+
+  "offlineCachedTitle": "Offline content",
+  "offlineCachedAt": "Last loaded: {timestamp}",
+  "@offlineCachedAt": {
+    "placeholders": {
+      "timestamp": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineCachedUnknownTime": "Last loaded: unknown",
+
+  "newsTitle": "News",
+  "newsEmptyTitle": "No articles",
+  "newsEmptyMessage": "There are currently no articles in the selected channels.",
+  "newsNoChannelsSelectedTitle": "No channels selected",
+  "newsNoChannelsSelectedMessage": "You have deselected every news channel. Select at least one channel to see articles.",
+  "newsNoChannelsAvailableTitle": "No channels available",
+  "newsNoChannelsAvailableMessage": "There are currently no news channels.",
+  "newsChannelPickerTitle": "Channels",
+  "newsChannelPickerTooltip": "Select channels",
+  "newsChannelSelected": "Channel {name} subscribed",
+  "@newsChannelSelected": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "newsChannelDeselected": "Channel {name} not subscribed",
+  "@newsChannelDeselected": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "newsPinnedLabel": "Pinned",
+  "newsPublishedAt": "Published on {date}",
+  "@newsPublishedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "newsAuthorsLabel": "By {authors}",
+  "@newsAuthorsLabel": {
+    "placeholders": {
+      "authors": {
+        "type": "String"
+      }
+    }
+  },
+  "newsSourceLabel": "Source: {source}",
+  "@newsSourceLabel": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "newsOpenSource": "Open source",
+  "newsArticleSemanticLabel": "Article {title}, published on {date}",
+  "@newsArticleSemanticLabel": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "newsChannelCountLabel": "{count, plural, =0{No channels selected} =1{1 channel selected} other{{count} channels selected}}",
+  "@newsChannelCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newsTranslationFallbackHint": "No English version of this content is available yet. The original German text is shown.",
+
+  "canteenTitle": "Canteen",
+  "canteenPickerTitle": "Choose canteen",
+  "canteenPickerTooltip": "Switch canteen",
+  "canteenNoCanteensTitle": "No canteen available",
+  "canteenNoCanteensMessage": "No canteens are configured at the moment.",
+  "canteenNoMealsTitle": "Nothing on offer",
+  "canteenNoMealsMessage": "No meals are listed for this day.",
+  "canteenPreviousDay": "Previous day",
+  "canteenNextDay": "Next day",
+  "canteenDayLabel": "{date}",
+  "@canteenDayLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "canteenSprintLabel": "Sprint",
+  "canteenSprintSemanticLabel": "Sprint offer",
+  "canteenExtrasLabel": "Sides",
+  "canteenMarkersLabel": "Markers",
+  "canteenIngredientsLabel": "Ingredients",
+  "canteenPricesLabel": "Prices",
+  "canteenPriceSemanticLabel": "{group}: {price}",
+  "@canteenPriceSemanticLabel": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "canteenPriceStudentSemanticLabel": "Student price, {group}: {price}",
+  "@canteenPriceStudentSemanticLabel": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "canteenPriceMissing": "no price available",
+  "canteenLastSyncAt": "Last updated: {timestamp}",
+  "@canteenLastSyncAt": {
+    "placeholders": {
+      "timestamp": {
+        "type": "String"
+      }
+    }
+  },
+  "canteenNeverSynced": "Never successfully updated",
+  "canteenStaleTitle": "Data may be outdated",
+  "canteenStaleMessage": "The menu could not be updated for a while. Details may differ from the notice board.",
+  "canteenSourceLanguageHint": "Meal names come unchanged from the German-language source and are not translated.",
+  "canteenMealSemanticLabel": "Meal {name}",
+  "@canteenMealSemanticLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "contactsTitle": "Contacts",
+  "contactsEmptyTitle": "No contact areas",
+  "contactsEmptyMessage": "No points of contact are listed at the moment.",
+  "contactsDemoBadge": "Demo content",
+  "contactsDemoHint": "This area contains provisional demo data. The details have not been approved yet.",
+  "contactPersonsLabel": "Contact persons",
+  "contactNoPersonsMessage": "No individual contact person is listed for this area. Please use the general contact options.",
+  "contactNoContactDetailsMessage": "No contact options are listed for this area yet.",
+  "contactPersonCount": "{count, plural, =0{No contact person} =1{1 contact person} other{{count} contact persons}}",
+  "@contactPersonCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "contactEmailLabel": "Email",
+  "contactPhoneLabel": "Phone",
+  "contactWebsiteLabel": "Website",
+  "contactAppointmentLabel": "Book an appointment",
+  "contactAddressLabel": "Address",
+  "contactOpeningHoursLabel": "Opening hours",
+  "contactAreaSemanticLabel": "Contact area {name}",
+  "@contactAreaSemanticLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "settingsTitle": "Settings",
+  "settingsSectionAppearance": "Appearance",
+  "settingsSectionContent": "Content",
+  "settingsSectionLegal": "Legal",
+  "settingsLanguage": "Language",
+  "settingsLanguageSystem": "System language",
+  "settingsLanguageGerman": "German",
+  "settingsLanguageEnglish": "English",
+  "settingsTheme": "Appearance mode",
+  "settingsThemeSystem": "System setting",
+  "settingsThemeLight": "Light",
+  "settingsThemeDark": "Dark",
+  "settingsChannels": "News channels",
+  "settingsChannelsSubtitle": "Choose which channels appear in the news list.",
+  "settingsPreferredCanteen": "Preferred canteen",
+  "settingsPreferredCanteenNone": "No selection",
+  "settingsAbout": "About this app",
+  "settingsImprint": "Legal notice",
+  "settingsPrivacy": "Privacy",
+
+  "aboutTitle": "About this app",
+  "aboutVersion": "Version {version} ({build})",
+  "@aboutVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutLicenseLabel": "License",
+  "aboutLicenseValue": "AGPL-3.0-only",
+  "aboutCopyright": "Copyright © 2026 Erik Engler and Jona Sommer",
+  "aboutIndependenceTitle": "Independence notice",
+  "aboutIndependenceNotice": "Campus Köthen is an independent, unofficial campus app. It is neither developed nor operated by Hochschule Anhalt, nor is it officially endorsed by the university. The university and its institutions are named solely for the factual attribution of publicly available information.",
+  "aboutOpenSourceLicenses": "Open source licenses",
+  "aboutFontNotice": "Typeface Manrope, licensed under the SIL Open Font License 1.1.",
+
+  "imprintTitle": "Legal notice",
+  "privacyTitle": "Privacy",
+  "legalPlaceholderBadge": "Placeholder",
+  "legalPlaceholderTitle": "Content not final yet",
+  "imprintPlaceholderBody": "This page is a placeholder. A legally binding legal notice does not exist yet. No addresses, names or contact details are stated here on purpose.",
+  "privacyPlaceholderBody": "This page is a placeholder. A legally binding privacy policy does not exist yet. No information about controllers or processing purposes is stated here on purpose.",
+  "legalOperatorNotConfirmed": "The operator of the app has not been confirmed yet. Until that is settled, no responsible entity is named here.",
+  "legalNotPublishedHint": "The app is under development and has not been published."
+}

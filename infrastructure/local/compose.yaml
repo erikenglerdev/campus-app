@@ -1,0 +1,160 @@
+# Campus Köthen — local development stack
+#
+# Mirrors the server topology: ONE PostgreSQL 16 instance holding TWO separate
+# databases with TWO separate roles. Neither role can read the other database.
+#
+#   campus_cms_local  owned by  campus_cms   <- Strapi only
+#   campus_app_local  owned by  campus_app   <- Campus API + worker only
+#
+# PostgreSQL is bound to 127.0.0.1 ONLY. It is never exposed publicly.
+#
+# Default profile  : databases only (apps run on the host via pnpm)
+# Profile `full`   : additionally builds and runs cms, api and worker containers
+#
+# Usage:
+#   cp .env.example .env
+#   docker compose -f infrastructure/local/compose.yaml up -d
+#   docker compose -f infrastructure/local/compose.yaml --profile full up -d --build
+
+name: campus-koethen-local
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      # Bootstrap superuser — used ONLY by the init scripts. The application
+      # roles below are deliberately NOT superusers, so privilege checks apply.
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?POSTGRES_SUPERUSER_PASSWORD is required}
+      APP_DB_NAME: campus_app_local
+      APP_DB_USER: campus_app
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?APP_DB_PASSWORD is required}
+      CMS_DB_NAME: campus_cms_local
+      CMS_DB_USER: campus_cms
+      CMS_DB_PASSWORD: ${CMS_DB_PASSWORD:?CMS_DB_PASSWORD is required}
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+    ports:
+      # Bound to loopback only — never 0.0.0.0.
+      - '127.0.0.1:${POSTGRES_PORT:-5433}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  cms:
+    profiles: ['full']
+    build:
+      context: ../..
+      dockerfile: apps/cms/Dockerfile
+    image: campus-app-cms:local
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 1337
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: campus_cms_local
+      DATABASE_USERNAME: campus_cms
+      DATABASE_PASSWORD: ${CMS_DB_PASSWORD:?CMS_DB_PASSWORD is required}
+      DATABASE_SSL: 'false'
+      APP_KEYS: ${APP_KEYS:?APP_KEYS is required}
+      API_TOKEN_SALT: ${API_TOKEN_SALT:?API_TOKEN_SALT is required}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:?ADMIN_JWT_SECRET is required}
+      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT:?TRANSFER_TOKEN_SALT is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
+    ports:
+      - '127.0.0.1:${CMS_PORT:-1337}:1337'
+    volumes:
+      - cms-uploads:/opt/app/public/uploads
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:1337/_health').then(r=>process.exit(r.status<400?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  api:
+    profiles: ['full']
+    build:
+      context: ../..
+      dockerfile: apps/backend/Dockerfile
+    image: campus-app-backend:local
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_URL: postgresql://campus_app:${APP_DB_PASSWORD:?APP_DB_PASSWORD is required}@postgres:5432/campus_app_local?schema=public
+      STRAPI_BASE_URL: ${STRAPI_BASE_URL:-http://cms:1337}
+      STRAPI_API_TOKEN: ${STRAPI_API_TOKEN:-}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - '127.0.0.1:${API_PORT:-3000}:3000'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/health/live').then(r=>process.exit(r.status<400?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  worker:
+    profiles: ['full']
+    # Same image as the API, different entrypoint — as documented in the deployment contract.
+    build:
+      context: ../..
+      dockerfile: apps/backend/Dockerfile
+    image: campus-app-backend:local
+    restart: unless-stopped
+    logging: *default-logging
+    command: ['node', 'dist/worker.js']
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://campus_app:${APP_DB_PASSWORD:?APP_DB_PASSWORD is required}@postgres:5432/campus_app_local?schema=public
+      CANTEEN_SYNC_CRON: ${CANTEEN_SYNC_CRON:-0 */2 * * *}
+      CANTEEN_SYNC_ON_BOOT: ${CANTEEN_SYNC_ON_BOOT:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+
+volumes:
+  postgres-data:
+  cms-uploads:

@@ -5,3 +5,16 @@ packages:
 
 # apps/mobile is intentionally NOT a pnpm workspace member.
 # The Flutter app is managed by its own Dart/Flutter toolchain (pub).
+
+# Explicit allowlist for dependency install scripts (pnpm >= 10).
+# Only packages that genuinely need to compile or fetch a native binary are
+# allowed to run. Telemetry/advertising postinstall scripts stay disabled.
+allowBuilds:
+  '@prisma/engines': true # downloads the query engine binary
+  prisma: true # CLI postinstall, generates the client
+  esbuild: true # native binary used by Strapi/Vite
+  '@swc/core': true # native transpiler binary
+  sharp: true # native image processing used by Strapi uploads
+  unrs-resolver: true # native resolver binary used by eslint tooling
+  '@scarf/scarf': false # analytics beacon — intentionally denied
+  core-js-pure: false # postinstall advertising banner — intentionally denied

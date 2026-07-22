@@ -1,0 +1,107 @@
+// Campus Köthen App · AGPL-3.0-only
+// Copyright © 2026 Erik Engler and Jona Sommer
+
+import 'json.dart';
+
+/// Pagination block of a list response (`meta.pagination`).
+class ApiPagination {
+  const ApiPagination({
+    required this.page,
+    required this.pageSize,
+    required this.total,
+    required this.totalPages,
+  });
+
+  final int page;
+  final int pageSize;
+  final int total;
+  final int totalPages;
+
+  bool get hasNextPage => page < totalPages;
+
+  static ApiPagination? fromJson(Object? json) {
+    final Map<String, dynamic>? map = asJsonMap(json);
+    if (map == null) return null;
+    return ApiPagination(
+      page: asInt(map['page']) ?? 1,
+      pageSize: asInt(map['pageSize']) ?? 0,
+      total: asInt(map['total']) ?? 0,
+      totalPages: asInt(map['totalPages']) ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'page': page,
+    'pageSize': pageSize,
+    'total': total,
+    'totalPages': totalPages,
+  };
+}
+
+/// The `meta` envelope every content response carries.
+class ApiMeta {
+  const ApiMeta({
+    this.requestedLocale,
+    this.resolvedLocale,
+    this.translationFallback = false,
+    this.pagination,
+    this.lastSuccessfulSyncAt,
+    this.dataStale = false,
+    this.droppedBlockTypes = const <String>[],
+  });
+
+  final String? requestedLocale;
+  final String? resolvedLocale;
+
+  /// `true` when at least one delivered field fell back to the German source.
+  final bool translationFallback;
+
+  final ApiPagination? pagination;
+
+  /// Canteen responses only. `null` means: never successfully synchronised.
+  final DateTime? lastSuccessfulSyncAt;
+
+  /// Canteen responses only.
+  final bool dataStale;
+
+  /// Block types the server dropped from rich text content.
+  final List<String> droppedBlockTypes;
+
+  static const ApiMeta empty = ApiMeta();
+
+  static ApiMeta fromJson(Object? json) {
+    final Map<String, dynamic>? map = asJsonMap(json);
+    if (map == null) return empty;
+    return ApiMeta(
+      requestedLocale: asString(map['requestedLocale']),
+      resolvedLocale: asString(map['resolvedLocale']),
+      translationFallback: asBool(map['translationFallback']) ?? false,
+      pagination: ApiPagination.fromJson(map['pagination']),
+      lastSuccessfulSyncAt: asDateTime(map['lastSuccessfulSyncAt']),
+      dataStale: asBool(map['dataStale']) ?? false,
+      droppedBlockTypes: asStringList(map['droppedBlockTypes']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'requestedLocale': requestedLocale,
+    'resolvedLocale': resolvedLocale,
+    'translationFallback': translationFallback,
+    if (pagination != null) 'pagination': pagination!.toJson(),
+    if (lastSuccessfulSyncAt != null)
+      'lastSuccessfulSyncAt': lastSuccessfulSyncAt!.toUtc().toIso8601String(),
+    'dataStale': dataStale,
+    'droppedBlockTypes': droppedBlockTypes,
+  };
+}
+
+/// A parsed content response: payload plus its [ApiMeta].
+class ApiResponse<T> {
+  const ApiResponse({required this.data, required this.meta});
+
+  final T data;
+  final ApiMeta meta;
+
+  ApiResponse<R> map<R>(R Function(T value) transform) =>
+      ApiResponse<R>(data: transform(data), meta: meta);
+}

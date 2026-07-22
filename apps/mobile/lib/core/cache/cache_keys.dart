@@ -1,0 +1,37 @@
+// Campus Köthen App · AGPL-3.0-only
+// Copyright © 2026 Erik Engler and Jona Sommer
+
+/// Keys of the persistent content cache.
+///
+/// Keys carry the locale where the cached document is locale dependent, so a
+/// language switch never shows the previous language's content.
+abstract final class CacheKeys {
+  /// Full channel list.
+  static String newsChannels(String locale) => 'news.channels.$locale';
+
+  /// The most recently loaded first page of the news list, keyed by the
+  /// selected channel set so a channel change does not show a stale list.
+  static String newsFirstPage(String locale, List<String> channels) {
+    final List<String> sorted = List<String>.of(channels)..sort();
+    return 'news.page1.$locale.${sorted.join('+')}';
+  }
+
+  /// A single news article.
+  static String newsArticle(String locale, String slug) =>
+      'news.article.$locale.$slug';
+
+  /// Full contact area list.
+  static String contactAreas(String locale) => 'contacts.areas.$locale';
+
+  /// A single contact area including its persons.
+  static String contactArea(String locale, String slug) =>
+      'contacts.area.$locale.$slug';
+
+  /// Canteen list.
+  static String canteens(String locale) => 'canteen.list.$locale';
+
+  /// Menu of one canteen for the cached two-week window
+  /// (current + upcoming week).
+  static String canteenMenu(String locale, String slug) =>
+      'canteen.menu.$locale.$slug';
+}
