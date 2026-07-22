@@ -27,3 +27,4 @@ overrides:
   'tar@<7.5.19': '>=7.5.19' # GHSA-8qq5-c9xr-p97q — decompression/parse DoS (critical)
   'vite@<=6.4.2': '>=6.4.3' # server.fs.deny bypass on Windows alternate paths (high)
   'sharp@<0.35.0': '>=0.35.0' # inherited libvips CVEs (high)
+

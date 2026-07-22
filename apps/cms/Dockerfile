@@ -47,7 +47,9 @@ RUN NODE_ENV=production \
     TRANSFER_TOKEN_SALT=build-only-placeholder \
     JWT_SECRET=build-only-placeholder \
     ENCRYPTION_KEY=build-only-placeholder \
-    pnpm --filter @campus/cms exec strapi build
+    pnpm --filter @campus/cms run build
+# NOTE: the package script, not `exec strapi build` directly — the script also
+# runs scripts/inject-prism-shim.mjs, without which the admin serves a blank page.
 
 # `pnpm deploy` resolves workspace links into a self-contained directory with
 # production dependencies only.
