@@ -1,98 +1,92 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Campus API and canteen worker
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Campus Köthen App · `AGPL-3.0-only` · Copyright © 2026 Erik Engler and Jona Sommer
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+NestJS service that is the **only** interface the mobile app talks to. It wraps
+Strapi and the canteen source so the client never reaches either directly.
 
-## Description
+One codebase, two entrypoints:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+| Entrypoint | Command | Role |
+| --- | --- | --- |
+| API | `node dist/main.js` | HTTP server on `0.0.0.0:3000` |
+| Worker | `node dist/worker.js` | Canteen synchronisation, every two hours |
 
-## Project setup
+They run as **separate containers from the same image**, so a slow or failing
+sync can never block the API or trigger its restart.
 
-```bash
-$ pnpm install
-```
+## Endpoints
 
-## Compile and run the project
+| | |
+| --- | --- |
+| `GET /health/live` | Process only. Never fails because a dependency is down. |
+| `GET /health/ready` | Database and CMS, each with a bounded timeout. |
+| `GET /docs`, `GET /docs-json` | Swagger UI and the OpenAPI document. |
+| `GET /v1/news/channels`, `/v1/news`, `/v1/news/:slug` | News |
+| `GET /v1/contact-areas`, `/v1/contact-areas/:slug` | Contacts |
+| `GET /v1/canteens`, `/v1/canteens/:slug/menu` | Canteens |
 
-```bash
-# development
-$ pnpm run start
+The binding contract is [`docs/api.md`](../../docs/api.md); the generated
+artefact is [`packages/openapi/openapi.json`](../../packages/openapi/openapi.json),
+and CI fails if the two drift apart.
 
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
-```
-
-## Run tests
+## Local development
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+cp .env.example .env
+pnpm --filter @campus/backend prisma:generate
+pnpm --filter @campus/backend prisma:migrate:dev
+pnpm --filter @campus/backend start:dev
 ```
 
-## Deployment
+Requires the local database from
+[`infrastructure/local`](../../infrastructure/local). Full walkthrough:
+[`docs/local-development.md`](../../docs/local-development.md).
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Administrative commands
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+pnpm --filter @campus/backend seed:canteens        # idempotent
+pnpm --filter @campus/backend sync:canteens        # against the live source
+pnpm --filter @campus/backend sync:canteens -- --fixture  # against stored fixtures
+pnpm --filter @campus/backend openapi:generate
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Synchronisation is a **CLI command, not an HTTP endpoint**. An unauthenticated
+sync route would let anyone drive load onto a third-party service.
 
-## Resources
+## Tests
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+pnpm --filter @campus/backend lint
+pnpm --filter @campus/backend typecheck
+pnpm --filter @campus/backend test
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+The canteen tests run against a **real PostgreSQL**. The guarantee they protect
+— that an empty, invalid or failed upstream response never deletes stored data —
+is a statement about database state, so asserting it against a mock would prove
+nothing.
 
-## Support
+## Design notes
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+- **Nothing from Strapi leaks.** `documentId`, `attributes`, `localizations` and
+  `populate` metadata stop at the mappers. Public DTOs are written out field by
+  field rather than spread, so a new upstream field cannot escape by accident.
+- **German is the canonical locale.** The requested locale is overlaid on top of
+  it, so an untranslated article keeps its German text and sets
+  `translationFallback` instead of disappearing. Nothing is machine-translated.
+- **Canteen text is never translated at all.** The source is German-only; meals
+  carry `sourceLanguage: "de"` so the client can say so honestly.
+- **Money is `Decimal`**, transported as a decimal string. No float arithmetic.
+- **`food.image_url` is parsed and discarded.** No canteen images are stored or
+  served, and there is no image column in the schema.
+- **Unknown content blocks are dropped server-side** and reported in
+  `meta.droppedBlockTypes`, so a new CMS block type cannot break a detail screen.
 
-## Stay in touch
+## Configuration
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Every variable is validated once at boot by `src/config/env.schema.ts`. A bad
+value fails the process immediately and reports the offending **key only** —
+never the value, so a malformed `DATABASE_URL` cannot print a password into the
+logs. See [`.env.example`](.env.example).

@@ -55,6 +55,19 @@ FROM node:22.23.1-alpine AS runtime
 # worker's SIGTERM shutdown path actually runs.
 RUN apk add --no-cache openssl tini
 
+# Remove npm, npx and corepack from the RUNTIME image.
+#
+# Nothing here runs them: the container starts with `node dist/...` (or Strapi's
+# JS entry) and any local CLI is a plain node script. npm ships its own bundled
+# dependency tree, which is where every HIGH/CRITICAL finding in the first Trivy
+# scan came from (tar, sigstore, picomatch, brace-expansion) — none of them our
+# code, none of them reachable, all of them real scanner noise we cannot patch
+# from our lockfile. Deleting the package manager removes the whole class and
+# shrinks the image.
+RUN rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
+
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=3000
