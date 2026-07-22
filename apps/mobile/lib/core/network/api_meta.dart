@@ -47,6 +47,8 @@ class ApiMeta {
     this.pagination,
     this.lastSuccessfulSyncAt,
     this.dataStale = false,
+    this.featureEnabled,
+    this.dataState,
     this.droppedBlockTypes = const <String>[],
   });
 
@@ -61,8 +63,17 @@ class ApiMeta {
   /// Canteen responses only. `null` means: never successfully synchronised.
   final DateTime? lastSuccessfulSyncAt;
 
-  /// Canteen responses only.
+  /// Canteen and timetable responses only.
   final bool dataStale;
+
+  /// Timetable responses only: whether the feature is switched on at all.
+  /// `null` when the endpoint does not carry the flag.
+  final bool? featureEnabled;
+
+  /// Timetable responses only: the raw `dataState` key
+  /// (`ready` | `pending` | `unavailable`). Kept as a string here so this core
+  /// type stays free of feature specific enums; the timetable feature maps it.
+  final String? dataState;
 
   /// Block types the server dropped from rich text content.
   final List<String> droppedBlockTypes;

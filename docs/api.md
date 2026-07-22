@@ -412,3 +412,139 @@ Verbindliche Regeln:
 - keine `location_id`
 - keine hartcodierte Kanal-, Mensa- oder Bereichsliste
 - keine Kenntnis der Preisfeld-Nummerierung der Quelle
+
+## 9. Stundenplan
+
+Quelle ist die **öffentliche** WebUntis-Ansicht. Sie wird ausschließlich serverseitig abgerufen —
+siehe [data-sources.md](data-sources.md). Der Client sieht **niemals** eine WebUntis-URL, einen
+WebUntis-Header, eine Schuljahres-ID oder eine externe Gruppen-ID.
+
+Das Feature ist über `WEBUNTIS_ENABLED` schaltbar und steht **standardmäßig auf `false`**, bis die
+Nutzung organisatorisch freigegeben ist. Deaktiviert antworten die Endpunkte weiterhin mit `200`
+und einem klaren Zustand — nicht mit einem Fehler, damit der Client das verständlich darstellen
+kann statt wie ein Absturz.
+
+### `GET /v1/timetable/groups`
+
+| Parameter    | Typ                      | Regeln                                                      |
+| ------------ | ------------------------ | ----------------------------------------------------------- |
+| `query`      | String, max. 100 Zeichen | Suche über Kurzname, Langname und Bereich; case-insensitive |
+| `department` | String                   | exakter Bereichsfilter (`shortName`)                        |
+| `locale`     | `de` \| `en`             | wie überall                                                 |
+
+Liefert alle aktiven Gruppen in **einer** Antwort (Größenordnung 270). Sortierung: `shortName` ASC.
+
+```jsonc
+{
+  "data": [
+    {
+      "id": "8f1c…", // Campus-UUID, stabil
+      "shortName": "AIN2 - BT",
+      "longName": "AIN2-Angewandte Informatik Vertiefung: Biotechnologie",
+      "department": "FB5", // oder null
+    },
+  ],
+  "meta": {
+    "requestedLocale": "de",
+    "resolvedLocale": "de",
+    "translationFallback": false,
+    "featureEnabled": true,
+    "lastSuccessfulSyncAt": "…",
+    "dataStale": false,
+  },
+}
+```
+
+Es gibt **kein** Feld mit der WebUntis-ID.
+
+### `GET /v1/timetable/entries`
+
+| Parameter | Typ          | Regeln                                                                |
+| --------- | ------------ | --------------------------------------------------------------------- |
+| `groupId` | UUID         | **erforderlich**; unbekannt ⇒ `404 TIMETABLE_GROUP_NOT_FOUND`         |
+| `from`    | `YYYY-MM-DD` | **erforderlich**                                                      |
+| `to`      | `YYYY-MM-DD` | **erforderlich**, `to >= from`, Spanne max. **42 Tage** ⇒ sonst `400` |
+| `locale`  | `de` \| `en` |                                                                       |
+
+```jsonc
+{
+  "data": {
+    "group": { "id": "8f1c…", "shortName": "AIN2 - BT", "longName": "…", "department": "FB5" },
+    "days": [
+      {
+        "date": "2026-07-20",
+        "entries": [
+          {
+            "id": "…",
+            "start": "2026-07-20T08:00:00.000Z",
+            "end": "2026-07-20T09:30:00.000Z",
+            "timezone": "Europe/Berlin",
+            "title": "Englisch als Fremdsprache",
+            "subjectCode": "Englisch als Fremdsp",
+            "type": "regular_teaching | additional | unknown",
+            "status": "regular | changed | cancelled | unknown",
+            "teachers": [{ "shortName": "D-Demo01", "displayName": "Demo Demoperson01" }],
+            "rooms": [{ "shortName": "D-04/201", "longName": "Seminarraum VM/GIN" }],
+            "groups": [{ "id": "8f1c…", "shortName": "AIN2 - BT" }],
+            "note": null,
+          },
+        ],
+      },
+    ],
+  },
+  "meta": {
+    "requestedLocale": "de",
+    "resolvedLocale": "de",
+    "translationFallback": true,
+    "timezone": "Europe/Berlin",
+    "from": "2026-07-20",
+    "to": "2026-08-02",
+    "lastSuccessfulSyncAt": "…",
+    "dataStale": false,
+    "dataState": "ready | pending | unavailable",
+    "featureEnabled": true,
+  },
+}
+```
+
+Verbindliche Regeln:
+
+- **Jeder Tag des Zeitraums** erscheint, auch ohne Einträge. Ein echter freier Tag ist dadurch vom
+  Ladefehler unterscheidbar — dieselbe Regel wie beim Speiseplan.
+- `start`/`end` sind **absolute UTC-Zeitpunkte**. Die fachliche Zone `Europe/Berlin` steht
+  zusätzlich im Vertrag, weil die Quelle lokale Wandzeit ohne Zone liefert.
+- `status` und `type` sind **normalisierte technische Schlüssel**. Ein unbekannter Quellwert wird
+  auf `unknown` abgebildet und bricht nichts.
+- `teachers`, `rooms`, `groups` und `title` stammen aus dem Fremdsystem und werden **nie**
+  übersetzt. Deshalb ist `translationFallback` bei `locale=en` `true`.
+- `dataState`:
+  - `ready` — Daten liegen vor,
+  - `pending` — Feature aktiv, aber noch kein erfolgreicher Lauf für diesen Zeitraum,
+  - `unavailable` — Feature deaktiviert oder dauerhaft kein Datenstand.
+
+### `GET /v1/timetable/status`
+
+Öffentlicher, bewusst magerer Zustand. Enthält **keine** URLs, Header, externen IDs oder
+Fehlerdetails der Quelle.
+
+```jsonc
+{
+  "data": {
+    "featureEnabled": true,
+    "groupCount": 270,
+    "lastGroupSyncAt": "2026-07-22T03:00:11.000Z",
+    "lastEntrySyncAt": "2026-07-22T17:30:04.000Z",
+    "dataStale": false,
+    "coveredFrom": "2026-07-15",
+    "coveredTo": "2026-08-19",
+  },
+  "meta": { "requestedLocale": "de", "resolvedLocale": "de", "translationFallback": false },
+}
+```
+
+### Fehlercodes
+
+| Code                        | Status                                                |
+| --------------------------- | ----------------------------------------------------- |
+| `TIMETABLE_GROUP_NOT_FOUND` | 404                                                   |
+| `VALIDATION_FAILED`         | 400 (ungültiges Datum, `to < from`, Spanne > 42 Tage) |

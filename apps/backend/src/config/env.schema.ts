@@ -69,6 +69,39 @@ export const envSchema = z.object({
   /** How far ahead a sync fetches: current + next week. */
   CANTEEN_SYNC_DAYS_AHEAD: z.coerce.number().int().min(1).max(60).default(14),
 
+  // --- WebUntis timetable --------------------------------------------------
+  /**
+   * OFF by default, on purpose. The source is an internal interface of a
+   * third party's public web UI, and automated use is not cleared yet. The
+   * feature ships complete but dormant until that is a deliberate decision.
+   */
+  WEBUNTIS_ENABLED: booleanFromEnv.default(false),
+  WEBUNTIS_BASE_URL: z.url().default('https://hsa.webuntis.com/WebUntis/api/rest/view/v1'),
+  /**
+   * Identifies the tenant for the anonymous public view. Not a credential, but
+   * still server-side configuration: it must never reach the app.
+   */
+  WEBUNTIS_ANONYMOUS_SCHOOL: z.string().min(1).default('hsa'),
+  WEBUNTIS_HTTP_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120_000).default(20_000),
+  WEBUNTIS_RETRY_ATTEMPTS: z.coerce.number().int().min(0).max(5).default(3),
+  /** Politeness delay between consecutive upstream requests. */
+  WEBUNTIS_REQUEST_SPACING_MS: z.coerce.number().int().min(0).max(60_000).default(1_500),
+  /** Largest response we are willing to buffer, as a crude runaway guard. */
+  WEBUNTIS_MAX_RESPONSE_BYTES: z.coerce
+    .number()
+    .int()
+    .min(64_000)
+    .max(64_000_000)
+    .default(16_000_000),
+  /** The catalogue changes rarely; nightly is plenty. */
+  WEBUNTIS_GROUP_SYNC_CRON: z.string().min(1).default('0 3 * * *'),
+  /** Entries for ALL groups arrive in one request, so this can stay modest. */
+  WEBUNTIS_ENTRY_SYNC_CRON: z.string().min(1).default('*/30 * * * *'),
+  WEBUNTIS_SYNC_ON_BOOT: booleanFromEnv.default(false),
+  WEBUNTIS_LOOKBACK_DAYS: z.coerce.number().int().min(0).max(90).default(7),
+  WEBUNTIS_LOOKAHEAD_DAYS: z.coerce.number().int().min(1).max(180).default(28),
+  WEBUNTIS_STALE_AFTER_MINUTES: z.coerce.number().int().min(5).max(10_080).default(180),
+
   // --- Observability -------------------------------------------------------
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   /** Pretty console output for humans; JSON is the default and the server format. */
