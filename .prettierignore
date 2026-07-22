@@ -8,3 +8,7 @@ apps/mobile
 pnpm-lock.yaml
 LICENSE
 packages/openapi/openapi.json
+
+# Recorded third-party fixtures: kept byte-for-byte as observed, and
+# malformed.json is deliberately unparseable, which Prettier cannot format.
+apps/backend/test/fixtures/webuntis
