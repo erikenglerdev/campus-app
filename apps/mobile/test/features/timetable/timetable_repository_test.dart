@@ -65,38 +65,42 @@ void main() {
   });
 
   group('fetchEntries', () {
-    test('sends groupId, from and to exactly as the contract requires', () async {
-      final FakeHttpAdapter adapter = workingApi();
+    test(
+      'sends groupId, from and to exactly as the contract requires',
+      () async {
+        final FakeHttpAdapter adapter = workingApi();
 
-      await buildRepository(adapter).fetchEntries(
-        locale: 'de',
-        groupId: timetableGroupIdFixture,
-        from: _monday,
-        to: _sunday,
-      );
+        await buildRepository(adapter).fetchEntries(
+          locale: 'de',
+          groupId: timetableGroupIdFixture,
+          from: _monday,
+          to: _sunday,
+        );
 
-      final String query = adapter.queries.single;
-      expect(adapter.requests.single.path, '/timetable/entries');
-      expect(
-        Uri.decodeQueryComponent(
-          RegExp(r'groupId=([^&]*)').firstMatch(query)!.group(1)!,
-        ),
-        timetableGroupIdFixture,
-      );
-      expect(query, contains('from=2026-07-20'));
-      expect(query, contains('to=2026-07-26'));
-      expect(query, contains('locale=de'));
-    });
+        final String query = adapter.queries.single;
+        expect(adapter.requests.single.path, '/timetable/entries');
+        expect(
+          Uri.decodeQueryComponent(
+            RegExp(r'groupId=([^&]*)').firstMatch(query)!.group(1)!,
+          ),
+          timetableGroupIdFixture,
+        );
+        expect(query, contains('from=2026-07-20'));
+        expect(query, contains('to=2026-07-26'));
+        expect(query, contains('locale=de'));
+      },
+    );
 
     test('exposes featureEnabled and dataState from the meta block', () async {
-      final Loaded<Timetable> loaded = await buildRepository(
-        workingApi(meta: timetableMeta(dataState: 'pending')),
-      ).fetchEntries(
-        locale: 'de',
-        groupId: timetableGroupIdFixture,
-        from: _monday,
-        to: _sunday,
-      );
+      final Loaded<Timetable> loaded =
+          await buildRepository(
+            workingApi(meta: timetableMeta(dataState: 'pending')),
+          ).fetchEntries(
+            locale: 'de',
+            groupId: timetableGroupIdFixture,
+            from: _monday,
+            to: _sunday,
+          );
 
       expect(loaded.meta.featureEnabled, isTrue);
       expect(
@@ -106,20 +110,21 @@ void main() {
     });
 
     test('reports a disabled feature without failing', () async {
-      final Loaded<Timetable> loaded = await buildRepository(
-        workingApi(
-          meta: timetableMeta(
-            featureEnabled: false,
-            dataState: 'unavailable',
-            lastSuccessfulSyncAt: null,
-          ),
-        ),
-      ).fetchEntries(
-        locale: 'de',
-        groupId: timetableGroupIdFixture,
-        from: _monday,
-        to: _sunday,
-      );
+      final Loaded<Timetable> loaded =
+          await buildRepository(
+            workingApi(
+              meta: timetableMeta(
+                featureEnabled: false,
+                dataState: 'unavailable',
+                lastSuccessfulSyncAt: null,
+              ),
+            ),
+          ).fetchEntries(
+            locale: 'de',
+            groupId: timetableGroupIdFixture,
+            from: _monday,
+            to: _sunday,
+          );
 
       expect(loaded.meta.featureEnabled, isFalse);
       expect(

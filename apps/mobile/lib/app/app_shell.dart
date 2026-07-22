@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../core/theme/app_dimensions.dart';
 import '../l10n/l10n.dart';
 
-/// Bottom navigation shell holding the four top-level sections.
+/// Bottom navigation shell holding the five top-level sections.
 class AppShell extends StatelessWidget {
   const AppShell({required this.navigationShell, super.key});
 
@@ -31,6 +31,12 @@ class AppShell extends StatelessWidget {
               selectedIcon: const Icon(Icons.article),
               label: l10n.navNews,
               tooltip: l10n.navNews,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.calendar_month_outlined),
+              selectedIcon: const Icon(Icons.calendar_month),
+              label: l10n.navTimetable,
+              tooltip: l10n.navTimetable,
             ),
             NavigationDestination(
               icon: const Icon(Icons.restaurant_outlined),

@@ -14,6 +14,9 @@ import '../../canteen/application/canteen_providers.dart';
 import '../../canteen/data/canteen_models.dart';
 import '../../canteen/presentation/canteen_picker_sheet.dart';
 import '../../news/application/channel_subscriptions.dart';
+import '../../timetable/application/timetable_providers.dart';
+import '../../timetable/data/timetable_models.dart';
+import '../../timetable/presentation/timetable_group_picker_sheet.dart';
 
 /// Local settings. Everything here stays on the device — the app works
 /// entirely without a user account.
@@ -37,6 +40,18 @@ class SettingsScreen extends ConsumerWidget {
             .map((Canteen canteen) => canteen.displayName)
             .firstOrNull ??
         l10n.settingsPreferredCanteenNone;
+    final List<TimetableGroup> timetableGroups =
+        ref.watch(timetableGroupsProvider).value?.value ??
+        const <TimetableGroup>[];
+    final String? timetableGroupId = ref.watch(
+      selectedTimetableGroupIdProvider,
+    );
+    final String timetableGroupName =
+        timetableGroups
+            .where((TimetableGroup group) => group.id == timetableGroupId)
+            .map((TimetableGroup group) => group.shortName)
+            .firstOrNull ??
+        l10n.settingsTimetableGroupNone;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
@@ -61,6 +76,13 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: Text(canteenName),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => showCanteenPickerSheet(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.school_outlined),
+            title: Text(l10n.settingsTimetableGroup),
+            subtitle: Text(timetableGroupName),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showTimetableGroupPickerSheet(context),
           ),
           const Divider(),
           _SectionHeader(title: l10n.settingsSectionLegal),

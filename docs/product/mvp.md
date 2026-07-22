@@ -52,15 +52,20 @@ Die App funktioniert **ohne Nutzerkonto**. Alle Präferenzen bleiben auf dem Ger
 
 - News-Liste, News-Detail, dynamische News-Kanal-Auswahl
 - Mensa-Auswahl und Speiseplan mit Tagesnavigation
+- **Gruppenstundenplan** aus der öffentlichen WebUntis-Ansicht — vollständig umgesetzt, aber
+  serverseitig über `WEBUNTIS_ENABLED` **standardmäßig deaktiviert**, bis die Nutzung
+  organisatorisch freigegeben ist (siehe Release-Gates)
 - Kontaktbereiche und Kontaktdetail
-- Lokale Einstellungen: Sprache, Theme, Kanal-Abos, bevorzugte Mensa
+- Lokale Einstellungen: Sprache, Theme, Kanal-Abos, bevorzugte Mensa, gewählte Stundenplangruppe
 - Offline-/Cache-Verhalten mit klarer Stale-Kennzeichnung
 - About, Impressums-Platzhalter, Datenschutz-Platzhalter
 - Deutsch und Englisch in App, CMS und API
 
 ### 3.2 Nicht enthalten
 
-Nutzerkonten · Push-Nachrichten · WebUntis/Stundenplan · Gebäudepläne · Raumbelegung ·
+Nutzerkonten · Push-Nachrichten · persönlicher WebUntis-Login · Noten/Abwesenheiten/Hausaufgaben ·
+Stundenpläne für Lehrpersonen oder Räume · Raumverfügbarkeit („freie Räume") ·
+Zusammenführen mehrerer Gruppen in einen Plan · Gebäudepläne · Raumbelegung ·
 Indoor-Navigation · Analytics/Tracking · Sentry oder externes Crash-Reporting · Redis · SMTP ·
 automatisches Deployment · globale Volltextsuche
 
@@ -181,3 +186,7 @@ werden:
 8. **PROD-Server und Domains.**
 9. **Freigabe realer Kontaktdaten** und ggf. Personenfotos (Rechtsgrundlage).
 10. **Nutzungsfreigabe der Mensa-Datenquelle** durch den Betreiber.
+11. **Nutzungsfreigabe der WebUntis-Stundenplanquelle** — Erlaubnis zur automatisierten Nutzung
+    der internen View-API, akzeptable Abrufrate, Stabilitätszusage beziehungsweise offizielle API,
+    gewünschte Quellenangabe sowie zulässige Speicherung und Aufbewahrung von Lehrpersonennamen.
+    Bis dahin bleibt `WEBUNTIS_ENABLED=false`.

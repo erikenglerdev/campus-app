@@ -90,7 +90,8 @@ class _TimetableGroupPickerListState
         const SizedBox(height: AppSpacing.sm),
         Expanded(
           child: switch (groups) {
-            AsyncLoading<Loaded<List<TimetableGroup>>>() when !groups.hasValue =>
+            AsyncLoading<Loaded<List<TimetableGroup>>>()
+                when !groups.hasValue =>
               const LoadingView(),
             AsyncError<Loaded<List<TimetableGroup>>>(:final Object error) =>
               ErrorView(

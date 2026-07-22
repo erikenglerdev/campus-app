@@ -7,6 +7,8 @@ abstract final class AppRoutes {
   static const String newsDetailName = 'news-detail';
   static const String newsDetailPath = ':slug';
 
+  static const String timetable = '/timetable';
+
   static const String canteen = '/canteen';
 
   static const String contacts = '/contacts';

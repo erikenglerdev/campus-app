@@ -128,7 +128,8 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen>
       child: switch (week) {
         AsyncLoading<Loaded<Timetable>>() when loaded == null =>
           const LoadingView(),
-        AsyncError<Loaded<Timetable>>(:final Object error) when loaded == null =>
+        AsyncError<Loaded<Timetable>>(:final Object error)
+            when loaded == null =>
           ErrorView(
             failure: error,
             onRetry: () => ref.invalidate(timetableWeekProvider(request)),
@@ -205,7 +206,7 @@ class _TimetableContent extends ConsumerWidget {
         else ...<Widget>[
           const _WeekNavigator(),
           const SizedBox(height: AppSpacing.md),
-          _DaySelector(selectedDay: selectedDay, timetable: timetable),
+          _DaySelector(selectedDay: selectedDay),
           const SizedBox(height: AppSpacing.md),
           if (loaded.fromCache) ...<Widget>[
             OfflineNotice(cachedAt: loaded.cachedAt),
@@ -368,10 +369,9 @@ class _WeekNavigator extends ConsumerWidget {
 
 /// Horizontal day picker of the visible week.
 class _DaySelector extends ConsumerWidget {
-  const _DaySelector({required this.selectedDay, required this.timetable});
+  const _DaySelector({required this.selectedDay});
 
   final DateTime selectedDay;
-  final Timetable timetable;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -482,7 +482,8 @@ class _DayAgenda extends StatelessWidget {
     final AppLocalizations l10n = context.l10n;
     final String locale = Localizations.localeOf(context).languageCode;
     final TimetableDay? day = timetable.dayFor(selectedDay);
-    final List<TimetableEntry> entries = day?.entries ?? const <TimetableEntry>[];
+    final List<TimetableEntry> entries =
+        day?.entries ?? const <TimetableEntry>[];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

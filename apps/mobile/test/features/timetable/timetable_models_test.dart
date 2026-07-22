@@ -35,17 +35,20 @@ void main() {
       expect(groups.map((TimetableGroup group) => group.id), <String>['a']);
     });
 
-    test('matches a search term across short name, long name and department', () {
-      final TimetableGroup group = TimetableGroup.listFromJson(
-        timetableGroupsFixture,
-      ).first;
+    test(
+      'matches a search term across short name, long name and department',
+      () {
+        final TimetableGroup group = TimetableGroup.listFromJson(
+          timetableGroupsFixture,
+        ).first;
 
-      expect(group.matches('ain2'), isTrue, reason: 'short name, lower case');
-      expect(group.matches('biotech'), isTrue, reason: 'long name');
-      expect(group.matches('fb5'), isTrue, reason: 'department');
-      expect(group.matches('  '), isTrue, reason: 'blank matches everything');
-      expect(group.matches('maschinenbau'), isFalse);
-    });
+        expect(group.matches('ain2'), isTrue, reason: 'short name, lower case');
+        expect(group.matches('biotech'), isTrue, reason: 'long name');
+        expect(group.matches('fb5'), isTrue, reason: 'department');
+        expect(group.matches('  '), isTrue, reason: 'blank matches everything');
+        expect(group.matches('maschinenbau'), isFalse);
+      },
+    );
   });
 
   group('TimetableEntry', () {
@@ -162,9 +165,10 @@ void main() {
       });
 
       expect(timetable!.days.first.date, DateTime(2026, 7, 20));
-      expect(timetable.days.first.entries.map((TimetableEntry e) => e.id), <
-        String
-      >['early', 'late']);
+      expect(
+        timetable.days.first.entries.map((TimetableEntry e) => e.id),
+        <String>['early', 'late'],
+      );
     });
 
     test('returns null when the payload has no group', () {

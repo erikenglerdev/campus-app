@@ -123,27 +123,26 @@ Map<String, dynamic> menuFixture(DateTime date) => <String, dynamic>{
 ///
 /// Only Campus UUIDs appear here — the contract guarantees that no upstream
 /// identifier ever reaches the client.
-List<Map<String, dynamic>> get timetableGroupsFixture =>
-    <Map<String, dynamic>>[
-      <String, dynamic>{
-        'id': '11111111-1111-4111-8111-111111111111',
-        'shortName': 'AIN2 - BT',
-        'longName': 'AIN2-Angewandte Informatik Vertiefung: Biotechnologie',
-        'department': 'FB5',
-      },
-      <String, dynamic>{
-        'id': '22222222-2222-4222-8222-222222222222',
-        'shortName': 'MB1',
-        'longName': 'MB1-Maschinenbau',
-        'department': 'FB6',
-      },
-      <String, dynamic>{
-        'id': '33333333-3333-4333-8333-333333333333',
-        'shortName': 'OHNE',
-        'longName': null,
-        'department': null,
-      },
-    ];
+List<Map<String, dynamic>> get timetableGroupsFixture => <Map<String, dynamic>>[
+  <String, dynamic>{
+    'id': '11111111-1111-4111-8111-111111111111',
+    'shortName': 'AIN2 - BT',
+    'longName': 'AIN2-Angewandte Informatik Vertiefung: Biotechnologie',
+    'department': 'FB5',
+  },
+  <String, dynamic>{
+    'id': '22222222-2222-4222-8222-222222222222',
+    'shortName': 'MB1',
+    'longName': 'MB1-Maschinenbau',
+    'department': 'FB6',
+  },
+  <String, dynamic>{
+    'id': '33333333-3333-4333-8333-333333333333',
+    'shortName': 'OHNE',
+    'longName': null,
+    'department': null,
+  },
+];
 
 /// Id of the group used by the timetable fixtures.
 const String timetableGroupIdFixture = '11111111-1111-4111-8111-111111111111';

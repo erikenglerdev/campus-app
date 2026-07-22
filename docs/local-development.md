@@ -75,6 +75,23 @@ Beide Seeds sind **idempotent** — zweimaliges Ausführen erzeugt keine Duplika
 
 ### 2.5 Mensadaten
 
+### Stundenplan
+
+Der Stundenplan ist standardmäßig **deaktiviert**. Zum lokalen Ausprobieren in
+`apps/backend/.env`:
+
+```dotenv
+WEBUNTIS_ENABLED=true
+WEBUNTIS_SYNC_ON_BOOT=true
+```
+
+Danach den Worker starten. Er löst dann nacheinander Kontext-, Katalog- und Eintragslauf aus.
+Der Katalog kostet einen Request, die Einträge **einen einzigen** Request für alle Gruppen.
+
+Ohne aktiviertes Flag antworten die Endpunkte weiterhin mit `200`, melden aber
+`featureEnabled: false` und `dataState: "unavailable"` — die App stellt das als verständlichen
+Hinweis dar, nicht als Fehler.
+
 ```bash
 # Administrativer manueller Sync gegen die echte Quelle
 pnpm --filter @campus/backend sync:canteens

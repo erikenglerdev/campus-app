@@ -14,13 +14,15 @@ import '../features/news/presentation/news_detail_screen.dart';
 import '../features/news/presentation/news_list_screen.dart';
 import '../features/settings/presentation/channel_settings_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
+import '../features/timetable/presentation/timetable_screen.dart';
 import 'app_routes.dart';
 import 'app_shell.dart';
 
 /// The application router.
 ///
-/// Four stateful branches — one per bottom navigation destination — so each
-/// section keeps its own navigation stack.
+/// Five stateful branches — one per bottom navigation destination — so each
+/// section keeps its own navigation stack. The branch order is the order of
+/// the destinations in [AppShell].
 GoRouter createAppRouter({String initialLocation = AppRoutes.news}) {
   return GoRouter(
     initialLocation: initialLocation,
@@ -49,6 +51,15 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.news}) {
                         ),
                   ),
                 ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: AppRoutes.timetable,
+                builder: (BuildContext _, GoRouterState _) =>
+                    const TimetableScreen(),
               ),
             ],
           ),

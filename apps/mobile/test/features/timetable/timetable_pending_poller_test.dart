@@ -158,7 +158,11 @@ void main() {
 
         poller.handleLifecycleState(state);
 
-        expect(poller.hasActiveTimer, isFalse, reason: 'no timer survives $state');
+        expect(
+          poller.hasActiveTimer,
+          isFalse,
+          reason: 'no timer survives $state',
+        );
         expect(async.periodicTimerCount + async.nonPeriodicTimerCount, 0);
 
         async.elapse(const Duration(hours: 6));

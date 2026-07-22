@@ -32,11 +32,9 @@ class TimetableGroup {
   bool matches(String term) {
     final String needle = term.trim().toLowerCase();
     if (needle.isEmpty) return true;
-    return <String?>[
-      shortName,
-      longName,
-      department,
-    ].whereType<String>().any((String value) => value.toLowerCase().contains(needle));
+    return <String?>[shortName, longName, department].whereType<String>().any(
+      (String value) => value.toLowerCase().contains(needle),
+    );
   }
 
   static TimetableGroup? fromJson(Object? json) {
@@ -250,10 +248,9 @@ class TimetableDay {
     final DateTime? date = asCalendarDate(map['date']);
     if (date == null) return null;
     final List<TimetableEntry> entries =
-        asList(map['entries'])
-            .map(TimetableEntry.fromJson)
-            .whereType<TimetableEntry>()
-            .toList()
+        asList(
+            map['entries'],
+          ).map(TimetableEntry.fromJson).whereType<TimetableEntry>().toList()
           ..sort(
             (TimetableEntry a, TimetableEntry b) => a.start.compareTo(b.start),
           );
@@ -281,10 +278,9 @@ class Timetable {
     final TimetableGroup? group = TimetableGroup.fromJson(map['group']);
     if (group == null) return null;
     final List<TimetableDay> days =
-        asList(map['days'])
-            .map(TimetableDay.fromJson)
-            .whereType<TimetableDay>()
-            .toList()
+        asList(
+            map['days'],
+          ).map(TimetableDay.fromJson).whereType<TimetableDay>().toList()
           ..sort((TimetableDay a, TimetableDay b) => a.date.compareTo(b.date));
     return Timetable(group: group, days: days);
   }

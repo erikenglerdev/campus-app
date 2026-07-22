@@ -146,8 +146,83 @@ Der Studierendenpreis wird in der App hervorgehoben.
 
 ---
 
-## 4. Nicht im MVP
+## 4. WebUntis — öffentliche Stundenplanansicht
 
-**WebUntis / Stundenplan.** Bewusst ausgeschlossen: personenbezogene Anmeldung, unklare
-Schnittstellenstabilität und rechtliche Klärung stehen aus. Die Architektur bleibt erweiterbar,
-es wird aber **kein ungenutzter Code** dafür gebaut.
+> ⚠️ **Kein offizieller Vertrag.** Genutzt wird die **interne View-API** der öffentlichen
+> WebUntis-Weboberfläche. Sie ist nicht dokumentiert, nicht versioniert und kann sich jederzeit
+> ohne Ankündigung ändern. Ein Parserfehler ist deshalb zuerst als Änderung der Quelle zu
+> behandeln, nicht als Bug im eigenen Code.
+
+Beobachtet und verifiziert am **22.07.2026**.
+
+### 4.1 Endpunkte
+
+Basis: `https://hsa.webuntis.com/WebUntis/api/rest/view/v1`
+
+| Endpunkt             | Methode | Pflichtparameter                                                | Pflicht-Header                             |
+| -------------------- | ------- | --------------------------------------------------------------- | ------------------------------------------ |
+| `/app/data`          | GET     | —                                                               | `anonymous-school: hsa`                    |
+| `/timetable/filter`  | GET     | `resourceType=CLASS`                                            | zusätzlich `X-Webuntis-Api-School-Year-Id` |
+| `/timetable/entries` | GET     | `start`, `end` (`YYYY-MM-DD`), `format=2`, `resourceType=CLASS` | zusätzlich `X-Webuntis-Api-School-Year-Id` |
+
+Die Schuljahres-ID ist **dynamisch** und wird zur Laufzeit aus `/app/data` gelesen. Sie ist
+nirgends im Quellcode hinterlegt.
+
+### 4.2 Beobachtete Eigenheiten
+
+1. **Ein fehlender Pflichtparameter liefert HTTP 500**, nicht 400, mit dem Parameternamen im
+   JSON-Body. Der Status allein ist hier also ein schlechtes Fehlersignal.
+2. **`entries` ohne Ressourcen-IDs liefert alle Klassen auf einmal.** Gemessen: 270 Klassen ×
+   5 Tage = 1350 Tagesobjekte, ~505 KB, ~1,2 s. Genau deshalb ist die Synchronisation ein
+   **Batch pro Zeitfenster** und keine 270 Einzelabrufe.
+3. **`position1` … `position7` haben keine feste Bedeutung.** Allein in der aufgezeichneten Stichprobe
+   erschien `ROOM` auf Position 2 und 3, `CLASS` auf 3 und 4, `SUBJECT` auf 1 und 2. Ausgewertet wird
+   deshalb ausschließlich über `current.type` — eine indexbasierte Auswertung würde Räume still als
+   Klassen einsortieren.
+4. `duration.start`/`duration.end` sind **lokale Wandzeit ohne Zone** und werden als
+   `Europe/Berlin` interpretiert. Beim Import wird in absolute UTC-Zeitpunkte umgerechnet.
+5. `ids[]` ist der stabile Quellschlüssel und enthält gelegentlich mehr als einen Wert.
+6. Beobachtetes Vokabular — **was gesehen wurde, nicht was existiert**:
+   `type` = `NORMAL_TEACHING_PERIOD`, `ADDITIONAL_PERIOD`;
+   `status` = `REGULAR`, `CHANGED`, `CANCELLED`, `ADDITIONAL`.
+   Unbekannte Werte werden auf `unknown` abgebildet und brechen den Import nicht.
+
+### 4.3 Abrufregeln
+
+| Regel           | Wert                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------- |
+| Feature-Flag    | `WEBUNTIS_ENABLED`, **Default `false`**                                               |
+| Gruppenkatalog  | täglich (`WEBUNTIS_GROUP_SYNC_CRON`, Default `0 3 * * *`)                             |
+| Stundenplan     | alle 30 Minuten (`WEBUNTIS_ENTRY_SYNC_CRON`), **ein** Request pro Lauf                |
+| Zeitfenster     | 7 Tage zurück, 28 Tage voraus (konfigurierbar)                                        |
+| API-Zeitraum    | maximal 42 Tage                                                                       |
+| Timeout / Retry | 20 s, 3 Versuche, Backoff mit Jitter, `Retry-After` wird beachtet                     |
+| Abstand         | 1,5 s zwischen Fremdrequests                                                          |
+| Tests           | ausschließlich gegen redigierte Fixtures unter `apps/backend/test/fixtures/webuntis/` |
+
+Die App ruft WebUntis **nie** direkt auf. Kein Client-Request löst einen Fremdabruf aus.
+
+### 4.4 Personenbezogene Daten
+
+Die Quelle liefert **Lehrpersonennamen**. Diese werden gespeichert und angezeigt, weil sie
+Bestandteil des öffentlich einsehbaren Stundenplans sind. In den committeten Fixtures sind sie
+durch deterministische Pseudonyme ersetzt — die Live-Antwort enthielt 145 echte Namensvarianten,
+keine davon liegt im Repository.
+
+**Offen und vor einer Produktivfreigabe zu klären:**
+
+- Erlaubnis zur automatisierten Nutzung der internen View-API
+- akzeptable Abrufrate
+- Zusage zur Schnittstellenstabilität beziehungsweise eine offizielle API
+- gewünschte Quellenangabe
+- zulässige Speicherung und Anzeige von Lehrpersonennamen sowie Aufbewahrungsfristen
+
+Bis dahin bleibt `WEBUNTIS_ENABLED=false`.
+
+---
+
+## 5. Nicht im MVP
+
+Stundenpläne für **Lehrpersonen oder Räume**, Raumverfügbarkeit („freie Räume"), persönlicher
+WebUntis-Login, Noten, Abwesenheiten und Hausaufgaben. Die öffentliche Ansicht wird ausschließlich
+für **Gruppenstundenpläne** genutzt.

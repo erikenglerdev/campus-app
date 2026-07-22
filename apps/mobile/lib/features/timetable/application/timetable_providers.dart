@@ -15,9 +15,7 @@ import 'timetable_week.dart';
 final FutureProvider<Loaded<List<TimetableGroup>>> timetableGroupsProvider =
     FutureProvider<Loaded<List<TimetableGroup>>>((Ref ref) async {
       final String locale = ref.watch(localeCodeProvider);
-      return ref
-          .watch(timetableRepositoryProvider)
-          .fetchGroups(locale: locale);
+      return ref.watch(timetableRepositoryProvider).fetchGroups(locale: locale);
     });
 
 /// The group the user chose, or `null` when they have not chosen yet.
@@ -26,7 +24,9 @@ final FutureProvider<Loaded<List<TimetableGroup>>> timetableGroupsProvider =
 /// than none, so the screen shows an onboarding state instead.
 final Provider<String?> selectedTimetableGroupIdProvider = Provider<String?>(
   (Ref ref) => ref.watch(
-    settingsProvider.select((AppSettings settings) => settings.timetableGroupId),
+    settingsProvider.select(
+      (AppSettings settings) => settings.timetableGroupId,
+    ),
   ),
 );
 
@@ -84,17 +84,18 @@ class TimetableWeekRequest {
 }
 
 /// The timetable of one group for one week.
-final timetableWeekProvider = FutureProvider.family<
-  Loaded<Timetable>,
-  TimetableWeekRequest
->((Ref ref, TimetableWeekRequest request) async {
-  final String locale = ref.watch(localeCodeProvider);
-  return ref
-      .watch(timetableRepositoryProvider)
-      .fetchEntries(
-        locale: locale,
-        groupId: request.groupId,
-        from: request.weekStart,
-        to: request.weekEnd,
-      );
-});
+final timetableWeekProvider =
+    FutureProvider.family<Loaded<Timetable>, TimetableWeekRequest>((
+      Ref ref,
+      TimetableWeekRequest request,
+    ) async {
+      final String locale = ref.watch(localeCodeProvider);
+      return ref
+          .watch(timetableRepositoryProvider)
+          .fetchEntries(
+            locale: locale,
+            groupId: request.groupId,
+            from: request.weekStart,
+            to: request.weekEnd,
+          );
+    });

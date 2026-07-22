@@ -49,7 +49,8 @@ Flutter ──/v1──► Campus API (NestJS) ──► campus_app_* (PostgreSQ
                                               ▲
                    Campus Worker ─────────────┘
                         │
-                        └──► meine-mensa.de (alle 2 Stunden)
+                        ├──► meine-mensa.de (alle 2 Stunden)
+                        └──► WebUntis, öffentliche Ansicht (deaktivierbar)
 ```
 
 Harte Systemgrenzen:

@@ -33,11 +33,9 @@ void main() {
     test('survives a restart of the app', () async {
       final InMemoryKeyValueStore store = InMemoryKeyValueStore();
 
-      await containerWith(
-        store,
-      ).read(settingsProvider.notifier).setTimetableGroup(
-        timetableGroupIdFixture,
-      );
+      await containerWith(store)
+          .read(settingsProvider.notifier)
+          .setTimetableGroup(timetableGroupIdFixture);
 
       expect(
         store.getString(PreferenceKeys.preferredTimetableGroup),
@@ -62,10 +60,7 @@ void main() {
       await container.read(settingsProvider.notifier).setTimetableGroup(null);
 
       expect(container.read(selectedTimetableGroupIdProvider), isNull);
-      expect(
-        store.getString(PreferenceKeys.preferredTimetableGroup),
-        isNull,
-      );
+      expect(store.getString(PreferenceKeys.preferredTimetableGroup), isNull);
     });
   });
 
@@ -85,10 +80,7 @@ void main() {
     });
 
     test('ends six days later and crosses month boundaries', () {
-      expect(
-        TimetableWeek.endOf(DateTime(2026, 7, 30)),
-        DateTime(2026, 8, 2),
-      );
+      expect(TimetableWeek.endOf(DateTime(2026, 7, 30)), DateTime(2026, 8, 2));
       expect(TimetableWeek.daysOf(DateTime(2026, 7, 30)), hasLength(7));
       expect(
         TimetableWeek.daysOf(DateTime(2026, 7, 30)).last,
@@ -127,11 +119,17 @@ void main() {
 
       controller.select(DateTime(2026, 7, 22));
       controller.nextWeek();
-      expect(container.read(selectedTimetableDayProvider), DateTime(2026, 7, 29));
+      expect(
+        container.read(selectedTimetableDayProvider),
+        DateTime(2026, 7, 29),
+      );
 
       controller.previousWeek();
       controller.previousWeek();
-      expect(container.read(selectedTimetableDayProvider), DateTime(2026, 7, 15));
+      expect(
+        container.read(selectedTimetableDayProvider),
+        DateTime(2026, 7, 15),
+      );
     });
 
     test('jumping to today restores the current day', () {
@@ -154,38 +152,41 @@ void main() {
   });
 
   group('TimetableWeekRequest', () {
-    test('is a value type so the provider family caches per group and week', () {
-      const String other = '22222222-2222-4222-8222-222222222222';
-      final TimetableWeekRequest a = TimetableWeekRequest(
-        groupId: timetableGroupIdFixture,
-        weekStart: DateTime(2026, 7, 20),
-      );
-      final TimetableWeekRequest b = TimetableWeekRequest(
-        groupId: timetableGroupIdFixture,
-        weekStart: DateTime(2026, 7, 20),
-      );
+    test(
+      'is a value type so the provider family caches per group and week',
+      () {
+        const String other = '22222222-2222-4222-8222-222222222222';
+        final TimetableWeekRequest a = TimetableWeekRequest(
+          groupId: timetableGroupIdFixture,
+          weekStart: DateTime(2026, 7, 20),
+        );
+        final TimetableWeekRequest b = TimetableWeekRequest(
+          groupId: timetableGroupIdFixture,
+          weekStart: DateTime(2026, 7, 20),
+        );
 
-      expect(a, b);
-      expect(a.hashCode, b.hashCode);
-      expect(
-        a,
-        isNot(
-          TimetableWeekRequest(
-            groupId: other,
-            weekStart: DateTime(2026, 7, 20),
+        expect(a, b);
+        expect(a.hashCode, b.hashCode);
+        expect(
+          a,
+          isNot(
+            TimetableWeekRequest(
+              groupId: other,
+              weekStart: DateTime(2026, 7, 20),
+            ),
           ),
-        ),
-      );
-      expect(
-        a,
-        isNot(
-          TimetableWeekRequest(
-            groupId: timetableGroupIdFixture,
-            weekStart: DateTime(2026, 7, 27),
+        );
+        expect(
+          a,
+          isNot(
+            TimetableWeekRequest(
+              groupId: timetableGroupIdFixture,
+              weekStart: DateTime(2026, 7, 27),
+            ),
           ),
-        ),
-      );
-      expect(a.weekEnd, DateTime(2026, 7, 26));
-    });
+        );
+        expect(a.weekEnd, DateTime(2026, 7, 26));
+      },
+    );
   });
 }

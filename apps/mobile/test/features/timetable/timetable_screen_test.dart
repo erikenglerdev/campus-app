@@ -22,11 +22,10 @@ import '../../support/pump_app.dart';
 /// The Monday of the week the screen shows by default.
 final DateTime monday = TimetableWeek.startOf(DateTime.now());
 
-InMemoryKeyValueStore storeWithGroup() => InMemoryKeyValueStore(
-  <String, Object>{
-    PreferenceKeys.preferredTimetableGroup: timetableGroupIdFixture,
-  },
-);
+InMemoryKeyValueStore storeWithGroup() =>
+    InMemoryKeyValueStore(<String, Object>{
+      PreferenceKeys.preferredTimetableGroup: timetableGroupIdFixture,
+    });
 
 FakeHttpAdapter workingApi({Map<String, dynamic>? meta}) {
   return FakeHttpAdapter((RequestOptions options) {
@@ -47,6 +46,7 @@ Future<ProviderContainer> pumpTimetable(
   KeyValueStore? store,
   Locale locale = AppLocales.german,
   TextScaler textScaler = TextScaler.noScaling,
+  ThemeMode themeMode = ThemeMode.light,
   bool selectMonday = true,
 }) async {
   final ProviderContainer container = await pumpScreen(
@@ -55,8 +55,11 @@ Future<ProviderContainer> pumpTimetable(
     keyValueStore: store ?? storeWithGroup(),
     locale: locale,
     textScaler: textScaler,
+    themeMode: themeMode,
     overrides: <Override>[
-      apiClientProvider.overrideWithValue(fakeApiClient(adapter ?? workingApi())),
+      apiClientProvider.overrideWithValue(
+        fakeApiClient(adapter ?? workingApi()),
+      ),
     ],
   );
   if (selectMonday) {
@@ -235,7 +238,11 @@ void main() {
       await pumpTimetable(tester);
 
       final Finder notice = find.textContaining('Quelle:');
-      await tester.scrollUntilVisible(notice, 400, scrollable: find.byType(Scrollable).first);
+      await tester.scrollUntilVisible(
+        notice,
+        400,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pumpAndSettle();
 
       expect(notice, findsOneWidget);
@@ -262,9 +269,7 @@ void main() {
       WidgetTester tester,
     ) async {
       bool offline = false;
-      final FakeHttpAdapter adapter = FakeHttpAdapter((
-        RequestOptions options,
-      ) {
+      final FakeHttpAdapter adapter = FakeHttpAdapter((RequestOptions options) {
         if (offline) throw Exception('offline');
         if (options.path.endsWith('/timetable/groups')) {
           return FakeHttpResponse(envelope(timetableGroupsFixture));
@@ -324,7 +329,10 @@ void main() {
         ),
       );
 
-      expect(find.text('Stundenplan noch nicht freigeschaltet'), findsOneWidget);
+      expect(
+        find.text('Stundenplan noch nicht freigeschaltet'),
+        findsOneWidget,
+      );
       expect(find.text('Etwas ist schiefgelaufen'), findsNothing);
       expect(find.text('Erneut versuchen'), findsNothing);
     });
@@ -392,6 +400,18 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('Mathematik 2'), findsOneWidget);
       expect(find.text('Fällt aus'), findsOneWidget);
+    });
+
+    testWidgets('renders in the dark theme', (WidgetTester tester) async {
+      await pumpTimetable(tester, themeMode: ThemeMode.dark);
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Mathematik 2'), findsOneWidget);
+      expect(find.text('Fällt aus'), findsOneWidget);
+      expect(
+        Theme.of(tester.element(find.text('Mathematik 2'))).brightness,
+        Brightness.dark,
+      );
     });
 
     testWidgets('keeps navigation targets at least 48dp tall', (

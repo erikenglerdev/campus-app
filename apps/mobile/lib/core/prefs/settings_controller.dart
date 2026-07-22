@@ -71,9 +71,7 @@ class SettingsController extends Notifier<AppSettings> {
         store.getString(PreferenceKeys.themeMode),
       ),
       preferredCanteenSlug: store.getString(PreferenceKeys.preferredCanteen),
-      timetableGroupId: store.getString(
-        PreferenceKeys.preferredTimetableGroup,
-      ),
+      timetableGroupId: store.getString(PreferenceKeys.preferredTimetableGroup),
     );
   }
 

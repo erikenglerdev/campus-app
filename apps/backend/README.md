@@ -81,6 +81,14 @@ nothing.
 - **Money is `Decimal`**, transported as a decimal string. No float arithmetic.
 - **`food.image_url` is parsed and discarded.** No canteen images are stored or
   served, and there is no image column in the schema.
+- **The timetable source is fully encapsulated.** WebUntis is reached only by the
+  worker, only server-side, and its base URL, headers, school year id and class
+  ids never appear in a public DTO or in the app. A client request never
+  triggers an upstream call — otherwise the API would become an unthrottled
+  proxy onto a third party.
+- **The timetable ships dormant.** `WEBUNTIS_ENABLED` defaults to `false` until
+  automated use of that source is cleared; the API then reports
+  `featureEnabled: false` and `dataState: "unavailable"` rather than erroring.
 - **Unknown content blocks are dropped server-side** and reported in
   `meta.droppedBlockTypes`, so a new CMS block type cannot break a detail screen.
 

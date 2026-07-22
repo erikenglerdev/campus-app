@@ -22,7 +22,8 @@ abstract final class TimetableWeek {
   }
 
   /// Sunday of the week [value] belongs to.
-  static DateTime endOf(DateTime value) => shift(startOf(value), lengthInDays - 1);
+  static DateTime endOf(DateTime value) =>
+      shift(startOf(value), lengthInDays - 1);
 
   /// All seven days of the week [value] belongs to, Monday first.
   static List<DateTime> daysOf(DateTime value) {

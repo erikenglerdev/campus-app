@@ -112,6 +112,8 @@ services:
       STRAPI_BASE_URL: http://cms:1337
       STRAPI_API_TOKEN: ${STRAPI_API_TOKEN:?required}
       # Explicit allowlist. A wildcard is rejected when NODE_ENV=production.
+      WEBUNTIS_ENABLED: ${WEBUNTIS_ENABLED:-false}
+      WEBUNTIS_STALE_AFTER_MINUTES: ${WEBUNTIS_STALE_AFTER_MINUTES:-180}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?required}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
@@ -142,6 +144,17 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://campus_app:${APP_DB_PASSWORD:?required}@${DB_HOST:?required}:${DB_PORT:-5432}/campus_app_dev?schema=public
       CANTEEN_SYNC_CRON: ${CANTEEN_SYNC_CRON:-0 */2 * * *}
+      # Timetable jobs. Disabled by default: the source is a third party's
+      # internal interface and automated use is not cleared yet.
+      WEBUNTIS_ENABLED: ${WEBUNTIS_ENABLED:-false}
+      WEBUNTIS_BASE_URL: ${WEBUNTIS_BASE_URL:-https://hsa.webuntis.com/WebUntis/api/rest/view/v1}
+      WEBUNTIS_ANONYMOUS_SCHOOL: ${WEBUNTIS_ANONYMOUS_SCHOOL:-hsa}
+      WEBUNTIS_GROUP_SYNC_CRON: ${WEBUNTIS_GROUP_SYNC_CRON:-0 3 * * *}
+      WEBUNTIS_ENTRY_SYNC_CRON: ${WEBUNTIS_ENTRY_SYNC_CRON:-*/30 * * * *}
+      WEBUNTIS_SYNC_ON_BOOT: ${WEBUNTIS_SYNC_ON_BOOT:-false}
+      WEBUNTIS_LOOKBACK_DAYS: ${WEBUNTIS_LOOKBACK_DAYS:-7}
+      WEBUNTIS_LOOKAHEAD_DAYS: ${WEBUNTIS_LOOKAHEAD_DAYS:-28}
+      WEBUNTIS_STALE_AFTER_MINUTES: ${WEBUNTIS_STALE_AFTER_MINUTES:-180}
       CANTEEN_SYNC_ON_BOOT: 'false'
       LOG_LEVEL: ${LOG_LEVEL:-info}
 
