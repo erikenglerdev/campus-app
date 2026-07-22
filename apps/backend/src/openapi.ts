@@ -1,0 +1,31 @@
+import { DocumentBuilder } from '@nestjs/swagger';
+
+/**
+ * Shared OpenAPI metadata, used both by the running server (/docs) and by the
+ * generator that writes packages/openapi/openapi.json, so the published
+ * contract and the live documentation cannot drift apart.
+ */
+export function buildOpenApiConfig(builder: DocumentBuilder) {
+  return builder
+    .setTitle('Campus Köthen API')
+    .setDescription(
+      [
+        'Public read-only API of the Campus Köthen app.',
+        '',
+        'Campus Köthen is an independent, unofficial campus app. It is neither developed',
+        'nor operated by Hochschule Anhalt, nor is it officially endorsed by the university.',
+        '',
+        'All content endpoints accept `locale=de|en` (default `de`) and report',
+        '`requestedLocale`, `resolvedLocale` and `translationFallback` in their metadata.',
+        'Canteen dish text comes from a German-only source and is never machine-translated.',
+      ].join('\n'),
+    )
+    .setVersion('1.0.0')
+    .setLicense('AGPL-3.0-only', 'https://www.gnu.org/licenses/agpl-3.0.html')
+    .setContact('Campus Köthen App', 'https://github.com/erikenglerdev/campus-app', '')
+    .addTag('health', 'Liveness and readiness probes')
+    .addTag('news', 'News channels and articles')
+    .addTag('contacts', 'Contact areas and persons')
+    .addTag('canteens', 'Canteens and menus')
+    .build();
+}

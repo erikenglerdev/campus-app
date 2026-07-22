@@ -1,0 +1,1254 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/health/live": {
+      "get": {
+        "operationId": "HealthController_live",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "status": "ok",
+                    "uptimeSeconds": 1234
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Liveness probe — process only, never a dependency.",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "HealthController_ready",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Readiness probe — bounded database and CMS checks.",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/v1/news/channels": {
+      "get": {
+        "description": "Channels are fully dynamic. A channel added in the CMS appears here — and therefore in the app — without any code change.",
+        "operationId": "NewsController_channels_v1",
+        "parameters": [
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "de",
+                "en"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active channels ordered by sortOrder, then name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewsChannelsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List active news channels.",
+        "tags": [
+          "news"
+        ]
+      }
+    },
+    "/v1/news": {
+      "get": {
+        "description": "An absent `channels` parameter means all active channels. A present but empty `channels=` means the user deselected everything and yields an empty list.",
+        "operationId": "NewsController_list_v1",
+        "parameters": [
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "de",
+                "en"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "description": "Max 50.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "channels",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated channel slugs.",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewsListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List published news articles.",
+        "tags": [
+          "news"
+        ]
+      }
+    },
+    "/v1/news/{slug}": {
+      "get": {
+        "description": "Unknown content block types are removed server-side and reported in meta.droppedBlockTypes, so a new CMS block type can never break the detail screen.",
+        "operationId": "NewsController_detail_v1",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "de",
+                "en"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewsDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Fetch one article by its stable slug.",
+        "tags": [
+          "news"
+        ]
+      }
+    },
+    "/v1/contact-areas": {
+      "get": {
+        "description": "Areas are fully dynamic and are never hardcoded in the client. An area without any contact person is valid and fully usable — `personCount` is then 0.",
+        "operationId": "ContactsController_list_v1",
+        "parameters": [
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "de",
+                "en"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active areas ordered by sortOrder, then name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactAreasResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List active contact areas.",
+        "tags": [
+          "contacts"
+        ]
+      }
+    },
+    "/v1/contact-areas/{slug}": {
+      "get": {
+        "operationId": "ContactsController_detail_v1",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "de",
+                "en"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactAreaDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Fetch one contact area including its active persons.",
+        "tags": [
+          "contacts"
+        ]
+      }
+    },
+    "/v1/canteens": {
+      "get": {
+        "description": "The upstream location_id is backend-only and never exposed. Adding a canteen therefore needs no app release.",
+        "operationId": "CanteenController_list_v1",
+        "parameters": [
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "de",
+                "en"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active canteens with their freshness metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CanteensResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List active canteens.",
+        "tags": [
+          "canteens"
+        ]
+      }
+    },
+    "/v1/canteens/{slug}/menu": {
+      "get": {
+        "description": "Every day in the range is returned, so an empty day is distinguishable from a loading error. Dish text is the original German from the source and is never machine-translated.",
+        "operationId": "CanteenController_menu_v1",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "de",
+                "en"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "YYYY-MM-DD, at most 31 days after from.",
+            "schema": {}
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "YYYY-MM-DD, defaults to today.",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CanteenMenuResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Fetch the menu of one canteen for a date range.",
+        "tags": [
+          "canteens"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Campus Köthen API",
+    "description": "Public read-only API of the Campus Köthen app.\n\nCampus Köthen is an independent, unofficial campus app. It is neither developed\nnor operated by Hochschule Anhalt, nor is it officially endorsed by the university.\n\nAll content endpoints accept `locale=de|en` (default `de`) and report\n`requestedLocale`, `resolvedLocale` and `translationFallback` in their metadata.\nCanteen dish text comes from a German-only source and is never machine-translated.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Campus Köthen App",
+      "url": "https://github.com/erikenglerdev/campus-app",
+      "email": ""
+    },
+    "license": {
+      "name": "AGPL-3.0-only",
+      "url": "https://www.gnu.org/licenses/agpl-3.0.html"
+    }
+  },
+  "tags": [
+    {
+      "name": "health",
+      "description": "Liveness and readiness probes"
+    },
+    {
+      "name": "news",
+      "description": "News channels and articles"
+    },
+    {
+      "name": "contacts",
+      "description": "Contact areas and persons"
+    },
+    {
+      "name": "canteens",
+      "description": "Canteens and menus"
+    }
+  ],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "NewsChannelDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "example": "campus-news",
+            "description": "Stable, never localised."
+          },
+          "name": {
+            "type": "string",
+            "example": "Campus News"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "iconKey": {
+            "type": "string",
+            "example": "campus",
+            "description": "Semantic key, not a client class name."
+          },
+          "colorHex": {
+            "type": "string",
+            "example": "#5B3FD0",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          },
+          "sortOrder": {
+            "type": "number",
+            "example": 10
+          },
+          "defaultSubscribed": {
+            "type": "boolean",
+            "description": "Applied by the client exactly once, when the slug first appears."
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "description",
+          "iconKey",
+          "colorHex",
+          "sortOrder",
+          "defaultSubscribed"
+        ]
+      },
+      "PaginationMetaDto": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "example": 20
+          },
+          "total": {
+            "type": "number",
+            "example": 42
+          },
+          "totalPages": {
+            "type": "number",
+            "example": 3
+          }
+        },
+        "required": [
+          "page",
+          "pageSize",
+          "total",
+          "totalPages"
+        ]
+      },
+      "ResponseMetaDto": {
+        "type": "object",
+        "properties": {
+          "requestedLocale": {
+            "type": "string",
+            "enum": [
+              "de",
+              "en"
+            ],
+            "description": "Locale the client asked for."
+          },
+          "resolvedLocale": {
+            "type": "string",
+            "enum": [
+              "de",
+              "en"
+            ],
+            "description": "Locale actually served."
+          },
+          "translationFallback": {
+            "type": "boolean",
+            "description": "True when at least one delivered field came from the German fallback although another locale was requested."
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationMetaDto"
+          },
+          "droppedBlockTypes": {
+            "description": "Content block types removed because the MVP client does not render them.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lastSuccessfulSyncAt": {
+            "type": "object",
+            "nullable": true,
+            "description": "Last successful canteen synchronisation. Null means: never succeeded."
+          },
+          "dataStale": {
+            "type": "boolean",
+            "description": "True when the data is older than the configured threshold."
+          },
+          "from": {
+            "type": "string",
+            "description": "Start of the resolved date range (YYYY-MM-DD)."
+          },
+          "to": {
+            "type": "string",
+            "description": "End of the resolved date range (YYYY-MM-DD)."
+          }
+        },
+        "required": [
+          "requestedLocale",
+          "resolvedLocale",
+          "translationFallback"
+        ]
+      },
+      "NewsChannelsResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewsChannelDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "ImageDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "example": "https://cdn.example/hero.jpg",
+            "description": "Always https."
+          },
+          "alternativeText": {
+            "type": "string",
+            "nullable": true
+          },
+          "width": {
+            "type": "number",
+            "nullable": true
+          },
+          "height": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "url",
+          "alternativeText",
+          "width",
+          "height"
+        ]
+      },
+      "NewsChannelRefDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "colorHex": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "colorHex"
+        ]
+      },
+      "AuthorDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "role"
+        ]
+      },
+      "NewsListItemDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "example": "semesterstart-2026"
+          },
+          "title": {
+            "type": "string"
+          },
+          "teaser": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "isPinned": {
+            "type": "boolean"
+          },
+          "heroImage": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImageDto"
+              }
+            ]
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewsChannelRefDto"
+            }
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuthorDto"
+            }
+          },
+          "sourceName": {
+            "type": "string",
+            "nullable": true
+          },
+          "sourceUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Validated https URL of the original source, or null."
+          }
+        },
+        "required": [
+          "slug",
+          "title",
+          "teaser",
+          "publishedAt",
+          "isPinned",
+          "heroImage",
+          "channels",
+          "authors",
+          "sourceName",
+          "sourceUrl"
+        ]
+      },
+      "NewsListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewsListItemDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "NewsDetailDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "example": "semesterstart-2026"
+          },
+          "title": {
+            "type": "string"
+          },
+          "teaser": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "isPinned": {
+            "type": "boolean"
+          },
+          "heroImage": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImageDto"
+              }
+            ]
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewsChannelRefDto"
+            }
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuthorDto"
+            }
+          },
+          "sourceName": {
+            "type": "string",
+            "nullable": true
+          },
+          "sourceUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Validated https URL of the original source, or null."
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "description": "Sanitised content blocks. Only paragraph, heading, list, quote and image survive; anything else is removed server-side and reported in meta.droppedBlockTypes."
+          }
+        },
+        "required": [
+          "slug",
+          "title",
+          "teaser",
+          "publishedAt",
+          "isPinned",
+          "heroImage",
+          "channels",
+          "authors",
+          "sourceName",
+          "sourceUrl",
+          "content"
+        ]
+      },
+      "NewsDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/NewsDetailDto"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "ContactAreaListItemDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "example": "studierendenrat"
+          },
+          "name": {
+            "type": "string"
+          },
+          "shortDescription": {
+            "type": "string"
+          },
+          "iconKey": {
+            "type": "string",
+            "example": "students-council"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "generalEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "website": {
+            "type": "string",
+            "nullable": true
+          },
+          "appointmentUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
+          },
+          "openingHours": {
+            "type": "string",
+            "nullable": true
+          },
+          "personCount": {
+            "type": "number",
+            "description": "Zero is a valid, fully supported state — an area needs no contact person."
+          },
+          "isDemoContent": {
+            "type": "boolean",
+            "description": "True for seed data that has not been cleared for publication."
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "shortDescription",
+          "iconKey",
+          "sortOrder",
+          "generalEmail",
+          "phone",
+          "website",
+          "appointmentUrl",
+          "address",
+          "openingHours",
+          "personCount",
+          "isDemoContent"
+        ]
+      },
+      "ContactAreasResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactAreaListItemDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "ContactPersonDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "website": {
+            "type": "string",
+            "nullable": true
+          },
+          "profileImage": {
+            "type": "string",
+            "nullable": true
+          },
+          "sortOrder": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "role",
+          "description",
+          "email",
+          "phone",
+          "website",
+          "profileImage",
+          "sortOrder"
+        ]
+      },
+      "ContactAreaDetailDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "shortDescription": {
+            "type": "string"
+          },
+          "iconKey": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "generalEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "website": {
+            "type": "string",
+            "nullable": true
+          },
+          "appointmentUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
+          },
+          "openingHours": {
+            "type": "string",
+            "nullable": true
+          },
+          "isDemoContent": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "description": "Sanitised content blocks, same rules as news content."
+          },
+          "persons": {
+            "description": "Active persons only; may be empty.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactPersonDto"
+            }
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "shortDescription",
+          "iconKey",
+          "sortOrder",
+          "generalEmail",
+          "phone",
+          "website",
+          "appointmentUrl",
+          "address",
+          "openingHours",
+          "isDemoContent",
+          "description",
+          "persons"
+        ]
+      },
+      "ContactAreaDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ContactAreaDetailDto"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "CanteenListItemDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "example": "koethen-fasanerieallee"
+          },
+          "displayName": {
+            "type": "string",
+            "example": "Mensa Köthen",
+            "description": "API-owned text, available in de and en."
+          },
+          "campusLabel": {
+            "type": "string",
+            "example": "Fasanerieallee"
+          },
+          "lastSuccessfulSyncAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Null means the canteen has never synchronised successfully."
+          },
+          "dataStale": {
+            "type": "boolean",
+            "description": "True when the data is older than the configured threshold."
+          }
+        },
+        "required": [
+          "slug",
+          "displayName",
+          "campusLabel",
+          "lastSuccessfulSyncAt",
+          "dataStale"
+        ]
+      },
+      "CanteensResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CanteenListItemDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "CanteenRefDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "example": "koethen-fasanerieallee"
+          },
+          "displayName": {
+            "type": "string",
+            "example": "Mensa Köthen",
+            "description": "API-owned text, available in de and en."
+          },
+          "campusLabel": {
+            "type": "string",
+            "example": "Fasanerieallee"
+          }
+        },
+        "required": [
+          "slug",
+          "displayName",
+          "campusLabel"
+        ]
+      },
+      "MealMarkerDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "52"
+          },
+          "label": {
+            "type": "string",
+            "example": "vegan",
+            "description": "German label from the source — never machine-translated."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ingredient",
+              "marker"
+            ],
+            "description": "The source mixes both namespaces inside one array, so the distinction is preserved here."
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "kind"
+        ]
+      },
+      "MealPriceDto": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "type": "string",
+            "enum": [
+              "student",
+              "employee",
+              "guest"
+            ],
+            "description": "Stable technical key. The client highlights \"student\"."
+          },
+          "label": {
+            "type": "string",
+            "example": "Studierende",
+            "description": "Localised, API-owned label."
+          },
+          "amount": {
+            "type": "string",
+            "example": "1.95",
+            "description": "Decimal STRING with fixed scale — never a float, to avoid rounding."
+          },
+          "currency": {
+            "type": "string",
+            "example": "EUR"
+          }
+        },
+        "required": [
+          "group",
+          "label",
+          "amount",
+          "currency"
+        ]
+      },
+      "MealDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "58033"
+          },
+          "name": {
+            "type": "string",
+            "example": "Bulgur-Pfanne"
+          },
+          "subtitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "sourceLanguage": {
+            "type": "string",
+            "enum": [
+              "de"
+            ],
+            "description": "Always \"de\": the upstream source publishes German only and is not translated."
+          },
+          "counterId": {
+            "type": "number",
+            "nullable": true
+          },
+          "isSprint": {
+            "type": "boolean"
+          },
+          "extras": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "markers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MealMarkerDto"
+            }
+          },
+          "prices": {
+            "description": "All groups the source provided. A missing group is absent, never estimated.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MealPriceDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "subtitle",
+          "sourceLanguage",
+          "counterId",
+          "isSprint",
+          "extras",
+          "markers",
+          "prices"
+        ]
+      },
+      "CanteenDayDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-07-20"
+          },
+          "meals": {
+            "description": "An empty array is a real day without meals, not a loading failure.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MealDto"
+            }
+          }
+        },
+        "required": [
+          "date",
+          "meals"
+        ]
+      },
+      "CanteenMenuDto": {
+        "type": "object",
+        "properties": {
+          "canteen": {
+            "$ref": "#/components/schemas/CanteenRefDto"
+          },
+          "days": {
+            "description": "Every day of the requested range.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CanteenDayDto"
+            }
+          }
+        },
+        "required": [
+          "canteen",
+          "days"
+        ]
+      },
+      "CanteenMenuResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CanteenMenuDto"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      }
+    }
+  }
+}

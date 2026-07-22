@@ -1,8 +1,6 @@
-import { Controller, Get, Inject, Res } from '@nestjs/common';
+import { Controller, Get, Res } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
-import { ENV } from '../../config/app-config.module';
-import { Env } from '../../config/env.schema';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StrapiClient } from '../strapi/strapi.client';
 
@@ -35,7 +33,6 @@ export class HealthController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly strapi: StrapiClient,
-    @Inject(ENV) private readonly env: Env,
   ) {}
 
   /**

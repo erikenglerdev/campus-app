@@ -5,7 +5,14 @@ import { RequestLocale } from '../../common/locale/locale.decorator';
 import { LocaleResolution } from '../../common/locale/locale';
 import { parseChannels, parseWith, paginationSchema } from '../../common/validation/query';
 import { NewsService } from './news.service';
-import { NewsChannelDto, NewsDetailDto, NewsListItemDto } from './news.types';
+import {
+  NewsChannelDto,
+  NewsChannelsResponseDto,
+  NewsDetailDto,
+  NewsDetailResponseDto,
+  NewsListItemDto,
+  NewsListResponseDto,
+} from './news.types';
 
 @ApiTags('news')
 @Controller({ path: 'news', version: '1' })
@@ -19,7 +26,10 @@ export class NewsController {
       'Channels are fully dynamic. A channel added in the CMS appears here — and therefore in the app — without any code change.',
   })
   @ApiQuery({ name: 'locale', required: false, enum: ['de', 'en'] })
-  @ApiOkResponse({ description: 'Active channels ordered by sortOrder, then name.' })
+  @ApiOkResponse({
+    description: 'Active channels ordered by sortOrder, then name.',
+    type: NewsChannelsResponseDto,
+  })
   async channels(
     @RequestLocale() locale: LocaleResolution,
   ): Promise<ApiResponse<NewsChannelDto[]>> {
@@ -40,6 +50,7 @@ export class NewsController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'pageSize', required: false, type: Number, description: 'Max 50.' })
   @ApiQuery({ name: 'locale', required: false, enum: ['de', 'en'] })
+  @ApiOkResponse({ type: NewsListResponseDto })
   async list(
     @RequestLocale() locale: LocaleResolution,
     @Query() query: Record<string, unknown>,
@@ -71,6 +82,7 @@ export class NewsController {
       'Unknown content block types are removed server-side and reported in meta.droppedBlockTypes, so a new CMS block type can never break the detail screen.',
   })
   @ApiQuery({ name: 'locale', required: false, enum: ['de', 'en'] })
+  @ApiOkResponse({ type: NewsDetailResponseDto })
   async detail(
     @RequestLocale() locale: LocaleResolution,
     @Param('slug') slug: string,

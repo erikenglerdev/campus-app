@@ -29,6 +29,23 @@ export class ResponseMetaDto {
     description: 'Content block types removed because the MVP client does not render them.',
   })
   droppedBlockTypes?: string[];
+
+  // --- Canteen-specific freshness metadata ---------------------------------
+
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'Last successful canteen synchronisation. Null means: never succeeded.',
+  })
+  lastSuccessfulSyncAt?: string | null;
+
+  @ApiPropertyOptional({ description: 'True when the data is older than the configured threshold.' })
+  dataStale?: boolean;
+
+  @ApiPropertyOptional({ description: 'Start of the resolved date range (YYYY-MM-DD).' })
+  from?: string;
+
+  @ApiPropertyOptional({ description: 'End of the resolved date range (YYYY-MM-DD).' })
+  to?: string;
 }
 
 /** Envelope shared by every content endpoint — see docs/api.md §1. */
@@ -43,6 +60,10 @@ export function buildMeta(input: {
   translationFallback?: boolean;
   pagination?: PaginationMetaDto;
   droppedBlockTypes?: string[];
+  lastSuccessfulSyncAt?: string | null;
+  dataStale?: boolean;
+  from?: string;
+  to?: string;
 }): ResponseMetaDto {
   const meta: ResponseMetaDto = {
     requestedLocale: input.requestedLocale,
@@ -54,6 +75,18 @@ export function buildMeta(input: {
   }
   if (input.droppedBlockTypes && input.droppedBlockTypes.length > 0) {
     meta.droppedBlockTypes = input.droppedBlockTypes;
+  }
+  if (input.lastSuccessfulSyncAt !== undefined) {
+    meta.lastSuccessfulSyncAt = input.lastSuccessfulSyncAt;
+  }
+  if (input.dataStale !== undefined) {
+    meta.dataStale = input.dataStale;
+  }
+  if (input.from !== undefined) {
+    meta.from = input.from;
+  }
+  if (input.to !== undefined) {
+    meta.to = input.to;
   }
   return meta;
 }
