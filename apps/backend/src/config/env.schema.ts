@@ -93,10 +93,14 @@ export const envSchema = z.object({
     .min(64_000)
     .max(64_000_000)
     .default(16_000_000),
-  /** The catalogue changes rarely; nightly is plenty. */
-  WEBUNTIS_GROUP_SYNC_CRON: z.string().min(1).default('0 3 * * *'),
-  /** Entries for ALL groups arrive in one request, so this can stay modest. */
-  WEBUNTIS_ENTRY_SYNC_CRON: z.string().min(1).default('*/30 * * * *'),
+  /** The catalogue is near-static; twice a day is already generous. */
+  WEBUNTIS_GROUP_SYNC_CRON: z.string().min(1).default('0 3,15 * * *'),
+  /**
+   * Hourly. Entries for ALL groups arrive in ONE request, so this is 24
+   * upstream calls a day in total — a timetable does not change often enough
+   * to justify more, and automated use is not cleared yet.
+   */
+  WEBUNTIS_ENTRY_SYNC_CRON: z.string().min(1).default('0 * * * *'),
   WEBUNTIS_SYNC_ON_BOOT: booleanFromEnv.default(false),
   WEBUNTIS_LOOKBACK_DAYS: z.coerce.number().int().min(0).max(90).default(7),
   WEBUNTIS_LOOKAHEAD_DAYS: z.coerce.number().int().min(1).max(180).default(28),

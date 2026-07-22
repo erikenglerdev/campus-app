@@ -192,7 +192,7 @@ nirgends im Quellcode hinterlegt.
 | Regel           | Wert                                                                                  |
 | --------------- | ------------------------------------------------------------------------------------- |
 | Feature-Flag    | `WEBUNTIS_ENABLED`, **Default `false`**                                               |
-| Gruppenkatalog  | täglich (`WEBUNTIS_GROUP_SYNC_CRON`, Default `0 3 * * *`)                             |
+| Gruppenkatalog  | täglich (`WEBUNTIS_GROUP_SYNC_CRON`, Default `0 3,15 * * *`)                          |
 | Stundenplan     | alle 30 Minuten (`WEBUNTIS_ENTRY_SYNC_CRON`), **ein** Request pro Lauf                |
 | Zeitfenster     | 7 Tage zurück, 28 Tage voraus (konfigurierbar)                                        |
 | API-Zeitraum    | maximal 42 Tage                                                                       |
