@@ -7,24 +7,24 @@ Strapi and the canteen source so the client never reaches either directly.
 
 One codebase, two entrypoints:
 
-| Entrypoint | Command | Role |
-| --- | --- | --- |
-| API | `node dist/main.js` | HTTP server on `0.0.0.0:3000` |
-| Worker | `node dist/worker.js` | Canteen synchronisation, every two hours |
+| Entrypoint | Command               | Role                                     |
+| ---------- | --------------------- | ---------------------------------------- |
+| API        | `node dist/main.js`   | HTTP server on `0.0.0.0:3000`            |
+| Worker     | `node dist/worker.js` | Canteen synchronisation, every two hours |
 
 They run as **separate containers from the same image**, so a slow or failing
 sync can never block the API or trigger its restart.
 
 ## Endpoints
 
-| | |
-| --- | --- |
-| `GET /health/live` | Process only. Never fails because a dependency is down. |
-| `GET /health/ready` | Database and CMS, each with a bounded timeout. |
-| `GET /docs`, `GET /docs-json` | Swagger UI and the OpenAPI document. |
-| `GET /v1/news/channels`, `/v1/news`, `/v1/news/:slug` | News |
-| `GET /v1/contact-areas`, `/v1/contact-areas/:slug` | Contacts |
-| `GET /v1/canteens`, `/v1/canteens/:slug/menu` | Canteens |
+|                                                       |                                                         |
+| ----------------------------------------------------- | ------------------------------------------------------- |
+| `GET /health/live`                                    | Process only. Never fails because a dependency is down. |
+| `GET /health/ready`                                   | Database and CMS, each with a bounded timeout.          |
+| `GET /docs`, `GET /docs-json`                         | Swagger UI and the OpenAPI document.                    |
+| `GET /v1/news/channels`, `/v1/news`, `/v1/news/:slug` | News                                                    |
+| `GET /v1/contact-areas`, `/v1/contact-areas/:slug`    | Contacts                                                |
+| `GET /v1/canteens`, `/v1/canteens/:slug/menu`         | Canteens                                                |
 
 The binding contract is [`docs/api.md`](../../docs/api.md); the generated
 artefact is [`packages/openapi/openapi.json`](../../packages/openapi/openapi.json),
