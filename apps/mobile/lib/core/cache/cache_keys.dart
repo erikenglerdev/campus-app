@@ -34,4 +34,19 @@ abstract final class CacheKeys {
   /// (current + upcoming week).
   static String canteenMenu(String locale, String slug) =>
       'canteen.menu.$locale.$slug';
+
+  /// Full study group list of the timetable.
+  static String timetableGroups(String locale) => 'timetable.groups.$locale';
+
+  /// One requested timetable range.
+  ///
+  /// The key carries the locale, the **Campus** group id and both range bounds,
+  /// so neither a language switch, another group nor another week can ever be
+  /// served from a foreign cache entry.
+  static String timetableEntries({
+    required String locale,
+    required String groupId,
+    required String from,
+    required String to,
+  }) => 'timetable.entries.$locale.$groupId.$from.$to';
 }

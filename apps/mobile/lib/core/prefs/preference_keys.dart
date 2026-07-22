@@ -15,6 +15,11 @@ abstract final class PreferenceKeys {
   /// Canteen slug, or absent when the user has not chosen one yet.
   static const String preferredCanteen = 'settings.preferredCanteen.v1';
 
+  /// **Campus** UUID of the chosen timetable group, or absent when the user has
+  /// not chosen one yet. An upstream identifier is never stored.
+  static const String preferredTimetableGroup =
+      'settings.preferredTimetableGroup.v1';
+
   /// Schema version of the news channel subscription store.
   static const String channelStoreVersion = 'news.channels.version';
 

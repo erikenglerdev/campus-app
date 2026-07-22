@@ -90,6 +90,8 @@ class ApiMeta {
       pagination: ApiPagination.fromJson(map['pagination']),
       lastSuccessfulSyncAt: asDateTime(map['lastSuccessfulSyncAt']),
       dataStale: asBool(map['dataStale']) ?? false,
+      featureEnabled: asBool(map['featureEnabled']),
+      dataState: asString(map['dataState']),
       droppedBlockTypes: asStringList(map['droppedBlockTypes']),
     );
   }
@@ -102,6 +104,8 @@ class ApiMeta {
     if (lastSuccessfulSyncAt != null)
       'lastSuccessfulSyncAt': lastSuccessfulSyncAt!.toUtc().toIso8601String(),
     'dataStale': dataStale,
+    if (featureEnabled != null) 'featureEnabled': featureEnabled,
+    if (dataState != null) 'dataState': dataState,
     'droppedBlockTypes': droppedBlockTypes,
   };
 }

@@ -10,6 +10,10 @@
   "@navNews": {
     "description": "Label des News-Tabs in der unteren Navigation."
   },
+  "navTimetable": "Stundenplan",
+  "@navTimetable": {
+    "description": "Label des Stundenplan-Tabs in der unteren Navigation."
+  },
   "navCanteen": "Mensa",
   "@navCanteen": {
     "description": "Label des Mensa-Tabs in der unteren Navigation."
@@ -252,6 +256,159 @@
     }
   },
 
+  "timetableTitle": "Stundenplan",
+  "@timetableTitle": {},
+  "timetableGroupPickerTitle": "Kurs wählen",
+  "@timetableGroupPickerTitle": {},
+  "timetableGroupPickerTooltip": "Kurs wechseln",
+  "@timetableGroupPickerTooltip": {},
+  "timetableGroupSearchLabel": "Kurs suchen",
+  "@timetableGroupSearchLabel": {},
+  "timetableGroupSearchHint": "Kurzname, Langname oder Bereich",
+  "@timetableGroupSearchHint": {},
+  "timetableGroupSearchEmptyTitle": "Kein passender Kurs",
+  "@timetableGroupSearchEmptyTitle": {},
+  "timetableGroupSearchEmptyMessage": "Zu deiner Suche gibt es keinen Kurs. Prüfe die Schreibweise oder suche nach dem Bereich.",
+  "@timetableGroupSearchEmptyMessage": {},
+  "timetableNoGroupsTitle": "Keine Kurse verfügbar",
+  "@timetableNoGroupsTitle": {},
+  "timetableNoGroupsMessage": "Zurzeit sind keine Kurse hinterlegt.",
+  "@timetableNoGroupsMessage": {},
+  "timetableNoSelectionTitle": "Noch kein Kurs gewählt",
+  "@timetableNoSelectionTitle": {},
+  "timetableNoSelectionMessage": "Wähle deinen Kurs, um den Stundenplan zu sehen. Du kannst ihn jederzeit wechseln.",
+  "@timetableNoSelectionMessage": {},
+  "timetableChooseGroupAction": "Kurs auswählen",
+  "@timetableChooseGroupAction": {},
+  "timetableGroupSemanticLabel": "Kurs {name}, {details}",
+  "@timetableGroupSemanticLabel": {
+    "description": "details enthält Langname und Bereich, beide unübersetzt aus der Quelle.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "timetablePreviousWeek": "Vorherige Woche",
+  "@timetablePreviousWeek": {},
+  "timetableNextWeek": "Nächste Woche",
+  "@timetableNextWeek": {},
+  "timetableCurrentWeek": "Diese Woche",
+  "@timetableCurrentWeek": {},
+  "timetableWeekRange": "Woche {range}",
+  "@timetableWeekRange": {
+    "description": "range wird von AppDateFormats locale-gerecht vorformatiert.",
+    "placeholders": {
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableDaySemanticLabel": "Tag {date}",
+  "@timetableDaySemanticLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableDayHeading": "{date}",
+  "@timetableDayHeading": {
+    "description": "date wird von AppDateFormats locale-gerecht vorformatiert.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableEmptyDayTitle": "Keine Termine",
+  "@timetableEmptyDayTitle": {},
+  "timetableEmptyDayMessage": "Für diesen Tag sind keine Termine eingetragen.",
+  "@timetableEmptyDayMessage": {},
+  "timetablePendingTitle": "Stundenplan wird vorbereitet",
+  "@timetablePendingTitle": {},
+  "timetablePendingMessage": "Für diesen Zeitraum liegt noch kein fertiger Datenstand vor. Die App prüft in größer werdenden Abständen erneut.",
+  "@timetablePendingMessage": {},
+  "timetableDisabledTitle": "Stundenplan noch nicht freigeschaltet",
+  "@timetableDisabledTitle": {},
+  "timetableDisabledMessage": "Die Stundenplanfunktion ist derzeit nicht aktiv. Sobald die Nutzung geklärt ist, erscheinen hier Termine.",
+  "@timetableDisabledMessage": {},
+  "timetableUnavailableTitle": "Kein Datenstand verfügbar",
+  "@timetableUnavailableTitle": {},
+  "timetableUnavailableMessage": "Für diesen Zeitraum liegen keine Stundenplandaten vor.",
+  "@timetableUnavailableMessage": {},
+  "timetableStaleTitle": "Daten möglicherweise veraltet",
+  "@timetableStaleTitle": {},
+  "timetableStaleMessage": "Der Stundenplan konnte länger nicht aktualisiert werden. Termine können abweichen.",
+  "@timetableStaleMessage": {},
+  "timetableLastSyncAt": "Zuletzt aktualisiert: {timestamp}",
+  "@timetableLastSyncAt": {
+    "description": "timestamp wird von AppDateFormats locale-gerecht vorformatiert.",
+    "placeholders": {
+      "timestamp": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableNeverSynced": "Noch nie erfolgreich aktualisiert",
+  "@timetableNeverSynced": {},
+  "timetableSourceNotice": "Quelle: die öffentliche WebUntis-Ansicht der Hochschule Anhalt, serverseitig abgerufen. Es besteht keine Zusammenarbeit mit der Hochschule und keine Freigabe durch sie. Angaben ohne Gewähr.",
+  "@timetableSourceNotice": {
+    "description": "Sachlicher Quellenhinweis. Darf keine Partnerschaft oder Freigabe behaupten."
+  },
+  "timetableTimeRange": "{start} – {end}",
+  "@timetableTimeRange": {
+    "description": "start und end werden locale-gerecht vorformatiert.",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableUntitledEntry": "Ohne Titel",
+  "@timetableUntitledEntry": {},
+  "timetableTeachersLabel": "Lehrpersonen",
+  "@timetableTeachersLabel": {},
+  "timetableRoomsLabel": "Raum",
+  "@timetableRoomsLabel": {},
+  "timetableTypeRegular": "Lehrveranstaltung",
+  "@timetableTypeRegular": {},
+  "timetableTypeAdditional": "Zusatztermin",
+  "@timetableTypeAdditional": {},
+  "timetableTypeUnknown": "Sonstiger Termin",
+  "@timetableTypeUnknown": {},
+  "timetableStatusRegular": "Findet statt",
+  "@timetableStatusRegular": {},
+  "timetableStatusCancelled": "Fällt aus",
+  "@timetableStatusCancelled": {},
+  "timetableStatusChanged": "Geändert",
+  "@timetableStatusChanged": {},
+  "timetableStatusUnknown": "Status unklar",
+  "@timetableStatusUnknown": {},
+  "timetableEntrySemanticLabel": "{time}, {title}, {status}",
+  "@timetableEntrySemanticLabel": {
+    "description": "title stammt unübersetzt aus der Quelle.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableSourceLanguageHint": "Fach-, Raum- und Personennamen stammen unverändert aus der Quelle und werden nicht übersetzt.",
+  "@timetableSourceLanguageHint": {},
+
   "contactsTitle": "Kontakte",
   "@contactsTitle": {},
   "contactsEmptyTitle": "Keine Kontaktbereiche",
@@ -329,6 +486,10 @@
   "@settingsPreferredCanteen": {},
   "settingsPreferredCanteenNone": "Keine Auswahl",
   "@settingsPreferredCanteenNone": {},
+  "settingsTimetableGroup": "Kurs für den Stundenplan",
+  "@settingsTimetableGroup": {},
+  "settingsTimetableGroupNone": "Keine Auswahl",
+  "@settingsTimetableGroupNone": {},
   "settingsAbout": "Über diese App",
   "@settingsAbout": {},
   "settingsImprint": "Impressum",

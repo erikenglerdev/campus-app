@@ -142,3 +142,159 @@ model SyncRun {
   @@index([status, startedAt])
   @@map("sync_runs")
 }
+
+// ---------------------------------------------------------------------------
+// Timetable (WebUntis public view)
+//
+// Imported operational data, exactly like the canteen models: the source is a
+// third party, so nothing here is authored by us and everything is replaceable
+// by a re-import. External identifiers are stored so upserts stay stable, but
+// they are NEVER exposed through the API — clients only ever see Campus UUIDs.
+// ---------------------------------------------------------------------------
+
+/// The current school year as reported by the source. Its id is dynamic and
+/// changes every term, so it is resolved at runtime and never hardcoded.
+model TimetableContext {
+  id String @id @default(uuid())
+
+  source String @default("webuntis")
+  /// External school year id. Server-side only.
+  externalId String
+  name       String
+
+  validFrom DateTime @db.Date
+  validTo   DateTime @db.Date
+
+  active           Boolean   @default(true)
+  lastSeenAt       DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@unique([source, externalId])
+  @@index([source, active])
+  @@map("timetable_contexts")
+}
+
+/// A class group offered by the public view. The UUID is the stable public
+/// identifier; `externalId` never leaves the server.
+model TimetableGroup {
+  id String @id @default(uuid())
+
+  source     String @default("webuntis")
+  externalId String
+
+  shortName  String
+  longName   String
+  department String?
+
+  active     Boolean  @default(true)
+  /// Last successful catalogue run that still contained this group. A group is
+  /// only deactivated after a COMPLETE successful catalogue import.
+  lastSeenAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  entries TimetableEntryGroup[]
+
+  @@unique([source, externalId])
+  @@index([active, shortName])
+  @@index([department])
+  @@map("timetable_groups")
+}
+
+/// One scheduled lesson. Shared by however many groups attend it.
+model TimetableEntry {
+  id String @id @default(uuid())
+
+  source String @default("webuntis")
+  /// Stable upsert key derived from the source's `ids[]`. Repeating an import
+  /// therefore updates rather than duplicates.
+  externalKey String
+
+  /// Absolute instants. The source sends zone-less Europe/Berlin wall clock,
+  /// which is converted on import — storing it raw would shift every lesson.
+  startsAt DateTime
+  endsAt   DateTime
+  /// Calendar date in the source's zone, kept for cheap per-day queries.
+  date     DateTime @db.Date
+
+  title       String
+  subjectCode String?
+
+  /// Normalised: regular_teaching | additional | unknown
+  type String
+  /// Normalised: regular | changed | cancelled | unknown
+  status String
+  /// The untouched upstream value, so a new vocabulary can be diagnosed later
+  /// without re-reading the source.
+  sourceStatus String?
+
+  /// Denormalised on purpose: teachers and rooms are display-only strings from
+  /// the source, never entities we own or reconcile.
+  teachers Json @default("[]")
+  rooms    Json @default("[]")
+
+  note String?
+
+  importedAt DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  groups TimetableEntryGroup[]
+
+  @@unique([source, externalKey])
+  @@index([date])
+  @@index([startsAt])
+  @@map("timetable_entries")
+}
+
+/// Explicit many-to-many. Without it, syncing one group could delete a lesson
+/// that other groups still attend.
+model TimetableEntryGroup {
+  entryId String
+  groupId String
+
+  entry TimetableEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  group TimetableGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([entryId, groupId])
+  @@index([groupId])
+  @@map("timetable_entry_groups")
+}
+
+/// Audit trail. `lastSuccessfulSyncAt` and staleness are derived from this.
+model TimetableSyncRun {
+  id String @id @default(uuid())
+
+  source String @default("webuntis")
+  /// context | groups | entries
+  kind String
+
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  /// running | success | empty | partial | failed | disabled
+  status String
+
+  /// Confirmed window, for entry runs.
+  rangeFrom DateTime? @db.Date
+  rangeTo   DateTime? @db.Date
+
+  groupsRequested Int @default(0)
+  recordsReceived Int @default(0)
+  recordsAccepted Int @default(0)
+  recordsRejected Int @default(0)
+  recordsWritten  Int @default(0)
+  recordsRemoved  Int @default(0)
+
+  /// Classification only. Never a header, URL, raw payload or person's name.
+  errorCode    String?
+  errorMessage String?
+
+  @@index([kind, status, startedAt])
+  @@index([status, startedAt])
+  @@map("timetable_sync_runs")
+}

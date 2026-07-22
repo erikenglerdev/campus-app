@@ -14,6 +14,7 @@ class AppSettings {
     this.localeMode = LocaleMode.system,
     this.themeMode = ThemeMode.system,
     this.preferredCanteenSlug,
+    this.timetableGroupId,
   });
 
   final LocaleMode localeMode;
@@ -22,11 +23,17 @@ class AppSettings {
   /// Slug of the canteen the user prefers, or `null` for "not chosen yet".
   final String? preferredCanteenSlug;
 
+  /// **Campus** UUID of the chosen timetable group, or `null` for "not chosen
+  /// yet". The app never stores an upstream identifier.
+  final String? timetableGroupId;
+
   AppSettings copyWith({
     LocaleMode? localeMode,
     ThemeMode? themeMode,
     String? preferredCanteenSlug,
     bool clearPreferredCanteen = false,
+    String? timetableGroupId,
+    bool clearTimetableGroup = false,
   }) {
     return AppSettings(
       localeMode: localeMode ?? this.localeMode,
@@ -34,6 +41,9 @@ class AppSettings {
       preferredCanteenSlug: clearPreferredCanteen
           ? null
           : (preferredCanteenSlug ?? this.preferredCanteenSlug),
+      timetableGroupId: clearTimetableGroup
+          ? null
+          : (timetableGroupId ?? this.timetableGroupId),
     );
   }
 }
@@ -61,6 +71,9 @@ class SettingsController extends Notifier<AppSettings> {
         store.getString(PreferenceKeys.themeMode),
       ),
       preferredCanteenSlug: store.getString(PreferenceKeys.preferredCanteen),
+      timetableGroupId: store.getString(
+        PreferenceKeys.preferredTimetableGroup,
+      ),
     );
   }
 
@@ -82,6 +95,17 @@ class SettingsController extends Notifier<AppSettings> {
     }
     state = state.copyWith(preferredCanteenSlug: slug);
     await _store.setString(PreferenceKeys.preferredCanteen, slug);
+  }
+
+  /// Stores the **Campus** UUID of the chosen timetable group.
+  Future<void> setTimetableGroup(String? groupId) async {
+    if (groupId == null) {
+      state = state.copyWith(clearTimetableGroup: true);
+      await _store.remove(PreferenceKeys.preferredTimetableGroup);
+      return;
+    }
+    state = state.copyWith(timetableGroupId: groupId);
+    await _store.setString(PreferenceKeys.preferredTimetableGroup, groupId);
   }
 
   static ThemeMode _themeModeFromStorage(String? value) => switch (value) {
