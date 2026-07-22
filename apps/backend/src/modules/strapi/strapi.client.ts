@@ -41,6 +41,17 @@ export interface StrapiListResponse<T> {
  */
 export type StrapiQuery = Record<string, unknown>;
 
+/**
+ * Stringifies a query leaf. Objects and arrays are handled structurally by
+ * the encoder before reaching here, so anything left is a primitive; this
+ * keeps an accidental object from being serialised as '[object Object]'.
+ */
+function stringifyPrimitive(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return '';
+}
+
 @Injectable()
 export class StrapiClient {
   private readonly logger = new Logger(StrapiClient.name);
@@ -75,15 +86,13 @@ export class StrapiClient {
             // e.g. filters[$and][0][validFrom][$null]=true
             parts.push(...StrapiClient.encodeQuery(entry as StrapiQuery, indexedPath));
           } else {
-            parts.push(
-              `${encodeURIComponent(indexedPath)}=${encodeURIComponent(String(entry))}`,
-            );
+            parts.push(`${encodeURIComponent(indexedPath)}=${encodeURIComponent(String(entry))}`);
           }
         });
       } else if (value !== null && typeof value === 'object') {
         parts.push(...StrapiClient.encodeQuery(value as StrapiQuery, path));
       } else {
-        parts.push(`${encodeURIComponent(path)}=${encodeURIComponent(String(value))}`);
+        parts.push(`${encodeURIComponent(path)}=${encodeURIComponent(stringifyPrimitive(value))}`);
       }
     }
 
@@ -121,9 +130,7 @@ export class StrapiClient {
           signal: controller.signal,
           headers: {
             Accept: 'application/json',
-            ...(this.isConfigured
-              ? { Authorization: `Bearer ${this.env.STRAPI_API_TOKEN}` }
-              : {}),
+            ...(this.isConfigured ? { Authorization: `Bearer ${this.env.STRAPI_API_TOKEN}` } : {}),
           },
         });
 

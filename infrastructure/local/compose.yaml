@@ -83,6 +83,9 @@ services:
       TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT:?TRANSFER_TOKEN_SALT is required}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
+      # Idempotent de/en demo seed, run from the bootstrap hook. Off by default;
+      # never enable this on a production instance.
+      SEED_DEMO_CONTENT: ${SEED_DEMO_CONTENT:-false}
     ports:
       - '127.0.0.1:${CMS_PORT:-1337}:1337'
     volumes:
@@ -145,6 +148,12 @@ services:
     restart: unless-stopped
     logging: *default-logging
     command: ['node', 'dist/worker.js']
+    # The worker shares the API image but serves no HTTP, so the image's
+    # liveness probe would always fail. Disable it rather than report a
+    # permanently unhealthy container; the worker's own state is visible in its
+    # structured logs and in the sync_runs table.
+    healthcheck:
+      disable: true
     depends_on:
       postgres:
         condition: service_healthy

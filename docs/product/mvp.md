@@ -26,15 +26,15 @@ Platzhalterseiten der App.
 
 ## 1. Produktidentität
 
-| | |
-| --- | --- |
-| Projektname | Campus Köthen App |
-| Sichtbarer App-Name | Campus Köthen |
-| Bundle-ID / Application ID | `dev.erikengler.campuskoethen` |
-| Lizenz | `AGPL-3.0-only` |
-| Copyright | Copyright © 2026 Erik Engler and Jona Sommer |
-| Vorgesehener Betreiber | Studierendenrat der Hochschule Anhalt — **noch nicht bestätigt**, daher aktuell nicht als Betreiber ausgewiesen |
-| Sprachen | Deutsch (Standard/Fallback), Englisch |
+|                            |                                                                                                                 |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Projektname                | Campus Köthen App                                                                                               |
+| Sichtbarer App-Name        | Campus Köthen                                                                                                   |
+| Bundle-ID / Application ID | `dev.erikengler.campuskoethen`                                                                                  |
+| Lizenz                     | `AGPL-3.0-only`                                                                                                 |
+| Copyright                  | Copyright © 2026 Erik Engler and Jona Sommer                                                                    |
+| Vorgesehener Betreiber     | Studierendenrat der Hochschule Anhalt — **noch nicht bestätigt**, daher aktuell nicht als Betreiber ausgewiesen |
+| Sprachen                   | Deutsch (Standard/Fallback), Englisch                                                                           |
 
 ## 2. Zielgruppe und Nutzen
 
@@ -125,13 +125,13 @@ gebaut.
 
 Lokal gespeichert werden:
 
-| Daten | Speicher |
-| --- | --- |
+| Daten                                        | Speicher                             |
+| -------------------------------------------- | ------------------------------------ |
 | Kanal-Abos, bevorzugte Mensa, Sprache, Theme | `SharedPreferences` (kleine Skalare) |
-| Letzte News-Seite | `hive_ce` |
-| Kanäle vollständig | `hive_ce` |
-| Kontakte vollständig | `hive_ce` |
-| Mensadaten aktuelle + kommende Woche | `hive_ce` |
+| Letzte News-Seite                            | `hive_ce`                            |
+| Kanäle vollständig                           | `hive_ce`                            |
+| Kontakte vollständig                         | `hive_ce`                            |
+| Mensadaten aktuelle + kommende Woche         | `hive_ce`                            |
 
 Gecachte Daten werden klar als offline bzw. veraltet gekennzeichnet. **Ein Cachefehler darf nie zum
 App-Crash führen** — er degradiert auf einen Netzwerkabruf.
@@ -143,28 +143,28 @@ Touch-Ziele >= 48dp · keine reine Farbcodierung · Light/Dark/System-Theme.
 
 ## 5. Akzeptanzkriterien
 
-| # | Kriterium |
-| --- | --- |
-| A1 | Ein neuer Strapi-Kanal erscheint ohne Flutter-Codeänderung. |
-| A2 | Campus News und FB5 News sind unabhängig aktivierbar; beide standardmäßig abonniert. |
-| A3 | Auswahl bleibt nach App-Neustart erhalten; neue Default-Kanäle überschreiben keine Nutzerentscheidung. |
-| A4 | News in mehreren abonnierten Kanälen erscheint genau einmal. |
-| A5 | Entwürfe sind nicht öffentlich sichtbar. |
-| A6 | Inaktiver Kanal verschwindet ohne App-Fehler. |
-| A7 | Alle Kanäle deaktiviert ⇒ Empty State, kein Request für alle Kanäle. |
-| A8 | Beide Startmensen erscheinen über Backend-Daten; Flutter kennt keine Location-IDs. |
-| A9 | Alle Preisgruppen werden angezeigt; keine Mensabilder. |
-| A10 | Leere/ungültige Quellantwort löscht bestehende Mensadaten nicht. |
-| A11 | Wiederholter Import erzeugt keine Duplikate. |
-| A12 | Neuer Kontaktbereich erscheint ohne Codeänderung; Bereich ohne Person funktioniert. |
-| A13 | Inaktive Bereiche/Personen werden nicht ausgeliefert. |
-| A14 | API leakt keine Strapi-Internas (`data`/`attributes`/`documentId`/`populate`). |
-| A15 | Flutter spricht nur mit `/v1` der Campus API. |
-| A16 | de/en sind in Flutter, Strapi und API real getestet. |
-| A17 | Kein offizieller HSA-Eindruck, keine Hochschulassets; Unabhängigkeitshinweis sichtbar. |
-| A18 | Keine Secrets im Repository oder in den Images. |
-| A19 | Zwei getrennte Datenbanken mit getrennten Rollen. |
-| A20 | Backend-, Strapi- und Flutter-Gates lokal grün. |
+| #   | Kriterium                                                                                              |
+| --- | ------------------------------------------------------------------------------------------------------ |
+| A1  | Ein neuer Strapi-Kanal erscheint ohne Flutter-Codeänderung.                                            |
+| A2  | Campus News und FB5 News sind unabhängig aktivierbar; beide standardmäßig abonniert.                   |
+| A3  | Auswahl bleibt nach App-Neustart erhalten; neue Default-Kanäle überschreiben keine Nutzerentscheidung. |
+| A4  | News in mehreren abonnierten Kanälen erscheint genau einmal.                                           |
+| A5  | Entwürfe sind nicht öffentlich sichtbar.                                                               |
+| A6  | Inaktiver Kanal verschwindet ohne App-Fehler.                                                          |
+| A7  | Alle Kanäle deaktiviert ⇒ Empty State, kein Request für alle Kanäle.                                   |
+| A8  | Beide Startmensen erscheinen über Backend-Daten; Flutter kennt keine Location-IDs.                     |
+| A9  | Alle Preisgruppen werden angezeigt; keine Mensabilder.                                                 |
+| A10 | Leere/ungültige Quellantwort löscht bestehende Mensadaten nicht.                                       |
+| A11 | Wiederholter Import erzeugt keine Duplikate.                                                           |
+| A12 | Neuer Kontaktbereich erscheint ohne Codeänderung; Bereich ohne Person funktioniert.                    |
+| A13 | Inaktive Bereiche/Personen werden nicht ausgeliefert.                                                  |
+| A14 | API leakt keine Strapi-Internas (`data`/`attributes`/`documentId`/`populate`).                         |
+| A15 | Flutter spricht nur mit `/v1` der Campus API.                                                          |
+| A16 | de/en sind in Flutter, Strapi und API real getestet.                                                   |
+| A17 | Kein offizieller HSA-Eindruck, keine Hochschulassets; Unabhängigkeitshinweis sichtbar.                 |
+| A18 | Keine Secrets im Repository oder in den Images.                                                        |
+| A19 | Zwei getrennte Datenbanken mit getrennten Rollen.                                                      |
+| A20 | Backend-, Strapi- und Flutter-Gates lokal grün.                                                        |
 
 ## 6. Offene Release-Gates
 

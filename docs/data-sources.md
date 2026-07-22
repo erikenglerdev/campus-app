@@ -6,11 +6,11 @@ Campus Köthen App · `AGPL-3.0-only`
 
 ## 1. Übersicht
 
-| Quelle | Art | Verbraucher | Im MVP |
-| --- | --- | --- | --- |
-| Strapi 5 (eigene Instanz) | REST, Read-only-Token | Campus API | ja |
-| `meine-mensa.de/api/food_plans` | öffentliche REST-Schnittstelle | Campus Worker | ja |
-| WebUntis | — | — | **nein** |
+| Quelle                          | Art                            | Verbraucher   | Im MVP   |
+| ------------------------------- | ------------------------------ | ------------- | -------- |
+| Strapi 5 (eigene Instanz)       | REST, Read-only-Token          | Campus API    | ja       |
+| `meine-mensa.de/api/food_plans` | öffentliche REST-Schnittstelle | Campus Worker | ja       |
+| WebUntis                        | —                              | —             | **nein** |
 
 Der Flutter-Client greift auf **keine** dieser Quellen direkt zu (siehe
 [architecture.md](architecture.md), Grenze G1).
@@ -51,10 +51,10 @@ Betreiber: Studentenwerk Halle. Kein Token erforderlich. Antwort ist `applicatio
 
 ### 3.2 Verifizierte Standorte
 
-| `location_id` | Slug | Anzeigename | Campus-Label |
-| --- | --- | --- | --- |
-| `7` | `koethen-fasanerieallee` | Mensa Köthen | Fasanerieallee |
-| `22` | `koethen-lohmannstrasse` | Mensa Lohmannstraße | Lohmannstraße |
+| `location_id` | Slug                     | Anzeigename         | Campus-Label   |
+| ------------- | ------------------------ | ------------------- | -------------- |
+| `7`           | `koethen-fasanerieallee` | Mensa Köthen        | Fasanerieallee |
+| `22`          | `koethen-lohmannstrasse` | Mensa Lohmannstraße | Lohmannstraße  |
 
 Diese Zuordnung ist **Backend-Konfiguration** (`apps/backend/src/modules/canteen/canteens.config.ts`).
 Flutter kennt keine Location-IDs. Eine weitere Mensa erfordert kein App-Release.
@@ -67,31 +67,31 @@ Am 22.07.2026 real gegen beide Standorte geprüft (HTTP 200):
 {
   "data": [
     {
-      "id": 58033,              // stabile Plan-ID → Upsert-Schlüssel (sourcePlanId)
-      "date": "2026-07-20",     // YYYY-MM-DD
-      "counter_id": 44,         // Ausgabetheke
-      "location_id": 7,         // MUSS gegen die angefragte Mensa geprüft werden
+      "id": 58033, // stabile Plan-ID → Upsert-Schlüssel (sourcePlanId)
+      "date": "2026-07-20", // YYYY-MM-DD
+      "counter_id": 44, // Ausgabetheke
+      "location_id": 7, // MUSS gegen die angefragte Mensa geprüft werden
       "is_sprint": true,
       "food": {
-        "id": 1892,             // sourceFoodId
+        "id": 1892, // sourceFoodId
         "name": "Bulgur-Pfanne",
         "name_2": "mit Kichererbsen, Wirsing und Kräuterdip",
         "ingredients": ["2", "52", "53", "A1", "A3", "G2"],
-        "price_1": 1.95,        // Studierende
-        "price_2": 4.95,        // Bedienstete
-        "price_3": 7,           // Gäste  ← kann Integer sein, nicht nur Dezimal
+        "price_1": 1.95, // Studierende
+        "price_2": 4.95, // Bedienstete
+        "price_3": 7, // Gäste  ← kann Integer sein, nicht nur Dezimal
         "extra_1": "",
         "extra_2": "",
         "extra_3": "",
         "extra_4": "",
-        "image_url": "https://…" // WIRD NICHT GESPEICHERT UND NICHT AUSGELIEFERT
-      }
-    }
+        "image_url": "https://…", // WIRD NICHT GESPEICHERT UND NICHT AUSGELIEFERT
+      },
+    },
   ],
   "meta": {
     "ingredients": { "2": "Konservierungsstoffe", "52": "vegan", "A1": "enthält Weizengluten" },
-    "markers":     { "53": "Sprint-Menü", "54": "Mensa Vital", "55": "Bio", "9901": "Klima-Teller" }
-  }
+    "markers": { "53": "Sprint-Menü", "54": "Mensa Vital", "55": "Bio", "9901": "Klima-Teller" },
+  },
 }
 ```
 
@@ -116,11 +116,11 @@ Diese Punkte sind der Grund für die strikte Schema-Validierung:
 
 ### 3.5 Preisgruppen
 
-| Feld | Slug | Label DE | Label EN |
-| --- | --- | --- | --- |
-| `price_1` | `student` | Studierende | Students |
+| Feld      | Slug       | Label DE    | Label EN  |
+| --------- | ---------- | ----------- | --------- |
+| `price_1` | `student`  | Studierende | Students  |
 | `price_2` | `employee` | Bedienstete | Employees |
-| `price_3` | `guest` | Gäste | Guests |
+| `price_3` | `guest`    | Gäste       | Guests    |
 
 **Alle** verfügbaren Preisgruppen werden gespeichert und ausgeliefert. Die Zuordnung
 Feld → Bedeutung ist Backend-Wissen; die Labels sind API-eigene, zweisprachige Texte.
@@ -128,14 +128,14 @@ Der Studierendenpreis wird in der App hervorgehoben.
 
 ### 3.6 Abrufregeln
 
-| Regel | Wert |
-| --- | --- |
-| Intervall | alle 2 Stunden (`CANTEEN_SYNC_CRON="0 */2 * * *"`) |
-| Zeitraum je Abruf | aktuelle + kommende Woche |
-| Timeout | `CANTEEN_HTTP_TIMEOUT_MS`, Standard 15000 |
-| Retry | 3 Versuche, exponentieller Backoff |
-| Manueller Sync | administratives CLI-Kommando — **kein** öffentlicher Sync-Endpunkt |
-| Tests | ausschließlich gegen anonymisierte Fixtures unter `apps/backend/test/fixtures/meine-mensa/` |
+| Regel             | Wert                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------- |
+| Intervall         | alle 2 Stunden (`CANTEEN_SYNC_CRON="0 */2 * * *"`)                                          |
+| Zeitraum je Abruf | aktuelle + kommende Woche                                                                   |
+| Timeout           | `CANTEEN_HTTP_TIMEOUT_MS`, Standard 15000                                                   |
+| Retry             | 3 Versuche, exponentieller Backoff                                                          |
+| Manueller Sync    | administratives CLI-Kommando — **kein** öffentlicher Sync-Endpunkt                          |
+| Tests             | ausschließlich gegen anonymisierte Fixtures unter `apps/backend/test/fixtures/meine-mensa/` |
 
 ### 3.7 Rechtliches
 

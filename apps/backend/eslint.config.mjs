@@ -1,16 +1,20 @@
 // @ts-check
 import eslint from '@eslint/js';
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import eslintConfigPrettier from 'eslint-config-prettier';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['eslint.config.mjs'],
+    // Generated Prisma client and build output are not ours to lint.
+    ignores: ['eslint.config.mjs', 'dist/**', 'src/generated/**', 'coverage/**'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
-  eslintPluginPrettierRecommended,
+  // Turns off rules that would fight Prettier. Formatting itself is checked
+  // once, repo-wide, by `pnpm format:check` — running Prettier through ESLint
+  // as well would only duplicate the work and the failure messages.
+  eslintConfigPrettier,
   {
     languageOptions: {
       globals: {
@@ -26,10 +30,31 @@ export default tseslint.config(
   },
   {
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-floating-promises': 'warn',
+      // CLAUDE.md: no `any` without a justified, commented exception. Keeping
+      // this at error is the point — the Nest scaffold switched it off.
+      '@typescript-eslint/no-explicit-any': 'error',
+      // An unawaited promise in a request handler or a sync run is a real bug,
+      // not a style preference.
+      '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      "prettier/prettier": ["error", { endOfLine: "auto" }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
+  },
+  {
+    // Tests deliberately feed malformed and unexpected shapes through the
+    // parsers, which is exactly what the unsafe-* rules flag.
+    files: ['**/*.spec.ts', 'test/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      // Stubs are declared async to match the real signature they replace,
+      // even when the fake body has nothing to await.
+      '@typescript-eslint/require-await': 'off',
     },
   },
 );

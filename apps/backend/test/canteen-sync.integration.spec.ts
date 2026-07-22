@@ -155,9 +155,7 @@ describe('CanteenSyncService (integration)', () => {
       });
       expect(changed!.name).toBe('Gemüsepfanne (neu)');
       expect(changed!.isSprint).toBe(false);
-      expect(
-        changed!.prices.find((p) => p.group === 'student')!.amount.toString(),
-      ).toBe('2.15');
+      expect(changed!.prices.find((p) => p.group === 'student')!.amount.toString()).toBe('2.15');
 
       // 900003 was on a date outside the confirmed window and must survive;
       // the withdrawn dish inside the window must be gone.
@@ -177,9 +175,9 @@ describe('CanteenSyncService (integration)', () => {
     it('keeps existing data when the source returns an EMPTY list', async () => {
       await seedGoodData();
 
-      const outcome = await makeService(
-        stubClient(() => fixture('empty.json')),
-      ).syncCanteen(FASANERIEALLEE);
+      const outcome = await makeService(stubClient(() => fixture('empty.json'))).syncCanteen(
+        FASANERIEALLEE,
+      );
 
       expect(outcome.status).toBe('empty');
       expect(outcome.recordsRemoved).toBe(0);
@@ -282,7 +280,7 @@ describe('CanteenSyncService (integration)', () => {
   });
 
   describe('canteen isolation', () => {
-    it('keeps each canteen\'s meals separate', async () => {
+    it("keeps each canteen's meals separate", async () => {
       const service = makeService(stubClient(() => fixture('success.json')));
       await service.seedCanteens();
       await service.syncCanteen(FASANERIEALLEE);

@@ -13,14 +13,12 @@ const booleanFromEnv = z
   .enum(['true', 'false', '1', '0'])
   .transform((value) => value === 'true' || value === '1');
 
-const csv = z
-  .string()
-  .transform((value) =>
-    value
-      .split(',')
-      .map((entry) => entry.trim())
-      .filter((entry) => entry.length > 0),
-  );
+const csv = z.string().transform((value) =>
+  value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0),
+);
 
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),

@@ -48,7 +48,10 @@ export class MeineMensaClient {
       try {
         return await this.attempt(url);
       } catch (error) {
-        lastError = error instanceof CanteenSourceError ? error : new CanteenSourceError('network', 'unexpected failure');
+        lastError =
+          error instanceof CanteenSourceError
+            ? error
+            : new CanteenSourceError('network', 'unexpected failure');
 
         // A malformed body will not fix itself on retry; only transport
         // problems and server errors are worth repeating.

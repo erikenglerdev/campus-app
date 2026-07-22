@@ -4,6 +4,7 @@ import { ApiError } from '../../common/errors/api-error';
 import { LocaleResolution } from '../../common/locale/locale';
 import { StrapiClient, StrapiListResponse, StrapiRequestError } from '../strapi/strapi.client';
 import { ContactAreaDetailDto, ContactAreaListItemDto, ContactPersonDto } from './contacts.types';
+import { asString } from '../../common/util/coerce';
 
 /**
  * Read model for /v1/contact-areas*.
@@ -71,10 +72,10 @@ function mapPerson(raw: unknown): ContactPersonDto | null {
 
 function mapAreaBase(raw: Raw): Omit<ContactAreaListItemDto, 'personCount'> {
   return {
-    slug: String(raw['slug'] ?? ''),
-    name: String(raw['name'] ?? ''),
-    shortDescription: String(raw['shortDescription'] ?? ''),
-    iconKey: String(raw['iconKey'] ?? 'contact'),
+    slug: asString(raw['slug']),
+    name: asString(raw['name']),
+    shortDescription: asString(raw['shortDescription']),
+    iconKey: asString(raw['iconKey'], 'contact'),
     sortOrder: typeof raw['sortOrder'] === 'number' ? raw['sortOrder'] : 0,
     generalEmail: email(raw['generalEmail']),
     phone: str(raw['phone']),
@@ -119,9 +120,7 @@ export class ContactsService {
       return Array.isArray(response?.data) ? response.data : [];
     } catch (error) {
       if (error instanceof StrapiRequestError) {
-        throw new ApiError(
-          error.kind === 'timeout' ? 'UPSTREAM_TIMEOUT' : 'UPSTREAM_UNAVAILABLE',
-        );
+        throw new ApiError(error.kind === 'timeout' ? 'UPSTREAM_TIMEOUT' : 'UPSTREAM_UNAVAILABLE');
       }
       throw error;
     }
@@ -162,7 +161,7 @@ export class ContactsService {
 
     let fallbackUsed = false;
     const data = canonical.map((raw) => {
-      const slug = String(raw['slug'] ?? '');
+      const slug = asString(raw['slug']);
       const localised = translated.get(slug);
       if (locale.resolvedLocale !== CANONICAL_LOCALE && !localised) {
         fallbackUsed = true;

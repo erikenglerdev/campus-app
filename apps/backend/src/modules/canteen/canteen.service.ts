@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ApiError } from '../../common/errors/api-error';
-import { Locale, LocaleResolution } from '../../common/locale/locale';
+import { LocaleResolution } from '../../common/locale/locale';
 import { ENV } from '../../config/app-config.module';
 import { Env } from '../../config/env.schema';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -71,10 +71,8 @@ export class CanteenService {
       const syncedAt = lastSync.get(canteen.id) ?? null;
       return {
         slug: canteen.slug,
-        displayName:
-          locale.resolvedLocale === 'en' ? canteen.displayNameEn : canteen.displayNameDe,
-        campusLabel:
-          locale.resolvedLocale === 'en' ? canteen.campusLabelEn : canteen.campusLabelDe,
+        displayName: locale.resolvedLocale === 'en' ? canteen.displayNameEn : canteen.displayNameDe,
+        campusLabel: locale.resolvedLocale === 'en' ? canteen.campusLabelEn : canteen.campusLabelDe,
         lastSuccessfulSyncAt: syncedAt ? syncedAt.toISOString() : null,
         dataStale: this.isStale(syncedAt),
       };
@@ -137,17 +135,14 @@ export class CanteenService {
       const prices: MealPriceDto[] = meal.prices
         .map((price) => ({
           group: price.group as PriceGroup,
-          label: PRICE_GROUP_LABELS[price.group as PriceGroup]?.[locale.resolvedLocale as Locale] ??
-            price.group,
+          label:
+            PRICE_GROUP_LABELS[price.group as PriceGroup]?.[locale.resolvedLocale] ?? price.group,
           // Fixed scale so the client never has to guess; formatting is the
           // client's job, arithmetic never happens on this string.
           amount: Number(price.amount).toFixed(2),
           currency: 'EUR' as const,
         }))
-        .sort(
-          (a, b) =>
-            PRICE_GROUP_ORDER.indexOf(a.group) - PRICE_GROUP_ORDER.indexOf(b.group),
-        );
+        .sort((a, b) => PRICE_GROUP_ORDER.indexOf(a.group) - PRICE_GROUP_ORDER.indexOf(b.group));
 
       byDate.get(date)?.push({
         id: String(meal.sourcePlanId),

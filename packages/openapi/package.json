@@ -6,7 +6,10 @@
   "license": "AGPL-3.0-only",
   "author": "Erik Engler and Jona Sommer",
   "main": "openapi.json",
-  "files": ["openapi.json", "README.md"],
+  "files": [
+    "openapi.json",
+    "README.md"
+  ],
   "scripts": {
     "build": "echo \"@campus/openapi is a generated artifact; run 'pnpm openapi:generate' at the repo root\" && exit 0",
     "lint": "node scripts/validate.mjs",

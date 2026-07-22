@@ -33,9 +33,7 @@ describe('redactValue', () => {
   });
 
   it('redacts recursively through nested structures', () => {
-    const out = JSON.stringify(
-      redactValue({ outer: { inner: [{ token: 'leak-me' }] } }),
-    );
+    const out = JSON.stringify(redactValue({ outer: { inner: [{ token: 'leak-me' }] } }));
     expect(out).not.toContain('leak-me');
   });
 

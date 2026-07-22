@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ApiError } from '../errors/api-error';
 import { Locale } from '../locale/locale';
+import { asString } from '../util/coerce';
 
 /**
  * Query parsing helpers.
@@ -20,9 +21,7 @@ export function parseWith<T>(schema: z.ZodType<T>, value: unknown, locale: Local
     throw new ApiError(
       'VALIDATION_FAILED',
       locale,
-      result.error.issues.map(
-        (issue) => `${issue.path.join('.') || '(query)'}: ${issue.message}`,
-      ),
+      result.error.issues.map((issue) => `${issue.path.join('.') || '(query)'}: ${issue.message}`),
     );
   }
   return result.data;
@@ -47,7 +46,7 @@ export function parseChannels(raw: unknown): {
   if (raw === undefined || raw === null) {
     return { channels: [], channelsParamPresent: false };
   }
-  const value = Array.isArray(raw) ? raw.join(',') : String(raw);
+  const value = Array.isArray(raw) ? raw.join(',') : asString(raw);
   return {
     channels: value
       .split(',')

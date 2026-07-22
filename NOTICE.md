@@ -43,14 +43,14 @@ Hochschule Anhalt oder des Studentenwerks Halle.
 
 ### 2.1 Manrope (Schriftart)
 
-| | |
-| --- | --- |
-| Pfad im Repository | `apps/mobile/assets/fonts/` |
-| Upstream | <https://github.com/sharanda/manrope> · <https://fonts.google.com/specimen/Manrope> |
-| Designer | Mikhail Sharanda |
-| Copyright | `Copyright 2018 The Manrope Project Authors (https://github.com/sharanda/manrope)` |
-| Lizenz | **SIL Open Font License, Version 1.1** (`OFL-1.1`) |
-| Lizenztext | [`apps/mobile/assets/fonts/OFL.txt`](apps/mobile/assets/fonts/OFL.txt) |
+|                    |                                                                                     |
+| ------------------ | ----------------------------------------------------------------------------------- |
+| Pfad im Repository | `apps/mobile/assets/fonts/`                                                         |
+| Upstream           | <https://github.com/sharanda/manrope> · <https://fonts.google.com/specimen/Manrope> |
+| Designer           | Mikhail Sharanda                                                                    |
+| Copyright          | `Copyright 2018 The Manrope Project Authors (https://github.com/sharanda/manrope)`  |
+| Lizenz             | **SIL Open Font License, Version 1.1** (`OFL-1.1`)                                  |
+| Lizenztext         | [`apps/mobile/assets/fonts/OFL.txt`](apps/mobile/assets/fonts/OFL.txt)              |
 
 Die Schrift wird **lokal gebündelt** und zur Laufzeit **nicht** von Google Fonts oder einem anderen
 CDN geladen. Es findet dadurch keine Verbindung zu Drittanbietern beim Start der App statt.
@@ -104,10 +104,10 @@ Lizenzen stehen — überwiegend MIT, Apache-2.0 und BSD-3-Clause.
 Die Abhängigkeiten werden **nicht** in dieses Repository einvendort. Maßgeblich und
 maschinenlesbar sind:
 
-| Ökosystem | Quelle der Lizenzangaben |
-| --- | --- |
-| npm / pnpm | `pnpm-lock.yaml`, `pnpm licenses list` |
-| Flutter / Dart | `apps/mobile/pubspec.lock`, `flutter pub deps` |
+| Ökosystem        | Quelle der Lizenzangaben                          |
+| ---------------- | ------------------------------------------------- |
+| npm / pnpm       | `pnpm-lock.yaml`, `pnpm licenses list`            |
+| Flutter / Dart   | `apps/mobile/pubspec.lock`, `flutter pub deps`    |
 | Container-Images | SBOM-Artefakte aus `.github/workflows/images.yml` |
 
 Der Flutter-Client zeigt die Lizenzen seiner Dart-Abhängigkeiten zur Laufzeit über den

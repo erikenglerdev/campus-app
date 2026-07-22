@@ -38,17 +38,17 @@ Campus Köthen App · `AGPL-3.0-only` · Copyright © 2026 Erik Engler and Jona 
 
 Verstöße gegen diese Regeln sind Blocker, keine Stilfragen.
 
-| # | Grenze |
-| --- | --- |
-| G1 | Flutter spricht **ausschließlich** mit der Campus API unter `/v1`. Kein direkter Zugriff auf Strapi oder `meine-mensa.de`. |
-| G2 | Das Backend liest Strapi **ausschließlich** über dessen REST-API mit einem serverseitigen Read-only-Token. Kein Zugriff auf Strapi-Tabellen. |
-| G3 | Redaktionelle Inhalte liegen in Strapi. Importierte Mensadaten und Sync-Zustände liegen in `campus_app_<env>`. |
-| G4 | CMS und operative Daten nutzen **getrennte Datenbanken und getrennte Rollen**. Keine Rolle hat Zugriff auf beide. |
-| G5 | Die Strapi Public Role erhält **keine** allgemeinen öffentlichen Leserechte. Die Campus API nutzt ein eigenes minimales Read-only-Token. |
-| G6 | Die Strapi-Adresse ist nie eine Quellcode-Konstante — ausschließlich `STRAPI_BASE_URL`. |
-| G7 | Umgebungsunterschiede entstehen **nur** durch Environment/Secrets, nie durch Quellcode oder Branches. |
-| G8 | Öffentliche DTOs leaken keine Strapi-Internas (`data`, `attributes`, `documentId`, `meta.pagination` der Quelle). |
-| G9 | PostgreSQL wird nie öffentlich gebunden. |
+| #   | Grenze                                                                                                                                       |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| G1  | Flutter spricht **ausschließlich** mit der Campus API unter `/v1`. Kein direkter Zugriff auf Strapi oder `meine-mensa.de`.                   |
+| G2  | Das Backend liest Strapi **ausschließlich** über dessen REST-API mit einem serverseitigen Read-only-Token. Kein Zugriff auf Strapi-Tabellen. |
+| G3  | Redaktionelle Inhalte liegen in Strapi. Importierte Mensadaten und Sync-Zustände liegen in `campus_app_<env>`.                               |
+| G4  | CMS und operative Daten nutzen **getrennte Datenbanken und getrennte Rollen**. Keine Rolle hat Zugriff auf beide.                            |
+| G5  | Die Strapi Public Role erhält **keine** allgemeinen öffentlichen Leserechte. Die Campus API nutzt ein eigenes minimales Read-only-Token.     |
+| G6  | Die Strapi-Adresse ist nie eine Quellcode-Konstante — ausschließlich `STRAPI_BASE_URL`.                                                      |
+| G7  | Umgebungsunterschiede entstehen **nur** durch Environment/Secrets, nie durch Quellcode oder Branches.                                        |
+| G8  | Öffentliche DTOs leaken keine Strapi-Internas (`data`, `attributes`, `documentId`, `meta.pagination` der Quelle).                            |
+| G9  | PostgreSQL wird nie öffentlich gebunden.                                                                                                     |
 
 ## 3. Komponenten
 
@@ -65,10 +65,10 @@ Verstöße gegen diese Regeln sind Blocker, keine Stilfragen.
 
 Eine Codebasis, zwei Einstiegspunkte:
 
-| Einstiegspunkt | Start | Aufgabe |
-| --- | --- | --- |
-| API | `node dist/main.js` | HTTP-Server auf `0.0.0.0:3000` |
-| Worker | `node dist/worker.js` | Zeitgesteuerte Mensa-Synchronisierung |
+| Einstiegspunkt | Start                 | Aufgabe                               |
+| -------------- | --------------------- | ------------------------------------- |
+| API            | `node dist/main.js`   | HTTP-Server auf `0.0.0.0:3000`        |
+| Worker         | `node dist/worker.js` | Zeitgesteuerte Mensa-Synchronisierung |
 
 Module:
 
@@ -116,9 +116,9 @@ zwischen Backend und Flutter und wird in CI gegen den Code geprüft.
 
 ### 4.1 Trennung
 
-| Datenbank | Rolle | Inhalt | Zugriff durch |
-| --- | --- | --- | --- |
-| `campus_cms_<env>` | `campus_cms` | Strapi-Tabellen, redaktionelle Inhalte | nur Strapi |
+| Datenbank          | Rolle        | Inhalt                                               | Zugriff durch           |
+| ------------------ | ------------ | ---------------------------------------------------- | ----------------------- |
+| `campus_cms_<env>` | `campus_cms` | Strapi-Tabellen, redaktionelle Inhalte               | nur Strapi              |
 | `campus_app_<env>` | `campus_app` | `Canteen`, `Meal`, `IngredientDefinition`, `SyncRun` | nur Campus API + Worker |
 
 Redaktionelle Inhalte werden **nicht** in die operative Datenbank gespiegelt. Die API liest sie bei
@@ -191,11 +191,11 @@ wenn dieser Zeitpunkt älter als `CANTEEN_STALE_AFTER_MINUTES` ist.
 
 ### 7.1 Container
 
-| Image | Port | Health | User |
-| --- | --- | --- | --- |
-| `ghcr.io/erikenglerdev/campus-app-cms` | `0.0.0.0:1337` | `GET /_health` | non-root |
+| Image                                      | Port           | Health                                  | User     |
+| ------------------------------------------ | -------------- | --------------------------------------- | -------- |
+| `ghcr.io/erikenglerdev/campus-app-cms`     | `0.0.0.0:1337` | `GET /_health`                          | non-root |
 | `ghcr.io/erikenglerdev/campus-app-backend` | `0.0.0.0:3000` | `GET /health/live`, `GET /health/ready` | non-root |
-| `postgres:16-alpine` (offiziell, gepinnt) | intern | `pg_isready` | — |
+| `postgres:16-alpine` (offiziell, gepinnt)  | intern         | `pg_isready`                            | —        |
 
 Der Worker nutzt dasselbe Backend-Image mit abweichendem Startkommando. Zielplattform der
 veröffentlichten Images: **ausschließlich `linux/amd64`**.
@@ -223,11 +223,11 @@ Kein manueller URL-Austausch in mehreren Dateien, kein umgebungsspezifischer Cod
 
 ## 8. Bewusste Nicht-Entscheidungen
 
-| Thema | Status |
-| --- | --- |
-| Redis | nicht im MVP — kein Caching-Layer nötig, Datenmengen sind klein |
-| SMTP | später — Strapi-Admins werden zunächst manuell angelegt |
-| Sentry / Analytics | dauerhaft ausgeschlossen im MVP |
-| Automatisches Deployment | ausgeschlossen — Images werden gebaut, Deployment bleibt manuell |
-| Offsite-Backups | offenes Release-Gate, **nicht** eingerichtet |
-| WebUntis, Raumpläne, Indoor-Navigation | außerhalb des MVP; Architektur bleibt erweiterbar |
+| Thema                                  | Status                                                           |
+| -------------------------------------- | ---------------------------------------------------------------- |
+| Redis                                  | nicht im MVP — kein Caching-Layer nötig, Datenmengen sind klein  |
+| SMTP                                   | später — Strapi-Admins werden zunächst manuell angelegt          |
+| Sentry / Analytics                     | dauerhaft ausgeschlossen im MVP                                  |
+| Automatisches Deployment               | ausgeschlossen — Images werden gebaut, Deployment bleibt manuell |
+| Offsite-Backups                        | offenes Release-Gate, **nicht** eingerichtet                     |
+| WebUntis, Raumpläne, Indoor-Navigation | außerhalb des MVP; Architektur bleibt erweiterbar                |

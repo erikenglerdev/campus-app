@@ -6,12 +6,12 @@ Campus Köthen App · `AGPL-3.0-only`
 
 ## 1. Werkzeuge
 
-| Werkzeug | Erwartet | Prüfen |
-| --- | --- | --- |
-| Node.js | 22.x | `node --version` |
-| pnpm | >= 10 | `corepack enable && pnpm --version` |
-| Docker + Compose | Docker 29.x, Compose v5 | `docker compose version` |
-| Flutter | stable | `flutter doctor -v` |
+| Werkzeug         | Erwartet                | Prüfen                              |
+| ---------------- | ----------------------- | ----------------------------------- |
+| Node.js          | 22.x                    | `node --version`                    |
+| pnpm             | >= 10                   | `corepack enable && pnpm --version` |
+| Docker + Compose | Docker 29.x, Compose v5 | `docker compose version`            |
+| Flutter          | stable                  | `flutter doctor -v`                 |
 
 Node 22 ist gewählt, weil Strapi 5.50 offiziell `node >=20.0.0 <=26.x.x` unterstützt. Die Version
 ist in `package.json` unter `engines` und in den Dockerfiles gepinnt.
@@ -45,11 +45,11 @@ pnpm --filter @campus/backend prisma:migrate:dev
 pnpm --filter @campus/backend start:dev
 ```
 
-| URL | Zweck |
-| --- | --- |
-| <http://localhost:3000/health/live> | Prozess lebt |
+| URL                                  | Zweck                         |
+| ------------------------------------ | ----------------------------- |
+| <http://localhost:3000/health/live>  | Prozess lebt                  |
 | <http://localhost:3000/health/ready> | Datenbank + Strapi erreichbar |
-| <http://localhost:3000/docs> | OpenAPI / Swagger UI |
+| <http://localhost:3000/docs>         | OpenAPI / Swagger UI          |
 
 ### 2.3 CMS
 
@@ -143,10 +143,10 @@ Plattform-Toolchain und laufen auf jedem Entwicklungsrechner.
 
 Für einen echten Gerätestart gilt zusätzlich:
 
-| Ziel | Bedarf |
-| --- | --- |
-| iOS-Simulator | vollständiges Xcode aus dem App Store, danach `sudo xcodebuild -runFirstLaunch` und `brew install cocoapods` |
-| Android-Emulator | Android SDK **inklusive `cmdline-tools`** sowie `flutter doctor --android-licenses` |
+| Ziel             | Bedarf                                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------------------ |
+| iOS-Simulator    | vollständiges Xcode aus dem App Store, danach `sudo xcodebuild -runFirstLaunch` und `brew install cocoapods` |
+| Android-Emulator | Android SDK **inklusive `cmdline-tools`** sowie `flutter doctor --android-licenses`                          |
 
 Fehlt eine dieser Toolchains, bleiben Analyse und Tests trotzdem vollständig ausführbar; der
 Gerätestart ist dann ein dokumentierter Blocker und wird **nicht** als erfolgreich gemeldet.

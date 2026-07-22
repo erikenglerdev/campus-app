@@ -4,6 +4,7 @@ import { LocaleResolution } from '../../common/locale/locale';
 import { StrapiClient, StrapiListResponse, StrapiRequestError } from '../strapi/strapi.client';
 import { mapChannel, mapNewsDetail, mapNewsListItem } from './news.mapper';
 import { NewsChannelDto, NewsDetailDto, NewsListItemDto } from './news.types';
+import { asString } from '../../common/util/coerce';
 
 /**
  * Read model for /v1/news*.
@@ -115,7 +116,7 @@ export class NewsService {
 
     let fallbackUsed = false;
     const data = canonical.map((raw) => {
-      const slug = String(raw['slug'] ?? '');
+      const slug = asString(raw['slug']);
       const localised = translated.get(slug);
       if (locale.resolvedLocale !== CANONICAL_LOCALE && !localised) {
         fallbackUsed = true;
@@ -187,7 +188,7 @@ export class NewsService {
     if (locale.resolvedLocale !== CANONICAL_LOCALE && unique.length > 0) {
       translated = NewsService.bySlug(
         await this.fetch('/api/news-articles', {
-          filters: { slug: { $in: unique.map((entry) => String(entry['slug'] ?? '')) } },
+          filters: { slug: { $in: unique.map((entry) => asString(entry['slug'])) } },
           populate: baseQuery.populate,
           pagination: { pageSize: unique.length },
           locale: locale.resolvedLocale,
@@ -197,7 +198,7 @@ export class NewsService {
 
     let fallbackUsed = false;
     const data = unique.map((raw) => {
-      const slug = String(raw['slug'] ?? '');
+      const slug = asString(raw['slug']);
       const localised = translated.get(slug);
       if (locale.resolvedLocale !== CANONICAL_LOCALE && !localised) {
         fallbackUsed = true;
@@ -282,9 +283,7 @@ export class NewsService {
       localised = translated[0];
     }
 
-    const merged = localised
-      ? { ...base, ...localised, ...NewsService.sharedFields(base) }
-      : base;
+    const merged = localised ? { ...base, ...localised, ...NewsService.sharedFields(base) } : base;
 
     const { article, droppedBlockTypes } = mapNewsDetail(merged);
 

@@ -38,7 +38,9 @@ export class ResponseMetaDto {
   })
   lastSuccessfulSyncAt?: string | null;
 
-  @ApiPropertyOptional({ description: 'True when the data is older than the configured threshold.' })
+  @ApiPropertyOptional({
+    description: 'True when the data is older than the configured threshold.',
+  })
   dataStale?: boolean;
 
   @ApiPropertyOptional({ description: 'Start of the resolved date range (YYYY-MM-DD).' })

@@ -6,10 +6,10 @@ Published contract of the **Campus Köthen API**, generated from the NestJS DTOs
 
 ## Files
 
-| File | Purpose |
-| --- | --- |
-| `openapi.json` | Generated OpenAPI document — the machine-readable contract |
-| `scripts/validate.mjs` | Structural guarantees checked in CI |
+| File                   | Purpose                                                    |
+| ---------------------- | ---------------------------------------------------------- |
+| `openapi.json`         | Generated OpenAPI document — the machine-readable contract |
+| `scripts/validate.mjs` | Structural guarantees checked in CI                        |
 
 ## Regenerating
 

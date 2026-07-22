@@ -10,9 +10,7 @@
         "id": 1030,
         "name": "Dal mit Reis",
         "name_2": "mit Spinat und Süßkartoffeln",
-        "ingredients": [
-          "52"
-        ],
+        "ingredients": ["52"],
         "price_1": 1.95,
         "price_2": 4.95,
         "price_3": 7,

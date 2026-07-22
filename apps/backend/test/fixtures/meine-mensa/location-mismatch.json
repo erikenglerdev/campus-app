@@ -10,9 +10,7 @@
         "id": 1020,
         "name": "Fremdes Gericht",
         "name_2": "aus einer anderen Mensa",
-        "ingredients": [
-          "52"
-        ],
+        "ingredients": ["52"],
         "price_1": 1.95,
         "price_2": 4.95,
         "price_3": 7,
@@ -33,9 +31,7 @@
         "id": 1021,
         "name": "Richtiges Gericht",
         "name_2": "aus der angefragten Mensa",
-        "ingredients": [
-          "51"
-        ],
+        "ingredients": ["51"],
         "price_1": 1.95,
         "price_2": 4.95,
         "price_3": 7,

@@ -68,12 +68,7 @@ export interface ImageBlock {
   height: number | null;
 }
 
-export type ContentBlock =
-  | ParagraphBlock
-  | HeadingBlock
-  | ListBlock
-  | QuoteBlock
-  | ImageBlock;
+export type ContentBlock = ParagraphBlock | HeadingBlock | ListBlock | QuoteBlock | ImageBlock;
 
 export interface SanitizedContent {
   blocks: ContentBlock[];
@@ -174,8 +169,7 @@ function sanitizeImage(block: Record<string, unknown>): ImageBlock | null {
   return {
     type: 'image',
     url,
-    alternativeText:
-      typeof image['alternativeText'] === 'string' ? image['alternativeText'] : null,
+    alternativeText: typeof image['alternativeText'] === 'string' ? image['alternativeText'] : null,
     width: typeof image['width'] === 'number' ? image['width'] : null,
     height: typeof image['height'] === 'number' ? image['height'] : null,
   };

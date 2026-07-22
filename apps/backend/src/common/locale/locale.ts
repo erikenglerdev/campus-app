@@ -70,9 +70,8 @@ export function parseAcceptLanguage(header: string | undefined | null): Locale |
   }
 
   // Highest quality wins; document order breaks ties.
-  return candidates.reduce((best, current) =>
-    current.quality > best.quality ? current : best,
-  ).locale;
+  return candidates.reduce((best, current) => (current.quality > best.quality ? current : best))
+    .locale;
 }
 
 export interface LocaleResolution {

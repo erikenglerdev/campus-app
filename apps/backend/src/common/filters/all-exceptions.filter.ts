@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto';
 import type { Request, Response } from 'express';
 import { ApiError, messageFor } from '../errors/api-error';
 import { DEFAULT_LOCALE, Locale, isSupportedLocale } from '../locale/locale';
+import { asString } from '../util/coerce';
 
 /**
  * Translates every escaping error into the documented public error shape.
@@ -29,7 +30,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const requestId = randomUUID();
 
     // Best-effort locale so the error message matches the rest of the response.
-    const rawLocale = String(request.query?.['locale'] ?? '').toLowerCase();
+    // asString rather than String(): `?locale[]=x` arrives as an array and
+    // String() would turn it into text that could never match a locale.
+    const rawLocale = asString(request.query?.['locale']).toLowerCase();
     const locale: Locale = isSupportedLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
 
     if (exception instanceof ApiError) {
@@ -42,6 +45,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
+      const isNotFound = status === Number(HttpStatus.NOT_FOUND);
       const original = exception.getResponse();
       // Nest's built-in validation errors carry a useful `message` array.
       const details =
@@ -52,11 +56,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
       response.status(status).json({
         error: {
           status,
-          code: status === HttpStatus.NOT_FOUND ? 'NOT_FOUND' : 'VALIDATION_FAILED',
-          message:
-            status === HttpStatus.NOT_FOUND
-              ? messageFor('NEWS_ARTICLE_NOT_FOUND', locale)
-              : messageFor('VALIDATION_FAILED', locale),
+          code: isNotFound ? 'NOT_FOUND' : 'VALIDATION_FAILED',
+          message: isNotFound
+            ? messageFor('NEWS_ARTICLE_NOT_FOUND', locale)
+            : messageFor('VALIDATION_FAILED', locale),
           ...(Array.isArray(details) ? { details } : {}),
           requestId,
         },

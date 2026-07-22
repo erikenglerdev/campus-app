@@ -6,7 +6,7 @@ const BASE = {
 
 describe('validateEnv', () => {
   it('applies documented defaults', () => {
-    const env = validateEnv({ ...BASE } as NodeJS.ProcessEnv);
+    const env = validateEnv({ ...BASE });
     expect(env.PORT).toBe(3000);
     expect(env.HOST).toBe('0.0.0.0');
     expect(env.CANTEEN_SYNC_CRON).toBe('0 */2 * * *');
@@ -15,19 +15,17 @@ describe('validateEnv', () => {
   });
 
   it('rejects a non-PostgreSQL database url', () => {
-    expect(() =>
-      validateEnv({ ...BASE, DATABASE_URL: 'mysql://x/y' } as NodeJS.ProcessEnv),
-    ).toThrow(EnvValidationError);
+    expect(() => validateEnv({ ...BASE, DATABASE_URL: 'mysql://x/y' })).toThrow(EnvValidationError);
   });
 
   it('requires a database url', () => {
-    expect(() => validateEnv({} as NodeJS.ProcessEnv)).toThrow(EnvValidationError);
+    expect(() => validateEnv({})).toThrow(EnvValidationError);
   });
 
   it('never includes a secret value in the error message', () => {
     const secret = 'super-secret-password-value';
     try {
-      validateEnv({ DATABASE_URL: `mysql://user:${secret}@h/db` } as NodeJS.ProcessEnv);
+      validateEnv({ DATABASE_URL: `mysql://user:${secret}@h/db` });
       throw new Error('expected validation to fail');
     } catch (error) {
       expect((error as Error).message).not.toContain(secret);
@@ -39,7 +37,7 @@ describe('validateEnv', () => {
     const env = validateEnv({
       ...BASE,
       CORS_ALLOWED_ORIGINS: 'https://a.example, https://b.example ,',
-    } as NodeJS.ProcessEnv);
+    });
     expect(env.CORS_ALLOWED_ORIGINS).toEqual(['https://a.example', 'https://b.example']);
   });
 
@@ -49,7 +47,7 @@ describe('validateEnv', () => {
         ...BASE,
         NODE_ENV: 'production',
         CORS_ALLOWED_ORIGINS: '*',
-      } as NodeJS.ProcessEnv),
+      }),
     ).toThrow(/must not contain/);
   });
 
@@ -58,39 +56,33 @@ describe('validateEnv', () => {
       ...BASE,
       NODE_ENV: 'development',
       CORS_ALLOWED_ORIGINS: '*',
-    } as NodeJS.ProcessEnv);
+    });
     expect(env.CORS_ALLOWED_ORIGINS).toEqual(['*']);
   });
 
   it('treats an empty variable as unset and uses the default', () => {
-    const env = validateEnv({ ...BASE, PORT: '' } as NodeJS.ProcessEnv);
+    const env = validateEnv({ ...BASE, PORT: '' });
     expect(env.PORT).toBe(3000);
   });
 
   it('keeps an intentionally empty Strapi token without failing', () => {
-    const env = validateEnv({ ...BASE, STRAPI_API_TOKEN: '' } as NodeJS.ProcessEnv);
+    const env = validateEnv({ ...BASE, STRAPI_API_TOKEN: '' });
     expect(env.STRAPI_API_TOKEN).toBe('');
   });
 
   it('rejects a Strapi base url that is not http(s)', () => {
-    expect(() =>
-      validateEnv({ ...BASE, STRAPI_BASE_URL: 'ftp://cms.example' } as NodeJS.ProcessEnv),
-    ).toThrow(EnvValidationError);
+    expect(() => validateEnv({ ...BASE, STRAPI_BASE_URL: 'ftp://cms.example' })).toThrow(
+      EnvValidationError,
+    );
   });
 
   it('coerces and range-checks numeric settings', () => {
-    expect(() => validateEnv({ ...BASE, PORT: '70000' } as NodeJS.ProcessEnv)).toThrow();
-    expect(validateEnv({ ...BASE, PORT: '8080' } as NodeJS.ProcessEnv).PORT).toBe(8080);
+    expect(() => validateEnv({ ...BASE, PORT: '70000' })).toThrow();
+    expect(validateEnv({ ...BASE, PORT: '8080' }).PORT).toBe(8080);
   });
 
   it('parses boolean-ish flags', () => {
-    expect(
-      validateEnv({ ...BASE, CANTEEN_SYNC_ON_BOOT: 'true' } as NodeJS.ProcessEnv)
-        .CANTEEN_SYNC_ON_BOOT,
-    ).toBe(true);
-    expect(
-      validateEnv({ ...BASE, CANTEEN_SYNC_ON_BOOT: '0' } as NodeJS.ProcessEnv)
-        .CANTEEN_SYNC_ON_BOOT,
-    ).toBe(false);
+    expect(validateEnv({ ...BASE, CANTEEN_SYNC_ON_BOOT: 'true' }).CANTEEN_SYNC_ON_BOOT).toBe(true);
+    expect(validateEnv({ ...BASE, CANTEEN_SYNC_ON_BOOT: '0' }).CANTEEN_SYNC_ON_BOOT).toBe(false);
   });
 });

@@ -17,11 +17,17 @@ export default defineConfig({
   },
   datasource: {
     url: env('DATABASE_URL'),
-    // Only used by `prisma migrate dev` during LOCAL development. The
-    // application role is intentionally not a superuser and cannot create
-    // databases, so the shadow database is provisioned up front by
-    // infrastructure/local/initdb. `prisma migrate deploy`, which is what runs
-    // on the server, never uses a shadow database.
-    shadowDatabaseUrl: env('SHADOW_DATABASE_URL'),
+    // Only `prisma migrate dev` uses a shadow database, and only during LOCAL
+    // development: the application role is intentionally not a superuser and
+    // cannot create databases, so infrastructure/local/initdb provisions one up
+    // front. `prisma migrate deploy` — what actually runs on the server — never
+    // touches it.
+    //
+    // Read conditionally rather than through env(), which throws when the
+    // variable is absent. Requiring it everywhere would break `prisma generate`
+    // in the Docker build and in CI, neither of which has a shadow database.
+    ...(process.env['SHADOW_DATABASE_URL']
+      ? { shadowDatabaseUrl: process.env['SHADOW_DATABASE_URL'] }
+      : {}),
   },
 });

@@ -26,15 +26,15 @@ Dieses Projekt verwendet **keine** Logos, Wappen, Markenassets oder Designsystem
 
 ## Umfang des MVP
 
-| Enthalten | Nicht enthalten |
-| --- | --- |
-| News mit dynamischer Kanal-Auswahl | Nutzerkonten |
-| Mensapläne (alle Preisgruppen) | Push-Nachrichten |
-| Kontakte und Kontaktbereiche | WebUntis / Stundenplan |
-| Lokale Einstellungen (Sprache, Theme, Abos) | Gebäudepläne, Raumbelegung, Indoor-Navigation |
-| Offline-/Cache-Verhalten | Analytics, Tracking, Crash-Reporting |
-| About, Impressums- und Datenschutz-Platzhalter | Redis, SMTP |
-| Deutsch und Englisch | Automatisches Deployment |
+| Enthalten                                      | Nicht enthalten                               |
+| ---------------------------------------------- | --------------------------------------------- |
+| News mit dynamischer Kanal-Auswahl             | Nutzerkonten                                  |
+| Mensapläne (alle Preisgruppen)                 | Push-Nachrichten                              |
+| Kontakte und Kontaktbereiche                   | WebUntis / Stundenplan                        |
+| Lokale Einstellungen (Sprache, Theme, Abos)    | Gebäudepläne, Raumbelegung, Indoor-Navigation |
+| Offline-/Cache-Verhalten                       | Analytics, Tracking, Crash-Reporting          |
+| About, Impressums- und Datenschutz-Platzhalter | Redis, SMTP                                   |
+| Deutsch und Englisch                           | Automatisches Deployment                      |
 
 Details: [docs/product/mvp.md](docs/product/mvp.md)
 
@@ -79,13 +79,13 @@ docs/                          Produkt-, Architektur- und Betriebsdokumentation
 
 ## Voraussetzungen
 
-| Werkzeug | Version |
-| --- | --- |
-| Node.js | 22.x (Strapi 5.50 unterstützt `>=20 <=26`) |
-| pnpm | >= 10 (hier: 11.15.1, via Corepack) |
-| Docker + Compose | Docker 29.x, Compose v5 |
-| Flutter | stable channel |
-| PostgreSQL | 16 (über Compose) |
+| Werkzeug         | Version                                    |
+| ---------------- | ------------------------------------------ |
+| Node.js          | 22.x (Strapi 5.50 unterstützt `>=20 <=26`) |
+| pnpm             | >= 10 (hier: 11.15.1, via Corepack)        |
+| Docker + Compose | Docker 29.x, Compose v5                    |
+| Flutter          | stable channel                             |
+| PostgreSQL       | 16 (über Compose)                          |
 
 ## Schnellstart (lokal)
 

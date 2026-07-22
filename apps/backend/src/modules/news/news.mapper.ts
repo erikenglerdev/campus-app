@@ -7,6 +7,7 @@ import {
   NewsDetailDto,
   NewsListItemDto,
 } from './news.types';
+import { asString } from '../../common/util/coerce';
 
 /**
  * Strapi -> public DTO mapping.
@@ -60,11 +61,11 @@ function mapImage(value: unknown): ImageDto | null {
 
 export function mapChannel(raw: Raw): NewsChannelDto {
   return {
-    slug: String(raw['slug'] ?? ''),
-    name: String(raw['name'] ?? ''),
+    slug: asString(raw['slug']),
+    name: asString(raw['name']),
     description: str(raw['description']),
-    iconKey: String(raw['iconKey'] ?? 'channel'),
-    colorHex: String(raw['colorHex'] ?? '#5B3FD0'),
+    iconKey: asString(raw['iconKey'], 'channel'),
+    colorHex: asString(raw['colorHex'], '#5B3FD0'),
     sortOrder: num(raw['sortOrder']) ?? 0,
     defaultSubscribed: raw['defaultSubscribed'] === true,
   };
@@ -80,8 +81,8 @@ function mapChannelRef(raw: unknown): NewsChannelRefDto | null {
   }
   return {
     slug,
-    name: String(raw['name'] ?? ''),
-    colorHex: String(raw['colorHex'] ?? '#5B3FD0'),
+    name: asString(raw['name']),
+    colorHex: asString(raw['colorHex'], '#5B3FD0'),
   };
 }
 
@@ -105,9 +106,9 @@ function mapList<T>(value: unknown, map: (entry: unknown) => T | null): T[] {
 
 export function mapNewsListItem(raw: Raw): NewsListItemDto {
   return {
-    slug: String(raw['slug'] ?? ''),
-    title: String(raw['title'] ?? ''),
-    teaser: String(raw['teaser'] ?? ''),
+    slug: asString(raw['slug']),
+    title: asString(raw['title']),
+    teaser: asString(raw['teaser']),
     publishedAt: str(raw['publishedAt']),
     isPinned: raw['isPinned'] === true,
     heroImage: mapImage(raw['heroImage']),

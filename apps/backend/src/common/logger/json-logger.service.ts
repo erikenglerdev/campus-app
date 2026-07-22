@@ -38,7 +38,9 @@ export function redactValue(value: unknown, depth = 0): unknown {
     return '[truncated]';
   }
   if (typeof value === 'string') {
-    return value.replace(URL_CREDENTIALS_PATTERN, `$1$2:${REDACTED}@`).replace(BEARER_PATTERN, `$1${REDACTED}`);
+    return value
+      .replace(URL_CREDENTIALS_PATTERN, `$1$2:${REDACTED}@`)
+      .replace(BEARER_PATTERN, `$1${REDACTED}`);
   }
   if (Array.isArray(value)) {
     return value.map((entry) => redactValue(entry, depth + 1));

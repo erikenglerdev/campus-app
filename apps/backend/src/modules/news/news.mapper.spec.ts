@@ -94,8 +94,10 @@ describe('news mappers', () => {
     });
 
     it('drops a non-https source url rather than forwarding it', () => {
-      expect(mapNewsListItem({ ...raw, sourceUrl: 'http://insecure.example' }).sourceUrl).toBeNull();
-      // eslint-disable-next-line no-script-url
+      expect(
+        mapNewsListItem({ ...raw, sourceUrl: 'http://insecure.example' }).sourceUrl,
+      ).toBeNull();
+
       expect(mapNewsListItem({ ...raw, sourceUrl: 'javascript:alert(1)' }).sourceUrl).toBeNull();
     });
 

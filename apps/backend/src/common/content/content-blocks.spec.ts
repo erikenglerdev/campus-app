@@ -105,8 +105,11 @@ describe('sanitizeBlocks', () => {
         {
           type: 'paragraph',
           children: [
-            // eslint-disable-next-line no-script-url
-            { type: 'link', url: 'javascript:alert(1)', children: [{ type: 'text', text: 'klick' }] },
+            {
+              type: 'link',
+              url: 'javascript:alert(1)',
+              children: [{ type: 'text', text: 'klick' }],
+            },
           ],
         },
       ]);
@@ -120,8 +123,16 @@ describe('sanitizeBlocks', () => {
         {
           type: 'paragraph',
           children: [
-            { type: 'link', url: 'http://insecure.example', children: [{ type: 'text', text: 'x' }] },
-            { type: 'link', url: 'data:text/html,<script>', children: [{ type: 'text', text: 'y' }] },
+            {
+              type: 'link',
+              url: 'http://insecure.example',
+              children: [{ type: 'text', text: 'x' }],
+            },
+            {
+              type: 'link',
+              url: 'data:text/html,<script>',
+              children: [{ type: 'text', text: 'y' }],
+            },
           ],
         },
       ]);

@@ -1,0 +1,101 @@
+# Campus Köthen — Strapi 5 CMS image
+#
+# Build context is the REPOSITORY ROOT (pnpm workspace):
+#   docker build -f apps/cms/Dockerfile -t campus-app-cms:local .
+#
+# Contains the pre-built admin UI, listens on 0.0.0.0:1337 and exposes
+# Strapi's /_health. Published only for linux/amd64. Runs as non-root.
+#
+# Base image: Debian slim rather than Alpine. Strapi's image pipeline (sharp)
+# ships prebuilt glibc binaries; on musl it tries to compile from source and
+# fails. Slim keeps the toolchain out of the runtime layer anyway.
+
+# ---------------------------------------------------------------------------
+# Stage 1 — install workspace dependencies
+# ---------------------------------------------------------------------------
+FROM node:22.23.1-slim AS deps
+
+RUN corepack enable
+WORKDIR /repo
+
+# Only the manifests, so a source-only change does not bust the install cache.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/cms/package.json apps/cms/
+COPY apps/backend/package.json apps/backend/
+COPY packages/openapi/package.json packages/openapi/
+
+RUN pnpm install --frozen-lockfile --filter @campus/cms...
+
+# ---------------------------------------------------------------------------
+# Stage 2 — build the admin panel
+# ---------------------------------------------------------------------------
+FROM deps AS build
+
+COPY apps/cms apps/cms
+
+# `strapi build` compiles the admin UI. It reads configuration but needs no
+# database and no real secret.
+#
+# The placeholders are passed INLINE to this one command rather than via ENV:
+# that keeps them out of the image metadata entirely and avoids teaching anyone
+# that secrets belong in a Dockerfile. Real values arrive from the environment
+# at run time.
+RUN NODE_ENV=production \
+    APP_KEYS=build-only-placeholder-1,build-only-placeholder-2 \
+    API_TOKEN_SALT=build-only-placeholder \
+    ADMIN_JWT_SECRET=build-only-placeholder \
+    TRANSFER_TOKEN_SALT=build-only-placeholder \
+    JWT_SECRET=build-only-placeholder \
+    ENCRYPTION_KEY=build-only-placeholder \
+    pnpm --filter @campus/cms exec strapi build
+
+# `pnpm deploy` resolves workspace links into a self-contained directory with
+# production dependencies only.
+RUN pnpm --filter @campus/cms deploy --prod --legacy /opt/deploy
+
+# ---------------------------------------------------------------------------
+# Stage 3 — runtime
+# ---------------------------------------------------------------------------
+FROM node:22.23.1-slim AS runtime
+
+# tini gives correct signal handling so Strapi shuts down cleanly.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends tini \
+ && rm -rf /var/lib/apt/lists/*
+
+ENV NODE_ENV=production \
+    HOST=0.0.0.0 \
+    PORT=1337
+
+WORKDIR /opt/app
+
+# The node:* images already ship an unprivileged `node` user (uid 1000).
+COPY --from=build --chown=node:node /opt/deploy ./
+
+# `pnpm deploy` packs the package the way `npm pack` would, so it skips
+# git-ignored paths — which is exactly where `strapi build` puts its output.
+# The compiled server (dist/, including the admin bundle in dist/build) and the
+# Vite client entry (.strapi/client) are therefore copied explicitly. Without
+# these the container would have no admin UI and would try to rebuild at
+# startup.
+COPY --from=build --chown=node:node /repo/apps/cms/dist ./dist
+COPY --from=build --chown=node:node /repo/apps/cms/.strapi ./.strapi
+
+# Uploads live on a persistent volume; the directory must exist and be owned by
+# the runtime user before the volume is mounted over it.
+RUN mkdir -p /opt/app/public/uploads && chown -R node:node /opt/app/public
+
+USER node
+
+EXPOSE 1337
+
+VOLUME ["/opt/app/public/uploads"]
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=5 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||1337)+'/_health').then(r=>process.exit(r.status<400?0:1)).catch(()=>process.exit(1))"
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+# Invoke the package's real JS entry directly. `node_modules/.bin/strapi` is a
+# shell wrapper, so `node node_modules/.bin/strapi` fails with a SyntaxError.
+CMD ["node", "node_modules/@strapi/strapi/bin/strapi.js", "start"]

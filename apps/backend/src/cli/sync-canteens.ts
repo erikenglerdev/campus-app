@@ -33,14 +33,16 @@ async function main(): Promise<void> {
       7: 'success.json',
       22: 'lohmannstrasse.json',
     };
-    (client as unknown as Record<string, unknown>)['fetchFoodPlans'] = async (request: {
+    // Reads synchronously but returns a promise, matching the real method's
+    // signature without pretending there is anything to await.
+    (client as unknown as Record<string, unknown>)['fetchFoodPlans'] = (request: {
       locationId: number;
     }) => {
       const file = byLocation[request.locationId] ?? 'empty.json';
       const raw = JSON.parse(
         readFileSync(join(__dirname, '../../test/fixtures/meine-mensa', file), 'utf8'),
       ) as unknown;
-      return foodPlanResponseSchema.parse(raw);
+      return Promise.resolve(foodPlanResponseSchema.parse(raw));
     };
   }
 

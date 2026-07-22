@@ -1,10 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  foodPlanResponseSchema,
-  normalizeDefinitions,
-  normalizeEntry,
-} from './meine-mensa.schema';
+import { foodPlanResponseSchema, normalizeDefinitions, normalizeEntry } from './meine-mensa.schema';
 
 const fixture = (name: string): unknown =>
   JSON.parse(readFileSync(join(__dirname, '../../../test/fixtures/meine-mensa', name), 'utf8'));
@@ -44,9 +40,7 @@ describe('meine-mensa schema', () => {
 
   it('rejects a non-numeric price rather than coercing it', () => {
     const result = foodPlanResponseSchema.safeParse({
-      data: [
-        { id: 1, date: '2026-07-20', location_id: 7, food: { name: 'X', price_1: '1,95' } },
-      ],
+      data: [{ id: 1, date: '2026-07-20', location_id: 7, food: { name: 'X', price_1: '1,95' } }],
     });
     expect(result.success).toBe(false);
   });

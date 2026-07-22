@@ -67,8 +67,15 @@ async function bootstrap(): Promise<void> {
 
   const shutdown = (signal: string): void => {
     logger.log(`Received ${signal}, stopping the worker`);
-    job.stop();
-    void app.close().then(() => process.exit(0));
+    // cron v4 returns a promise from stop(); it is intentionally not awaited
+    // because shutdown continues regardless of how the timer teardown ends.
+    void job.stop();
+    // Both outcomes must terminate: without a rejection handler a failing
+    // close() would leave the container hanging until it is killed.
+    void app.close().then(
+      () => process.exit(0),
+      () => process.exit(1),
+    );
   };
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));

@@ -1,0 +1,152 @@
+# Campus Köthen — build and publish container images
+#
+# Runs ONLY on a push to main. It publishes images to GHCR and does NOT deploy:
+# there is no SSH step, no server secret and no environment promotion anywhere
+# in this repository. Rolling a new image out stays a deliberate manual action.
+
+name: Images
+
+on:
+  push:
+    branches: [main]
+
+# Least privilege by default; packages:write is granted per job, and only here.
+permissions:
+  contents: read
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    permissions:
+      contents: read
+      packages: write
+      # Required for build provenance attestation.
+      id-token: write
+      attestations: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: campus-app-cms
+            image: campus-app-cms
+            dockerfile: apps/cms/Dockerfile
+          - name: campus-app-backend
+            image: campus-app-backend
+            dockerfile: apps/backend/Dockerfile
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          # The workflow token is enough; no personal access token is involved.
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Derive tags and labels
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
+          # No `latest`: every deployment must name an explicit, immutable tag.
+          flavor: latest=false
+          tags: |
+            type=raw,value=main
+            type=raw,value=dev
+            type=sha,format=long,prefix=sha-
+          labels: |
+            org.opencontainers.image.title=${{ matrix.image }}
+            org.opencontainers.image.description=Campus Köthen — independent, unofficial campus app
+            org.opencontainers.image.licenses=AGPL-3.0-only
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          # The DEV server is x86_64. Building other architectures would only
+          # cost time for artefacts nobody runs.
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+          provenance: mode=max
+          sbom: true
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Scan the published image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}@${{ steps.build.outputs.digest }}
+          format: sarif
+          output: trivy-${{ matrix.image }}.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+
+      - name: Upload the scan report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: trivy-${{ matrix.image }}
+          path: trivy-${{ matrix.image }}.sarif
+          if-no-files-found: warn
+
+      - name: Fail on fixable HIGH or CRITICAL findings
+        # Deliberately a separate, blocking step. A real finding must not be
+        # quietly swallowed just because the image was already pushed; the tag
+        # stays available for inspection, but the run goes red.
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}@${{ steps.build.outputs.digest }}
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+
+  summary:
+    name: Publishing summary
+    runs-on: ubuntu-latest
+    needs: build
+    if: always()
+    steps:
+      - name: Write the summary
+        run: |
+          {
+            echo "## Published images"
+            echo
+            echo "| Image | Tags |"
+            echo "| --- | --- |"
+            echo "| \`ghcr.io/${{ github.repository_owner }}/campus-app-cms\` | \`main\`, \`dev\`, \`sha-${{ github.sha }}\` |"
+            echo "| \`ghcr.io/${{ github.repository_owner }}/campus-app-backend\` | \`main\`, \`dev\`, \`sha-${{ github.sha }}\` |"
+            echo
+            echo "Platform: \`linux/amd64\`. No \`latest\` tag is published."
+            echo
+            echo "Deploy by the immutable digest or the \`sha-\` tag — never by \`main\`/\`dev\`, which move."
+            echo
+            echo "**No deployment was performed by this workflow.**"
+          } >> "$GITHUB_STEP_SUMMARY"

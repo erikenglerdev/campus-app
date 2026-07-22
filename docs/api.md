@@ -10,24 +10,24 @@ den NestJS-DTOs erzeugt.
 
 ## 1. Grundregeln
 
-| Regel | |
-| --- | --- |
-| Basis-Pfad für Inhalte | `/v1` |
-| Technische Endpunkte | `/health/live`, `/health/ready`, `/docs`, `/docs-json` (ohne `/v1`) |
-| Format | `application/json; charset=utf-8` |
-| Authentifizierung | keine — alle Inhalte sind öffentlich lesbar |
-| Strapi-Internas | **niemals** in der Antwort (`data.attributes`, `documentId`, `populate`, Strapi-`meta`) |
+| Regel                  |                                                                                         |
+| ---------------------- | --------------------------------------------------------------------------------------- |
+| Basis-Pfad für Inhalte | `/v1`                                                                                   |
+| Technische Endpunkte   | `/health/live`, `/health/ready`, `/docs`, `/docs-json` (ohne `/v1`)                     |
+| Format                 | `application/json; charset=utf-8`                                                       |
+| Authentifizierung      | keine — alle Inhalte sind öffentlich lesbar                                             |
+| Strapi-Internas        | **niemals** in der Antwort (`data.attributes`, `documentId`, `populate`, Strapi-`meta`) |
 
 Jede **inhaltliche** Antwort verwendet denselben Umschlag:
 
 ```jsonc
 {
-  "data": { /* oder [] */ },
+  "data": {/* oder [] */},
   "meta": {
     "requestedLocale": "de",
     "resolvedLocale": "de",
-    "translationFallback": false
-  }
+    "translationFallback": false,
+  },
 }
 ```
 
@@ -39,20 +39,20 @@ Auflösung in dieser Reihenfolge:
 2. Header `Accept-Language` — nur wenn kein `locale`-Parameter gesetzt ist.
 3. Standard `de`.
 
-| Fall | Verhalten |
-| --- | --- |
-| `?locale=de` / `?locale=en` | wird verwendet |
-| `?locale=fr` | **`400 Bad Request`** — expliziter Wunsch wird nicht still verfälscht |
-| `Accept-Language: fr-FR` | stiller Fallback auf `de` |
-| `Accept-Language: en-GB,en;q=0.9` | `en` |
-| kein Hinweis | `de` |
+| Fall                              | Verhalten                                                             |
+| --------------------------------- | --------------------------------------------------------------------- |
+| `?locale=de` / `?locale=en`       | wird verwendet                                                        |
+| `?locale=fr`                      | **`400 Bad Request`** — expliziter Wunsch wird nicht still verfälscht |
+| `Accept-Language: fr-FR`          | stiller Fallback auf `de`                                             |
+| `Accept-Language: en-GB,en;q=0.9` | `en`                                                                  |
+| kein Hinweis                      | `de`                                                                  |
 
 Metadaten jeder inhaltlichen Antwort:
 
-| Feld | Bedeutung |
-| --- | --- |
-| `requestedLocale` | was der Client wollte |
-| `resolvedLocale` | was tatsächlich ausgeliefert wurde |
+| Feld                  | Bedeutung                                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------------ |
+| `requestedLocale`     | was der Client wollte                                                                            |
+| `resolvedLocale`      | was tatsächlich ausgeliefert wurde                                                               |
 | `translationFallback` | `true`, sobald **mindestens ein** ausgeliefertes Feld aus `de` stammt, obwohl `en` angefragt war |
 
 **Externe Mensa-Texte werden nie übersetzt.** Gerichtsnamen, Zusatztexte und Zutaten-/Markerlabels
@@ -68,21 +68,21 @@ Preisgruppen-Labels, Fehlermeldungen) sind zweisprachig.
     "status": 404,
     "code": "NEWS_ARTICLE_NOT_FOUND",
     "message": "Der angeforderte Beitrag wurde nicht gefunden.",
-    "requestId": "b1f0…"
-  }
+    "requestId": "b1f0…",
+  },
 }
 ```
 
 `message` ist in der aufgelösten Locale. Es werden **nie** interne Details, Stacktraces,
 Upstream-URLs oder Tokens ausgegeben.
 
-| Code | Status |
-| --- | --- |
-| `VALIDATION_FAILED` | 400 |
-| `UNSUPPORTED_LOCALE` | 400 |
-| `NEWS_ARTICLE_NOT_FOUND` / `CONTACT_AREA_NOT_FOUND` / `CANTEEN_NOT_FOUND` | 404 |
-| `UPSTREAM_UNAVAILABLE` | 503 |
-| `UPSTREAM_TIMEOUT` | 504 |
+| Code                                                                      | Status |
+| ------------------------------------------------------------------------- | ------ |
+| `VALIDATION_FAILED`                                                       | 400    |
+| `UNSUPPORTED_LOCALE`                                                      | 400    |
+| `NEWS_ARTICLE_NOT_FOUND` / `CONTACT_AREA_NOT_FOUND` / `CANTEEN_NOT_FOUND` | 404    |
+| `UPSTREAM_UNAVAILABLE`                                                    | 503    |
+| `UPSTREAM_TIMEOUT`                                                        | 504    |
 
 ## 4. Technische Endpunkte
 
@@ -100,11 +100,11 @@ Prüft Datenbank und Strapi kontrolliert mit Timeout. `200` wenn bereit, sonst `
 
 ```jsonc
 {
-  "status": "ok",              // "ok" | "degraded"
+  "status": "ok", // "ok" | "degraded"
   "checks": {
     "database": { "status": "ok", "latencyMs": 3 },
-    "strapi":   { "status": "ok", "latencyMs": 41 }
-  }
+    "strapi": { "status": "ok", "latencyMs": 41 },
+  },
 }
 ```
 
@@ -128,10 +128,10 @@ Nur **aktive** Kanäle, sortiert nach `sortOrder`, dann `name`.
       "iconKey": "campus",
       "colorHex": "#5B3FD0",
       "sortOrder": 10,
-      "defaultSubscribed": true
-    }
+      "defaultSubscribed": true,
+    },
   ],
-  "meta": { "requestedLocale": "de", "resolvedLocale": "de", "translationFallback": false }
+  "meta": { "requestedLocale": "de", "resolvedLocale": "de", "translationFallback": false },
 }
 ```
 
@@ -140,21 +140,21 @@ Nur **aktive** Kanäle, sortiert nach `sortOrder`, dann `name`.
 
 ### `GET /v1/news`
 
-| Parameter | Typ | Standard | Regeln |
-| --- | --- | --- | --- |
-| `channels` | CSV von Slugs | *fehlt* | siehe unten |
-| `page` | Integer >= 1 | `1` | |
-| `pageSize` | Integer 1–50 | `20` | Werte > 50 ⇒ `400` |
-| `locale` | `de` \| `en` | `de` | |
+| Parameter  | Typ           | Standard | Regeln             |
+| ---------- | ------------- | -------- | ------------------ |
+| `channels` | CSV von Slugs | _fehlt_  | siehe unten        |
+| `page`     | Integer >= 1  | `1`      |                    |
+| `pageSize` | Integer 1–50  | `20`     | Werte > 50 ⇒ `400` |
+| `locale`   | `de` \| `en`  | `de`     |                    |
 
 **Verhalten von `channels` — vertraglich festgeschrieben:**
 
-| Anfrage | Bedeutung |
-| --- | --- |
-| Parameter **fehlt** | alle aktiven Kanäle |
+| Anfrage                        | Bedeutung                             |
+| ------------------------------ | ------------------------------------- |
+| Parameter **fehlt**            | alle aktiven Kanäle                   |
 | `?channels=` (vorhanden, leer) | **bewusst keine** Kanäle ⇒ `data: []` |
-| `?channels=campus-news` | nur dieser Kanal |
-| unbekannter Slug enthalten | wird ignoriert, kein Fehler |
+| `?channels=campus-news`        | nur dieser Kanal                      |
+| unbekannter Slug enthalten     | wird ignoriert, kein Fehler           |
 
 Der Unterschied zwischen „fehlt“ und „leer“ ist wichtig: Deaktiviert der Nutzer **alle** Kanäle,
 sendet der Client `?channels=` und erhält eine leere Liste — er darf **nicht** versehentlich alle
@@ -177,13 +177,15 @@ Sortierung: `isPinned` DESC, dann `publishedAt` DESC, dann `slug` ASC (determini
       "channels": [{ "slug": "campus-news", "name": "Campus News", "colorHex": "#5B3FD0" }],
       "authors": [{ "name": "Redaktion Campus News", "role": "Redaktion" }],
       "sourceName": "Hochschule Anhalt",
-      "sourceUrl": "https://www.hs-anhalt.de/…"
-    }
+      "sourceUrl": "https://www.hs-anhalt.de/…",
+    },
   ],
   "meta": {
-    "requestedLocale": "de", "resolvedLocale": "de", "translationFallback": false,
-    "pagination": { "page": 1, "pageSize": 20, "total": 1, "totalPages": 1 }
-  }
+    "requestedLocale": "de",
+    "resolvedLocale": "de",
+    "translationFallback": false,
+    "pagination": { "page": 1, "pageSize": 20, "total": 1, "totalPages": 1 },
+  },
 }
 ```
 
@@ -198,24 +200,39 @@ Wie ein Listeneintrag, zusätzlich `content`. Unbekannter Slug ⇒ `404 NEWS_ART
 {
   "data": {
     "slug": "semesterstart-2026",
-    "title": "…", "teaser": "…", "publishedAt": "…", "isPinned": true,
-    "heroImage": null, "channels": [], "authors": [],
-    "sourceName": null, "sourceUrl": null,
+    "title": "…",
+    "teaser": "…",
+    "publishedAt": "…",
+    "isPinned": true,
+    "heroImage": null,
+    "channels": [],
+    "authors": [],
+    "sourceName": null,
+    "sourceUrl": null,
     "content": [
       { "type": "heading", "level": 2, "children": [{ "type": "text", "text": "Überblick" }] },
-      { "type": "paragraph", "children": [
-        { "type": "text", "text": "Normaler Text " },
-        { "type": "text", "text": "fett", "bold": true },
-        { "type": "link", "url": "https://example.org", "children": [{ "type": "text", "text": "Quelle" }] }
-      ]},
-      { "type": "list", "format": "unordered", "children": [
-        { "type": "list-item", "children": [{ "type": "text", "text": "Punkt" }] }
-      ]},
+      {
+        "type": "paragraph",
+        "children": [
+          { "type": "text", "text": "Normaler Text " },
+          { "type": "text", "text": "fett", "bold": true },
+          {
+            "type": "link",
+            "url": "https://example.org",
+            "children": [{ "type": "text", "text": "Quelle" }],
+          },
+        ],
+      },
+      {
+        "type": "list",
+        "format": "unordered",
+        "children": [{ "type": "list-item", "children": [{ "type": "text", "text": "Punkt" }] }],
+      },
       { "type": "quote", "children": [{ "type": "text", "text": "Zitat" }] },
-      { "type": "image", "url": "https://…", "alternativeText": "…", "width": 800, "height": 600 }
-    ]
+      { "type": "image", "url": "https://…", "alternativeText": "…", "width": 800, "height": 600 },
+    ],
   },
-  "meta": { "…": "…", "droppedBlockTypes": [] }
+  "meta": { "…": "…", "droppedBlockTypes": [] },
 }
 ```
 
@@ -241,13 +258,17 @@ Nur aktive Bereiche, sortiert nach `sortOrder`, dann `name`.
       "shortDescription": "Die gewählte Vertretung der Studierendenschaft.",
       "iconKey": "students-council",
       "sortOrder": 10,
-      "generalEmail": null, "phone": null, "website": null, "appointmentUrl": null,
-      "address": null, "openingHours": null,
+      "generalEmail": null,
+      "phone": null,
+      "website": null,
+      "appointmentUrl": null,
+      "address": null,
+      "openingHours": null,
       "personCount": 0,
-      "isDemoContent": true
-    }
+      "isDemoContent": true,
+    },
   ],
-  "meta": { "…": "…" }
+  "meta": { "…": "…" },
 }
 ```
 
@@ -264,16 +285,31 @@ Personen, sortiert nach `sortOrder`, dann `name`.
 ```jsonc
 {
   "data": {
-    "slug": "studierendenrat", "name": "…", "shortDescription": "…", "iconKey": "…",
-    "generalEmail": null, "phone": null, "website": null, "appointmentUrl": null,
-    "address": null, "openingHours": null, "isDemoContent": true,
+    "slug": "studierendenrat",
+    "name": "…",
+    "shortDescription": "…",
+    "iconKey": "…",
+    "generalEmail": null,
+    "phone": null,
+    "website": null,
+    "appointmentUrl": null,
+    "address": null,
+    "openingHours": null,
+    "isDemoContent": true,
     "description": [],
     "persons": [
-      { "name": "…", "role": "…", "description": null,
-        "email": null, "phone": null, "website": null, "profileImage": null }
-    ]
+      {
+        "name": "…",
+        "role": "…",
+        "description": null,
+        "email": null,
+        "phone": null,
+        "website": null,
+        "profileImage": null,
+      },
+    ],
   },
-  "meta": { "…": "…" }
+  "meta": { "…": "…" },
 }
 ```
 
@@ -293,10 +329,10 @@ Ausschließlich aus Backend-Daten. Der Client kennt **keine** `location_id`.
       "displayName": "Mensa Köthen",
       "campusLabel": "Fasanerieallee",
       "lastSuccessfulSyncAt": "2026-07-22T12:00:04.000Z",
-      "dataStale": false
-    }
+      "dataStale": false,
+    },
   ],
-  "meta": { "…": "…" }
+  "meta": { "…": "…" },
 }
 ```
 
@@ -304,11 +340,11 @@ Ausschließlich aus Backend-Daten. Der Client kennt **keine** `location_id`.
 
 ### `GET /v1/canteens/:slug/menu`
 
-| Parameter | Typ | Standard | Regeln |
-| --- | --- | --- | --- |
-| `from` | `YYYY-MM-DD` | heute | |
-| `to` | `YYYY-MM-DD` | `from` + 13 Tage | `to >= from`, Spanne **max. 31 Tage** ⇒ sonst `400` |
-| `locale` | `de` \| `en` | `de` | |
+| Parameter | Typ          | Standard         | Regeln                                              |
+| --------- | ------------ | ---------------- | --------------------------------------------------- |
+| `from`    | `YYYY-MM-DD` | heute            |                                                     |
+| `to`      | `YYYY-MM-DD` | `from` + 13 Tage | `to >= from`, Spanne **max. 31 Tage** ⇒ sonst `400` |
+| `locale`  | `de` \| `en` | `de`             |                                                     |
 
 ```jsonc
 {
@@ -327,26 +363,29 @@ Ausschließlich aus Backend-Daten. Der Client kennt **keine** `location_id`.
             "isSprint": true,
             "extras": [],
             "markers": [
-              { "code": "52", "label": "vegan",              "kind": "ingredient" },
-              { "code": "53", "label": "Sprint-Menü",        "kind": "marker" },
-              { "code": "A1", "label": "enthält Weizengluten","kind": "ingredient" }
+              { "code": "52", "label": "vegan", "kind": "ingredient" },
+              { "code": "53", "label": "Sprint-Menü", "kind": "marker" },
+              { "code": "A1", "label": "enthält Weizengluten", "kind": "ingredient" },
             ],
             "prices": [
-              { "group": "student",  "label": "Studierende", "amount": "1.95", "currency": "EUR" },
+              { "group": "student", "label": "Studierende", "amount": "1.95", "currency": "EUR" },
               { "group": "employee", "label": "Bedienstete", "amount": "4.95", "currency": "EUR" },
-              { "group": "guest",    "label": "Gäste",       "amount": "7.00", "currency": "EUR" }
-            ]
-          }
-        ]
-      }
-    ]
+              { "group": "guest", "label": "Gäste", "amount": "7.00", "currency": "EUR" },
+            ],
+          },
+        ],
+      },
+    ],
   },
   "meta": {
-    "requestedLocale": "en", "resolvedLocale": "en", "translationFallback": true,
+    "requestedLocale": "en",
+    "resolvedLocale": "en",
+    "translationFallback": true,
     "lastSuccessfulSyncAt": "2026-07-22T12:00:04.000Z",
     "dataStale": false,
-    "from": "2026-07-20", "to": "2026-08-02"
-  }
+    "from": "2026-07-20",
+    "to": "2026-08-02",
+  },
 }
 ```
 

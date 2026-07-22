@@ -10,13 +10,7 @@
         "id": 1001,
         "name": "Gemüsepfanne (neu)",
         "name_2": "mit Kichererbsen und Kräuterdip",
-        "ingredients": [
-          "2",
-          "52",
-          "53",
-          "A1",
-          "G2"
-        ],
+        "ingredients": ["2", "52", "53", "A1", "G2"],
         "price_1": 2.15,
         "price_2": 4.95,
         "price_3": 7,
@@ -37,11 +31,7 @@
         "id": 1002,
         "name": "Nudelauflauf",
         "name_2": "mit Tomatensauce",
-        "ingredients": [
-          "51",
-          "A1",
-          "F"
-        ],
+        "ingredients": ["51", "A1", "F"],
         "price_1": 2.55,
         "price_2": 5.15,
         "price_3": 7.4,
