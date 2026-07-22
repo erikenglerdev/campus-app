@@ -25,6 +25,24 @@ abstract final class AppDateFormats {
   static String shortWeekdayDate(DateTime value, String locale) =>
       DateFormat.MEd(locale).format(value.toLocal());
 
+  /// e.g. `Mo` · `Mon` — the abbreviated weekday of the day selector.
+  static String shortWeekday(DateTime value, String locale) =>
+      DateFormat.E(locale).format(value.toLocal());
+
+  /// e.g. `20` — the day of month of the day selector.
+  static String dayOfMonth(DateTime value, String locale) =>
+      DateFormat.d(locale).format(value.toLocal());
+
+  /// e.g. `20. Juli` · `Jul 20` — one end of a week range.
+  static String dayAndMonth(DateTime value, String locale) =>
+      DateFormat.MMMd(locale).format(value.toLocal());
+
+  /// e.g. `08:00` — the wall clock time of an appointment in the **device's**
+  /// time zone. Uses the same 24 hour pattern as [dateTime] so times read the
+  /// same everywhere in the app.
+  static String time(DateTime value, String locale) =>
+      DateFormat.Hm(locale).format(value.toLocal());
+
   /// `YYYY-MM-DD` — the wire format of the API. Never shown to users.
   static String isoDate(DateTime value) =>
       '${value.year.toString().padLeft(4, '0')}-'

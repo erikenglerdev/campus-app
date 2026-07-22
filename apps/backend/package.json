@@ -1,7 +1,7 @@
 {
   "name": "@campus/backend",
   "version": "0.1.0",
-  "description": "Campus Köthen API and canteen synchronization worker",
+  "description": "Campus K\u00f6then API and canteen synchronization worker",
   "private": true,
   "license": "AGPL-3.0-only",
   "author": "Erik Engler and Jona Sommer",
@@ -97,6 +97,7 @@
       "/src/generated/"
     ],
     "coverageDirectory": "./coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "maxWorkers": 1
   }
 }

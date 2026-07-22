@@ -14,6 +14,7 @@ export type ApiErrorCode =
   | 'NEWS_ARTICLE_NOT_FOUND'
   | 'CONTACT_AREA_NOT_FOUND'
   | 'CANTEEN_NOT_FOUND'
+  | 'TIMETABLE_GROUP_NOT_FOUND'
   | 'UPSTREAM_UNAVAILABLE'
   | 'UPSTREAM_TIMEOUT'
   | 'INTERNAL_ERROR';
@@ -41,6 +42,10 @@ const MESSAGES: Record<ApiErrorCode, Messages> = {
     de: 'Die angeforderte Mensa wurde nicht gefunden.',
     en: 'The requested canteen was not found.',
   },
+  TIMETABLE_GROUP_NOT_FOUND: {
+    de: 'Die angeforderte Gruppe wurde nicht gefunden.',
+    en: 'The requested group was not found.',
+  },
   UPSTREAM_UNAVAILABLE: {
     de: 'Die Inhalte sind derzeit nicht verfügbar. Bitte später erneut versuchen.',
     en: 'Content is currently unavailable. Please try again later.',
@@ -61,6 +66,7 @@ const STATUS: Record<ApiErrorCode, HttpStatus> = {
   NEWS_ARTICLE_NOT_FOUND: HttpStatus.NOT_FOUND,
   CONTACT_AREA_NOT_FOUND: HttpStatus.NOT_FOUND,
   CANTEEN_NOT_FOUND: HttpStatus.NOT_FOUND,
+  TIMETABLE_GROUP_NOT_FOUND: HttpStatus.NOT_FOUND,
   UPSTREAM_UNAVAILABLE: HttpStatus.SERVICE_UNAVAILABLE,
   UPSTREAM_TIMEOUT: HttpStatus.GATEWAY_TIMEOUT,
   INTERNAL_ERROR: HttpStatus.INTERNAL_SERVER_ERROR,

@@ -4,6 +4,7 @@
   "appTitle": "Campus Köthen",
 
   "navNews": "News",
+  "navTimetable": "Timetable",
   "navCanteen": "Canteen",
   "navContacts": "Contacts",
   "navSettings": "Settings",
@@ -178,6 +179,113 @@
     }
   },
 
+  "timetableTitle": "Timetable",
+  "timetableGroupPickerTitle": "Choose course",
+  "timetableGroupPickerTooltip": "Change course",
+  "timetableGroupSearchLabel": "Search course",
+  "timetableGroupSearchHint": "Short name, long name or department",
+  "timetableGroupSearchEmptyTitle": "No matching course",
+  "timetableGroupSearchEmptyMessage": "No course matches your search. Check the spelling or search for the department.",
+  "timetableNoGroupsTitle": "No courses available",
+  "timetableNoGroupsMessage": "No courses are listed at the moment.",
+  "timetableNoSelectionTitle": "No course chosen yet",
+  "timetableNoSelectionMessage": "Choose your course to see your timetable. You can change it at any time.",
+  "timetableChooseGroupAction": "Choose course",
+  "timetableGroupSemanticLabel": "Course {name}, {details}",
+  "@timetableGroupSemanticLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "timetablePreviousWeek": "Previous week",
+  "timetableNextWeek": "Next week",
+  "timetableCurrentWeek": "This week",
+  "timetableWeekRange": "Week {range}",
+  "@timetableWeekRange": {
+    "placeholders": {
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableDaySemanticLabel": "Day {date}",
+  "@timetableDaySemanticLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableDayHeading": "{date}",
+  "@timetableDayHeading": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableEmptyDayTitle": "No appointments",
+  "timetableEmptyDayMessage": "There are no appointments for this day.",
+  "timetablePendingTitle": "Timetable is being prepared",
+  "timetablePendingMessage": "No finished data set exists for this period yet. The app checks again at increasing intervals.",
+  "timetableDisabledTitle": "Timetable not enabled yet",
+  "timetableDisabledMessage": "The timetable feature is currently switched off. Appointments will appear here once its use has been clarified.",
+  "timetableUnavailableTitle": "No data available",
+  "timetableUnavailableMessage": "No timetable data exists for this period.",
+  "timetableStaleTitle": "Data may be outdated",
+  "timetableStaleMessage": "The timetable could not be updated for a while. Appointments may differ.",
+  "timetableLastSyncAt": "Last updated: {timestamp}",
+  "@timetableLastSyncAt": {
+    "placeholders": {
+      "timestamp": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableNeverSynced": "Never successfully updated",
+  "timetableSourceNotice": "Source: the public WebUntis view of Hochschule Anhalt, retrieved server-side only. There is no cooperation with and no approval by the university. All information without guarantee.",
+  "timetableTimeRange": "{start} – {end}",
+  "@timetableTimeRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableUntitledEntry": "Untitled",
+  "timetableTeachersLabel": "Teachers",
+  "timetableRoomsLabel": "Room",
+  "timetableTypeRegular": "Class",
+  "timetableTypeAdditional": "Additional appointment",
+  "timetableTypeUnknown": "Other appointment",
+  "timetableStatusRegular": "Takes place",
+  "timetableStatusCancelled": "Cancelled",
+  "timetableStatusChanged": "Changed",
+  "timetableStatusUnknown": "Status unclear",
+  "timetableEntrySemanticLabel": "{time}, {title}, {status}",
+  "@timetableEntrySemanticLabel": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableSourceLanguageHint": "Subject, room and person names come unchanged from the source and are not translated.",
+
   "contactsTitle": "Contacts",
   "contactsEmptyTitle": "No contact areas",
   "contactsEmptyMessage": "No points of contact are listed at the moment.",
@@ -225,6 +333,8 @@
   "settingsChannelsSubtitle": "Choose which channels appear in the news list.",
   "settingsPreferredCanteen": "Preferred canteen",
   "settingsPreferredCanteenNone": "No selection",
+  "settingsTimetableGroup": "Timetable course",
+  "settingsTimetableGroupNone": "No selection",
   "settingsAbout": "About this app",
   "settingsImprint": "Legal notice",
   "settingsPrivacy": "Privacy",

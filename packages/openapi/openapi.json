@@ -353,6 +353,151 @@
           "canteens"
         ]
       }
+    },
+    "/v1/timetable/groups": {
+      "get": {
+        "description": "Comes from the synchronised catalogue, never from a live upstream call. Identifiers are Campus UUIDs; the source system id is never exposed.",
+        "operationId": "TimetableController_groups_v1",
+        "parameters": [
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "de",
+                "en"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "department",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "query",
+            "required": false,
+            "in": "query",
+            "description": "Searches short name, long name and department.",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimetableGroupsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List selectable class groups.",
+        "tags": [
+          "timetable"
+        ]
+      }
+    },
+    "/v1/timetable/entries": {
+      "get": {
+        "description": "Every day of the range is returned, so a genuinely free day is distinguishable from a loading error. Range is capped at 42 days.",
+        "operationId": "TimetableController_entries_v1",
+        "parameters": [
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "de",
+                "en"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "2026-08-02"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "2026-07-20"
+            }
+          },
+          {
+            "name": "groupId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimetableWeekResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Fetch one group’s timetable for a date range.",
+        "tags": [
+          "timetable"
+        ]
+      }
+    },
+    "/v1/timetable/status": {
+      "get": {
+        "description": "Deliberately thin: no upstream URLs, headers, external ids or error detail.",
+        "operationId": "TimetableController_status_v1",
+        "parameters": [
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "de",
+                "en"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimetableStatusResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Public health of the timetable integration.",
+        "tags": [
+          "timetable"
+        ]
+      }
     }
   },
   "info": {
@@ -511,6 +656,24 @@
           "to": {
             "type": "string",
             "description": "End of the resolved date range (YYYY-MM-DD)."
+          },
+          "featureEnabled": {
+            "type": "boolean",
+            "description": "False when the timetable integration is switched off server-side."
+          },
+          "dataState": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "pending",
+              "unavailable"
+            ],
+            "description": "ready = data present; pending = enabled but not yet synchronised; unavailable = disabled or permanently without data."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Business timezone the wall-clock times belong to.",
+            "example": "Europe/Berlin"
           }
         },
         "required": [
@@ -1239,6 +1402,285 @@
         "properties": {
           "data": {
             "$ref": "#/components/schemas/CanteenMenuDto"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "TimetableGroupDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Stable Campus identifier."
+          },
+          "shortName": {
+            "type": "string",
+            "example": "AIN2 - BT"
+          },
+          "longName": {
+            "type": "string",
+            "example": "AIN2-Angewandte Informatik Vertiefung: Biotechnologie"
+          },
+          "department": {
+            "type": "string",
+            "nullable": true,
+            "example": "FB5"
+          }
+        },
+        "required": [
+          "id",
+          "shortName",
+          "longName",
+          "department"
+        ]
+      },
+      "TimetableGroupsResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimetableGroupDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "TimetableTeacherDto": {
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "type": "string",
+            "description": "Name as published by the source. Never translated."
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "shortName",
+          "displayName"
+        ]
+      },
+      "TimetableRoomDto": {
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "type": "string"
+          },
+          "longName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "shortName",
+          "longName"
+        ]
+      },
+      "TimetableEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Absolute instant, UTC."
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Europe/Berlin",
+            "description": "Business timezone the source schedules in."
+          },
+          "title": {
+            "type": "string",
+            "description": "Subject name from the source. Never translated."
+          },
+          "subjectCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "regular_teaching",
+              "additional",
+              "unknown"
+            ],
+            "description": "Normalised. An unrecognised upstream value becomes `unknown`."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "regular",
+              "changed",
+              "cancelled",
+              "unknown"
+            ],
+            "description": "Normalised. The client must render `unknown` neutrally rather than guess."
+          },
+          "teachers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimetableTeacherDto"
+            }
+          },
+          "rooms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimetableRoomDto"
+            }
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimetableGroupDto"
+            }
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "start",
+          "end",
+          "timezone",
+          "title",
+          "subjectCode",
+          "type",
+          "status",
+          "teachers",
+          "rooms",
+          "groups",
+          "note"
+        ]
+      },
+      "TimetableDayDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-07-20"
+          },
+          "entries": {
+            "description": "Empty means a genuinely free day, not a loading failure.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimetableEntryDto"
+            }
+          }
+        },
+        "required": [
+          "date",
+          "entries"
+        ]
+      },
+      "TimetableWeekDto": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "$ref": "#/components/schemas/TimetableGroupDto"
+          },
+          "days": {
+            "description": "Every day of the requested range.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimetableDayDto"
+            }
+          }
+        },
+        "required": [
+          "group",
+          "days"
+        ]
+      },
+      "TimetableWeekResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TimetableWeekDto"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "TimetableStatusDto": {
+        "type": "object",
+        "properties": {
+          "featureEnabled": {
+            "type": "boolean"
+          },
+          "groupCount": {
+            "type": "number",
+            "example": 270
+          },
+          "lastGroupSyncAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "lastEntrySyncAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "dataStale": {
+            "type": "boolean"
+          },
+          "coveredFrom": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-07-15"
+          },
+          "coveredTo": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-08-19"
+          }
+        },
+        "required": [
+          "featureEnabled",
+          "groupCount",
+          "lastGroupSyncAt",
+          "lastEntrySyncAt",
+          "dataStale",
+          "coveredFrom",
+          "coveredTo"
+        ]
+      },
+      "TimetableStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TimetableStatusDto"
           },
           "meta": {
             "$ref": "#/components/schemas/ResponseMetaDto"

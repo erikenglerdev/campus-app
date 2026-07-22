@@ -6,6 +6,7 @@ import { ContactsModule } from './modules/contacts/contacts.module';
 import { HealthModule } from './modules/health/health.module';
 import { NewsModule } from './modules/news/news.module';
 import { StrapiModule } from './modules/strapi/strapi.module';
+import { TimetableModule } from './modules/timetable/timetable.module';
 
 /**
  * HTTP API composition.
@@ -23,6 +24,7 @@ import { StrapiModule } from './modules/strapi/strapi.module';
     NewsModule,
     ContactsModule,
     CanteenModule,
+    TimetableModule,
   ],
 })
 export class AppModule {}

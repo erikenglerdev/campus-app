@@ -48,6 +48,26 @@ export class ResponseMetaDto {
 
   @ApiPropertyOptional({ description: 'End of the resolved date range (YYYY-MM-DD).' })
   to?: string;
+
+  // --- Timetable-specific metadata -----------------------------------------
+
+  @ApiPropertyOptional({
+    description: 'False when the timetable integration is switched off server-side.',
+  })
+  featureEnabled?: boolean;
+
+  @ApiPropertyOptional({
+    enum: ['ready', 'pending', 'unavailable'],
+    description:
+      'ready = data present; pending = enabled but not yet synchronised; unavailable = disabled or permanently without data.',
+  })
+  dataState?: 'ready' | 'pending' | 'unavailable';
+
+  @ApiPropertyOptional({
+    description: 'Business timezone the wall-clock times belong to.',
+    example: 'Europe/Berlin',
+  })
+  timezone?: string;
 }
 
 /** Envelope shared by every content endpoint — see docs/api.md §1. */
@@ -66,6 +86,9 @@ export function buildMeta(input: {
   dataStale?: boolean;
   from?: string;
   to?: string;
+  featureEnabled?: boolean;
+  dataState?: 'ready' | 'pending' | 'unavailable';
+  timezone?: string;
 }): ResponseMetaDto {
   const meta: ResponseMetaDto = {
     requestedLocale: input.requestedLocale,
@@ -89,6 +112,15 @@ export function buildMeta(input: {
   }
   if (input.to !== undefined) {
     meta.to = input.to;
+  }
+  if (input.featureEnabled !== undefined) {
+    meta.featureEnabled = input.featureEnabled;
+  }
+  if (input.dataState !== undefined) {
+    meta.dataState = input.dataState;
+  }
+  if (input.timezone !== undefined) {
+    meta.timezone = input.timezone;
   }
   return meta;
 }
