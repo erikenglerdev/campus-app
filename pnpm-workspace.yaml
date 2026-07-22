@@ -1,0 +1,7 @@
+packages:
+  - 'apps/cms'
+  - 'apps/backend'
+  - 'packages/*'
+
+# apps/mobile is intentionally NOT a pnpm workspace member.
+# The Flutter app is managed by its own Dart/Flutter toolchain (pub).
