@@ -1,6 +1,8 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Sommer
 
+import 'dart:typed_data';
+
 import 'package:meta/meta.dart';
 
 /// A single mailbox address as shown in the UI.
@@ -47,8 +49,8 @@ class MailMessageDetail {
     required this.to,
     required this.date,
     required this.body,
-    required this.hasUnsupportedAttachments,
     this.cc = const <MailAddress>[],
+    this.attachments = const <MailAttachment>[],
   });
 
   final String id;
@@ -64,8 +66,35 @@ class MailMessageDetail {
   /// HTML sanitised to text. Never HTML, never a WebView payload.
   final String body;
 
-  /// True when the message carries attachments, which the MVP does not open.
-  final bool hasUnsupportedAttachments;
+  /// The message's attachments (metadata always; bytes only for images, for an
+  /// inline preview). Empty when the message has none.
+  final List<MailAttachment> attachments;
+
+  bool get hasAttachments => attachments.isNotEmpty;
+}
+
+/// One attachment of a message.
+///
+/// [imageBytes] is populated only for image attachments so they can be shown
+/// inline from memory — no file is written and nothing is fetched from the
+/// network. Other attachments carry metadata only.
+@immutable
+class MailAttachment {
+  const MailAttachment({
+    required this.filename,
+    required this.mediaType,
+    this.sizeBytes,
+    this.imageBytes,
+  });
+
+  final String filename;
+
+  /// e.g. `image/png`, `application/pdf`.
+  final String mediaType;
+  final int? sizeBytes;
+  final Uint8List? imageBytes;
+
+  bool get isImage => mediaType.toLowerCase().startsWith('image/');
 }
 
 /// An outgoing plain-text message.

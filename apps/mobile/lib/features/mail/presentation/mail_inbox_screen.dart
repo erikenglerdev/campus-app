@@ -11,9 +11,13 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
 import '../application/mail_account_controller.dart';
+import '../application/mail_folders.dart';
 import '../application/mail_inbox_controller.dart';
+import '../domain/mail_folder.dart';
 import '../domain/mail_message.dart';
 import 'mail_error_messages.dart';
+import 'mail_folder_labels.dart';
+import 'mail_folder_picker.dart';
 
 /// Shows the 50 newest INBOX headers. No background sync, no IDLE: the list is
 /// fetched on demand and refreshed only by an explicit pull or retry.
@@ -54,6 +58,7 @@ class MailInboxScreen extends ConsumerWidget {
     final AsyncValue<List<MailMessageHeader>> inbox = ref.watch(
       mailInboxControllerProvider,
     );
+    final MailFolder folder = ref.watch(selectedMailboxProvider);
     final String? email = ref
         .watch(mailAccountControllerProvider)
         .value
@@ -61,8 +66,13 @@ class MailInboxScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.mailInboxTitle),
+        title: Text(folderLabel(l10n, folder)),
         actions: <Widget>[
+          IconButton(
+            onPressed: () => showMailFolderPicker(context),
+            tooltip: l10n.mailFoldersTooltip,
+            icon: const Icon(Icons.folder_outlined),
+          ),
           PopupMenuButton<String>(
             onSelected: (String value) {
               if (value == 'remove') _confirmRemoveAccount(context, ref);
@@ -122,7 +132,7 @@ class MailInboxScreen extends ConsumerWidget {
                 children: <Widget>[
                   const SizedBox(height: AppSpacing.xxxl),
                   EmptyView(
-                    title: l10n.mailInboxTitle,
+                    title: folderLabel(l10n, folder),
                     message: l10n.mailInboxEmpty,
                   ),
                 ],

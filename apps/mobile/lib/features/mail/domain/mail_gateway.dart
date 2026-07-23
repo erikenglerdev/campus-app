@@ -2,6 +2,7 @@
 // Copyright © 2026 Erik Engler and Jona Sommer
 
 import 'mail_credentials.dart';
+import 'mail_folder.dart';
 import 'mail_message.dart';
 
 /// Outcome of trying to store a sent copy after a successful SMTP send.
@@ -27,20 +28,29 @@ abstract interface class MailGateway {
   /// never persists anything.
   Future<void> verifyConnection(MailCredentials credentials);
 
-  /// Loads up to [limit] newest headers from INBOX. No bodies, no attachments.
-  Future<List<MailMessageHeader>> fetchInbox(
+  /// Lists all mailboxes (folders) on the server via IMAP LIST.
+  Future<List<MailFolder>> fetchMailboxes(MailCredentials credentials);
+
+  /// Loads up to [limit] newest headers from [mailboxPath]. No bodies.
+  Future<List<MailMessageHeader>> fetchHeaders(
     MailCredentials credentials, {
+    String mailboxPath = kInboxPath,
     int limit = 50,
   });
 
-  /// Loads one message as safe plain text.
+  /// Loads one message from [mailboxPath] as safe plain text, plus attachments.
   Future<MailMessageDetail> fetchMessage(
-    MailCredentials credentials,
-    String id,
-  );
+    MailCredentials credentials, {
+    String mailboxPath = kInboxPath,
+    required String id,
+  });
 
   /// Marks a message as \Seen. Best effort — failure is non-fatal to the caller.
-  Future<void> markSeen(MailCredentials credentials, String id);
+  Future<void> markSeen(
+    MailCredentials credentials, {
+    String mailboxPath = kInboxPath,
+    required String id,
+  });
 
   /// Sends a plain-text message via SMTP submission. Throws [MailFailure] if the
   /// send fails. Deliberately does NOT touch the Sent folder: storing a copy is

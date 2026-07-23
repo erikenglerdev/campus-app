@@ -5,10 +5,12 @@ import 'dart:async';
 
 import 'package:campus_koethen/features/mail/application/mail_account_controller.dart';
 import 'package:campus_koethen/features/mail/application/mail_compose_controller.dart';
+import 'package:campus_koethen/features/mail/application/mail_folders.dart';
 import 'package:campus_koethen/features/mail/application/mail_inbox_controller.dart';
 import 'package:campus_koethen/features/mail/application/mail_providers.dart';
 import 'package:campus_koethen/features/mail/domain/mail_credentials.dart';
 import 'package:campus_koethen/features/mail/domain/mail_failure.dart';
+import 'package:campus_koethen/features/mail/domain/mail_folder.dart';
 import 'package:campus_koethen/features/mail/domain/mail_gateway.dart';
 import 'package:campus_koethen/features/mail/domain/mail_message.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -248,6 +250,47 @@ void main() {
           MailFailureKind.timeout,
         ),
       );
+    });
+  });
+
+  group('folders', () {
+    test(
+      'lists the mailboxes from the server for a signed-in account',
+      () async {
+        final store = InMemoryMailCredentialStore()..write(_creds);
+        final gateway = FakeMailGateway(
+          folders: const <MailFolder>[
+            MailFolder.inbox(),
+            MailFolder(path: 'Sent', name: 'Sent', role: MailFolderRole.sent),
+            MailFolder(
+              path: 'Archiv',
+              name: 'Archiv',
+              role: MailFolderRole.archive,
+            ),
+          ],
+        );
+        final container = _container(gateway: gateway, store: store);
+        await container.read(mailAccountControllerProvider.future);
+
+        final List<MailFolder> folders = await container.read(
+          mailFoldersProvider.future,
+        );
+        expect(
+          folders.map((MailFolder f) => f.path),
+          containsAll(<String>['INBOX', 'Sent', 'Archiv']),
+        );
+      },
+    );
+
+    test('stays empty while signed out', () async {
+      final container = _container(
+        gateway: FakeMailGateway(
+          folders: const <MailFolder>[MailFolder.inbox()],
+        ),
+        store: InMemoryMailCredentialStore(),
+      );
+      await container.read(mailAccountControllerProvider.future);
+      expect(await container.read(mailFoldersProvider.future), isEmpty);
     });
   });
 

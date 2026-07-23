@@ -11,6 +11,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
 import '../application/mail_account_controller.dart';
+import '../application/mail_folders.dart';
 import '../application/mail_inbox_controller.dart';
 import '../domain/mail_message.dart';
 import 'compose_draft.dart';
@@ -57,8 +58,12 @@ class MailMessageScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final AppLocalizations l10n = context.l10n;
     final String locale = Localizations.localeOf(context).languageCode;
+    final MailMessageRef messageRef = (
+      mailboxPath: ref.watch(selectedMailboxProvider).path,
+      id: id,
+    );
     final AsyncValue<MailMessageDetail> message = ref.watch(
-      mailMessageProvider(id),
+      mailMessageProvider(messageRef),
     );
     final MailMessageDetail? detail = message.value;
 
@@ -87,7 +92,7 @@ class MailMessageScreen extends ConsumerWidget {
           title: l10n.errorGenericTitle,
           message: mailFailureMessage(l10n, error),
           action: FilledButton.icon(
-            onPressed: () => ref.invalidate(mailMessageProvider(id)),
+            onPressed: () => ref.invalidate(mailMessageProvider(messageRef)),
             icon: const Icon(Icons.refresh),
             label: Text(l10n.mailRetry),
           ),
@@ -137,14 +142,20 @@ class _MessageBody extends StatelessWidget {
           ),
         ],
         const Divider(height: AppSpacing.xl),
-        if (detail.hasUnsupportedAttachments) ...<Widget>[
-          _NoticeBanner(
-            icon: Icons.attach_file,
-            text: l10n.mailMessageAttachmentsUnsupported,
-          ),
-          const SizedBox(height: AppSpacing.md),
-        ],
         SelectableText(detail.body, style: text.bodyLarge),
+        if (detail.hasAttachments) ...<Widget>[
+          const SizedBox(height: AppSpacing.xl),
+          Semantics(
+            header: true,
+            child: Text(l10n.mailAttachmentsTitle, style: text.titleMedium),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          for (final MailAttachment attachment in detail.attachments)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: _AttachmentView(attachment: attachment),
+            ),
+        ],
         const SizedBox(height: AppSpacing.xl),
         _NoticeBanner(
           icon: Icons.image_not_supported_outlined,
@@ -152,6 +163,63 @@ class _MessageBody extends StatelessWidget {
           muted: true,
         ),
       ],
+    );
+  }
+}
+
+/// Renders one attachment: image attachments show an inline preview from
+/// memory (nothing is written to disk, nothing is fetched from the network);
+/// everything else shows a metadata tile.
+class _AttachmentView extends StatelessWidget {
+  const _AttachmentView({required this.attachment});
+
+  final MailAttachment attachment;
+
+  String _sizeLabel(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme text = Theme.of(context).textTheme;
+    final int? size = attachment.sizeBytes;
+    final String subtitle = <String>[
+      attachment.mediaType,
+      if (size != null) _sizeLabel(size),
+    ].join(' · ');
+
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          if (attachment.imageBytes != null)
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 320),
+              child: Image.memory(
+                attachment.imageBytes!,
+                fit: BoxFit.contain,
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              ),
+            ),
+          ListTile(
+            leading: Icon(
+              attachment.isImage
+                  ? Icons.image_outlined
+                  : Icons.insert_drive_file_outlined,
+            ),
+            title: Text(
+              attachment.filename,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(subtitle, style: text.bodySmall),
+          ),
+        ],
+      ),
     );
   }
 }

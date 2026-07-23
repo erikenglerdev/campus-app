@@ -27,7 +27,6 @@ MailMessageDetail _detail({
   cc: cc,
   date: DateTime.utc(2026, 7, 20, 9, 30),
   body: body,
-  hasUnsupportedAttachments: false,
 );
 
 void main() {

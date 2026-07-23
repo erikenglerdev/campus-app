@@ -1,8 +1,11 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Sommer
 
+import 'dart:typed_data';
+
 import 'package:campus_koethen/features/mail/application/mail_providers.dart';
 import 'package:campus_koethen/features/mail/domain/mail_credentials.dart';
+import 'package:campus_koethen/features/mail/domain/mail_folder.dart';
 import 'package:campus_koethen/features/mail/domain/mail_message.dart';
 import 'package:campus_koethen/features/mail/presentation/compose_draft.dart';
 import 'package:campus_koethen/features/mail/presentation/mail_compose_screen.dart';
@@ -38,6 +41,77 @@ void _tallSurface(WidgetTester tester) {
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
 }
+
+/// A valid 1×1 transparent PNG, so Image.memory decodes without error.
+const List<int> _pngBytes = <int>[
+  0x89,
+  0x50,
+  0x4E,
+  0x47,
+  0x0D,
+  0x0A,
+  0x1A,
+  0x0A,
+  0x00,
+  0x00,
+  0x00,
+  0x0D,
+  0x49,
+  0x48,
+  0x44,
+  0x52,
+  0x00,
+  0x00,
+  0x00,
+  0x01,
+  0x00,
+  0x00,
+  0x00,
+  0x01,
+  0x08,
+  0x06,
+  0x00,
+  0x00,
+  0x00,
+  0x1F,
+  0x15,
+  0xC4,
+  0x89,
+  0x00,
+  0x00,
+  0x00,
+  0x0A,
+  0x49,
+  0x44,
+  0x41,
+  0x54,
+  0x78,
+  0x9C,
+  0x63,
+  0x00,
+  0x01,
+  0x00,
+  0x00,
+  0x05,
+  0x00,
+  0x01,
+  0x0D,
+  0x0A,
+  0x2D,
+  0xB4,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x49,
+  0x45,
+  0x4E,
+  0x44,
+  0xAE,
+  0x42,
+  0x60,
+  0x82,
+];
 
 MailMessageHeader _header({String id = '1'}) => MailMessageHeader(
   id: id,
@@ -188,14 +262,25 @@ void main() {
     ) async {
       final store = InMemoryMailCredentialStore()..write(_creds);
       final gateway = FakeMailGateway(
-        detail: const MailMessageDetail(
+        detail: MailMessageDetail(
           id: '1',
           subject: 'Betreff',
-          from: MailAddress(email: 'alice@hs-anhalt.de', name: 'Alice'),
-          to: <MailAddress>[MailAddress(email: 'stud@hs-anhalt.de')],
+          from: const MailAddress(email: 'alice@hs-anhalt.de', name: 'Alice'),
+          to: const <MailAddress>[MailAddress(email: 'stud@hs-anhalt.de')],
           date: null,
           body: 'Dies ist der Nachrichtentext.',
-          hasUnsupportedAttachments: false,
+          attachments: <MailAttachment>[
+            MailAttachment(
+              filename: 'bericht.pdf',
+              mediaType: 'application/pdf',
+              sizeBytes: 2048,
+            ),
+            MailAttachment(
+              filename: 'bild.png',
+              mediaType: 'image/png',
+              imageBytes: Uint8List.fromList(_pngBytes),
+            ),
+          ],
         ),
       );
       await pumpScreen(
@@ -208,6 +293,50 @@ void main() {
       expect(find.text('Betreff'), findsOneWidget);
       expect(find.text('Dies ist der Nachrichtentext.'), findsOneWidget);
       expect(gateway.markedSeen, contains('1'));
+      // Attachments are listed (metadata) and images previewed inline.
+      expect(find.text('Anhänge'), findsOneWidget);
+      expect(find.text('bericht.pdf'), findsOneWidget);
+      expect(find.text('bild.png'), findsOneWidget);
+      expect(find.byType(Image), findsOneWidget);
+    });
+  });
+
+  group('folders', () {
+    testWidgets('folder picker lists mailboxes and switches the selection', (
+      WidgetTester tester,
+    ) async {
+      _tallSurface(tester);
+      final store = InMemoryMailCredentialStore()..write(_creds);
+      final gateway = FakeMailGateway(
+        inbox: <MailMessageHeader>[_header()],
+        folders: const <MailFolder>[
+          MailFolder.inbox(),
+          MailFolder(path: 'Sent', name: 'Sent', role: MailFolderRole.sent),
+        ],
+      );
+      await pumpScreen(
+        tester,
+        const MailScreen(),
+        overrides: _mail(gateway, store),
+      );
+      await tester.pumpAndSettle();
+
+      // Open the folder picker and choose "Sent" (localised to "Gesendet").
+      await tester.tap(find.byIcon(Icons.folder_outlined));
+      await tester.pumpAndSettle();
+      expect(find.text('Gesendet'), findsOneWidget);
+      await tester.tap(find.text('Gesendet'));
+      await tester.pumpAndSettle();
+
+      // The list was re-fetched for the Sent mailbox and the title updated.
+      expect(gateway.fetchedMailboxes, contains('Sent'));
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.text('Gesendet'),
+        ),
+        findsOneWidget,
+      );
     });
   });
 

@@ -3,12 +3,14 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:enough_mail/enough_mail.dart';
 
 import '../domain/hsa_mail_profile.dart';
 import '../domain/mail_credentials.dart' as domain;
 import '../domain/mail_failure.dart';
+import '../domain/mail_folder.dart';
 import '../domain/mail_gateway.dart';
 import '../domain/mail_message.dart' as model;
 import 'html_to_text.dart';
@@ -100,7 +102,30 @@ class EnoughMailGateway implements MailGateway {
   /// A neutral EHLO identifier. Never a personal or campus hostname.
   static const String _hostnameForEhlo = 'campus-koethen.localhost';
 
+  /// Selects [mailboxPath], taking the cheap INBOX shortcut when possible.
+  Future<void> _select(ImapClient client, String mailboxPath) async {
+    if (mailboxPath == kInboxPath) {
+      await client.selectInbox();
+    } else {
+      await client.selectMailboxByPath(mailboxPath);
+    }
+  }
+
   // --- Public API -----------------------------------------------------------
+
+  @override
+  Future<List<MailFolder>> fetchMailboxes(
+    domain.MailCredentials credentials,
+  ) async {
+    return _guard(() async {
+      return _withImap<List<MailFolder>>(credentials, (
+        ImapClient client,
+      ) async {
+        final List<Mailbox> boxes = await client.listMailboxes(recursive: true);
+        return boxes.map(_toFolder).toList();
+      });
+    });
+  }
 
   @override
   Future<void> verifyConnection(domain.MailCredentials credentials) async {
@@ -116,15 +141,18 @@ class EnoughMailGateway implements MailGateway {
   }
 
   @override
-  Future<List<model.MailMessageHeader>> fetchInbox(
+  Future<List<model.MailMessageHeader>> fetchHeaders(
     domain.MailCredentials credentials, {
+    String mailboxPath = kInboxPath,
     int limit = 50,
   }) async {
     return _guard(() async {
       return _withImap<List<model.MailMessageHeader>>(credentials, (
         ImapClient client,
       ) async {
-        final Mailbox inbox = await client.selectInbox();
+        final Mailbox inbox = mailboxPath == kInboxPath
+            ? await client.selectInbox()
+            : await client.selectMailboxByPath(mailboxPath);
         if (inbox.messagesExists == 0) return <model.MailMessageHeader>[];
 
         final int upper = inbox.messagesExists;
@@ -154,14 +182,15 @@ class EnoughMailGateway implements MailGateway {
 
   @override
   Future<model.MailMessageDetail> fetchMessage(
-    domain.MailCredentials credentials,
-    String id,
-  ) async {
+    domain.MailCredentials credentials, {
+    String mailboxPath = kInboxPath,
+    required String id,
+  }) async {
     return _guard(() async {
       return _withImap<model.MailMessageDetail>(credentials, (
         ImapClient client,
       ) async {
-        await client.selectInbox();
+        await _select(client, mailboxPath);
         final int uid = int.parse(id);
         final FetchImapResult result = await client.uidFetchMessages(
           MessageSequence.fromRange(uid, uid, isUidSequence: true),
@@ -177,10 +206,14 @@ class EnoughMailGateway implements MailGateway {
   }
 
   @override
-  Future<void> markSeen(domain.MailCredentials credentials, String id) async {
+  Future<void> markSeen(
+    domain.MailCredentials credentials, {
+    String mailboxPath = kInboxPath,
+    required String id,
+  }) async {
     await _guard(() async {
       await _withImap(credentials, (ImapClient client) async {
-        await client.selectInbox();
+        await _select(client, mailboxPath);
         final int uid = int.parse(id);
         await client.uidMarkSeen(
           MessageSequence.fromRange(uid, uid, isUidSequence: true),
@@ -318,8 +351,44 @@ class EnoughMailGateway implements MailGateway {
           .toList(),
       date: m.decodeDate(),
       body: body,
-      hasUnsupportedAttachments: m.hasAttachments(),
+      attachments: _attachmentsOf(m),
     );
+  }
+
+  /// Extracts attachment metadata. Image bytes are decoded from the already
+  /// downloaded message (no extra fetch, no network, no file written) so they
+  /// can be previewed inline; other types carry metadata only.
+  List<model.MailAttachment> _attachmentsOf(MimeMessage m) {
+    final List<ContentInfo> infos = m.findContentInfo();
+    return infos.map((ContentInfo info) {
+      final String type = info.mediaType?.text ?? 'application/octet-stream';
+      final Uint8List? bytes = info.isImage
+          ? m.getPart(info.fetchId)?.decodeContentBinary()
+          : null;
+      return model.MailAttachment(
+        filename: info.fileName ?? info.fetchId,
+        mediaType: type,
+        sizeBytes: info.size ?? bytes?.length,
+        imageBytes: bytes,
+      );
+    }).toList();
+  }
+
+  MailFolder _toFolder(Mailbox box) => MailFolder(
+    path: box.encodedPath,
+    name: box.name,
+    role: _roleOf(box),
+    isSelectable: !box.isNotSelectable,
+  );
+
+  MailFolderRole _roleOf(Mailbox box) {
+    if (box.isInbox) return MailFolderRole.inbox;
+    if (box.isSent) return MailFolderRole.sent;
+    if (box.isDrafts) return MailFolderRole.drafts;
+    if (box.isTrash) return MailFolderRole.trash;
+    if (box.isJunk) return MailFolderRole.junk;
+    if (box.isArchive) return MailFolderRole.archive;
+    return MailFolderRole.plain;
   }
 
   // --- Error handling -------------------------------------------------------

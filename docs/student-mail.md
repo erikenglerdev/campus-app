@@ -82,13 +82,23 @@ Einrichtung / Sicherheit
 
 Posteingang / Detail
 
-- [ ] Es werden bis zu 50 aktuelle INBOX-Nachrichten (neueste zuerst) angezeigt.
+- [ ] Es werden bis zu 50 aktuelle Nachrichten des gewählten Ordners (neueste zuerst)
+      angezeigt.
 - [ ] Ungelesene sind nicht nur über Farbe erkennbar (Icon/Fettung).
 - [ ] Öffnen einer Nachricht zeigt reinen Text; sie wird als gelesen markiert.
 - [ ] HTML-Mail wird als Text dargestellt; entfernte Bilder werden **nicht** geladen.
-- [ ] Mail mit Anhang zeigt den Hinweis „Anhänge werden nicht angezeigt“; nichts wird
-      heruntergeladen.
+- [ ] Mail mit Anhang zeigt die Anhänge: Bilder als Inline-Vorschau (aus dem Speicher,
+      kein Netzwerkabruf, keine Datei geschrieben), andere Typen als Kachel mit Name,
+      Typ und Größe.
 - [ ] Flugmodus → Aktualisieren zeigt einen Fehler mit „Erneut versuchen“, kein Absturz.
+
+Ordner
+
+- [ ] Das Ordner-Symbol öffnet die Liste **aller** Server-Ordner (IMAP LIST); ein
+      Sonderordner (Gesendet/Entwürfe/Papierkorb/Spam/Archiv) trägt Symbol und
+      lokalisierten Namen.
+- [ ] Auswahl eines Ordners lädt dessen Nachrichten; der Titel zeigt den Ordnernamen.
+- [ ] Öffnen einer Nachricht in einem anderen Ordner liest aus **diesem** Ordner.
 
 Verfassen / Senden
 
@@ -117,6 +127,7 @@ Barrierefreiheit / i18n
 
 ## Bekannte Grenzen (bewusst)
 
-Kein Hintergrund-Sync, kein IMAP IDLE, kein Anhang-Download, kein Verschieben/Löschen,
-keine Ordnerverwaltung, keine mehrfachen Konten. Der MVP liest, öffnet, beantwortet und
-schreibt reinen Text — mehr nicht.
+Kein Hintergrund-Sync, kein IMAP IDLE, kein Verschieben/Löschen, keine Ordnerverwaltung
+(nur Lesen/Wechseln, kein Anlegen/Umbenennen), keine mehrfachen Konten. Anhänge werden
+**angezeigt** (Bilder inline, sonst Metadaten), aber nicht auf das Gerät gespeichert oder
+mit anderen Apps geöffnet. Der MVP liest, öffnet, beantwortet und schreibt reinen Text.

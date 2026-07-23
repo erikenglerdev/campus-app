@@ -4,6 +4,7 @@
 import 'package:campus_koethen/features/mail/domain/mail_credential_store.dart';
 import 'package:campus_koethen/features/mail/domain/mail_credentials.dart';
 import 'package:campus_koethen/features/mail/domain/mail_failure.dart';
+import 'package:campus_koethen/features/mail/domain/mail_folder.dart';
 import 'package:campus_koethen/features/mail/domain/mail_gateway.dart';
 import 'package:campus_koethen/features/mail/domain/mail_message.dart';
 
@@ -49,6 +50,7 @@ class FakeMailGateway implements MailGateway {
     this.fetchInboxError,
     this.sendError,
     this.sentCopy = SentCopyResult.appended,
+    this.folders = const <MailFolder>[],
   });
 
   MailFailure? verifyError;
@@ -57,11 +59,13 @@ class FakeMailGateway implements MailGateway {
   List<MailMessageHeader> inbox;
   MailMessageDetail? detail;
   SentCopyResult sentCopy;
+  List<MailFolder> folders;
 
   int verifyCalls = 0;
   int sendCalls = 0;
   int appendCalls = 0;
   final List<String> markedSeen = <String>[];
+  final List<String> fetchedMailboxes = <String>[];
   final List<OutgoingMessage> sent = <OutgoingMessage>[];
   final List<OutgoingMessage> appended = <OutgoingMessage>[];
 
@@ -72,26 +76,38 @@ class FakeMailGateway implements MailGateway {
   }
 
   @override
-  Future<List<MailMessageHeader>> fetchInbox(
+  Future<List<MailFolder>> fetchMailboxes(MailCredentials credentials) async {
+    return folders;
+  }
+
+  @override
+  Future<List<MailMessageHeader>> fetchHeaders(
     MailCredentials credentials, {
+    String mailboxPath = kInboxPath,
     int limit = 50,
   }) async {
+    fetchedMailboxes.add(mailboxPath);
     if (fetchInboxError != null) throw fetchInboxError!;
     return inbox;
   }
 
   @override
   Future<MailMessageDetail> fetchMessage(
-    MailCredentials credentials,
-    String id,
-  ) async {
+    MailCredentials credentials, {
+    String mailboxPath = kInboxPath,
+    required String id,
+  }) async {
     final MailMessageDetail? d = detail;
     if (d == null) throw const MailFailure(MailFailureKind.protocol);
     return d;
   }
 
   @override
-  Future<void> markSeen(MailCredentials credentials, String id) async {
+  Future<void> markSeen(
+    MailCredentials credentials, {
+    String mailboxPath = kInboxPath,
+    required String id,
+  }) async {
     markedSeen.add(id);
   }
 
