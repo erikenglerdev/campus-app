@@ -11,6 +11,9 @@ import 'core/cache/content_cache.dart';
 import 'core/cache/hive_content_cache.dart';
 import 'core/prefs/key_value_store.dart';
 import 'core/prefs/settings_controller.dart';
+import 'features/mail/application/mail_providers.dart';
+import 'features/mail/data/mail_cache.dart';
+import 'features/mail/domain/mail_cache_store.dart';
 
 /// Entry point.
 ///
@@ -19,16 +22,18 @@ import 'core/prefs/settings_controller.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Both stores fail soft: a broken cache or preferences backend degrades the
+  // Every store fails soft: a broken cache or preferences backend degrades the
   // app to "network only", it never prevents the app from starting.
   final KeyValueStore keyValueStore = await _openKeyValueStore();
   final ContentCache contentCache = await HiveContentCache.open();
+  final MailCacheStore mailCache = await HiveMailCache.open();
 
   runApp(
     ProviderScope(
       overrides: <Override>[
         keyValueStoreProvider.overrideWithValue(keyValueStore),
         contentCacheProvider.overrideWithValue(contentCache),
+        mailCacheStoreProvider.overrideWithValue(mailCache),
       ],
       child: const CampusApp(),
     ),

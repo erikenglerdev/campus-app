@@ -15,6 +15,7 @@ class AppSettings {
     this.themeMode = ThemeMode.system,
     this.preferredCanteenSlug,
     this.timetableGroupId,
+    this.mailDownloadAttachments = false,
   });
 
   final LocaleMode localeMode;
@@ -27,6 +28,10 @@ class AppSettings {
   /// yet". The app never stores an upstream identifier.
   final String? timetableGroupId;
 
+  /// When true, the mail sync downloads attachment bytes too, so attachments
+  /// are available offline. Off by default to keep the cache small.
+  final bool mailDownloadAttachments;
+
   AppSettings copyWith({
     LocaleMode? localeMode,
     ThemeMode? themeMode,
@@ -34,6 +39,7 @@ class AppSettings {
     bool clearPreferredCanteen = false,
     String? timetableGroupId,
     bool clearTimetableGroup = false,
+    bool? mailDownloadAttachments,
   }) {
     return AppSettings(
       localeMode: localeMode ?? this.localeMode,
@@ -44,6 +50,8 @@ class AppSettings {
       timetableGroupId: clearTimetableGroup
           ? null
           : (timetableGroupId ?? this.timetableGroupId),
+      mailDownloadAttachments:
+          mailDownloadAttachments ?? this.mailDownloadAttachments,
     );
   }
 }
@@ -72,6 +80,8 @@ class SettingsController extends Notifier<AppSettings> {
       ),
       preferredCanteenSlug: store.getString(PreferenceKeys.preferredCanteen),
       timetableGroupId: store.getString(PreferenceKeys.preferredTimetableGroup),
+      mailDownloadAttachments:
+          store.getInt(PreferenceKeys.mailDownloadAttachments) == 1,
     );
   }
 
@@ -104,6 +114,14 @@ class SettingsController extends Notifier<AppSettings> {
     }
     state = state.copyWith(timetableGroupId: groupId);
     await _store.setString(PreferenceKeys.preferredTimetableGroup, groupId);
+  }
+
+  Future<void> setMailDownloadAttachments(bool enabled) async {
+    state = state.copyWith(mailDownloadAttachments: enabled);
+    await _store.setInt(
+      PreferenceKeys.mailDownloadAttachments,
+      enabled ? 1 : 0,
+    );
   }
 
   static ThemeMode _themeModeFromStorage(String? value) => switch (value) {

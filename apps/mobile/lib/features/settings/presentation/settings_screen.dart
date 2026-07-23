@@ -85,6 +85,17 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => showTimetableGroupPickerSheet(context),
           ),
           const Divider(),
+          _SectionHeader(title: l10n.settingsSectionMail),
+          SwitchListTile(
+            secondary: const Icon(Icons.download_outlined),
+            title: Text(l10n.settingsMailDownloadAttachments),
+            subtitle: Text(l10n.settingsMailDownloadAttachmentsSubtitle),
+            value: settings.mailDownloadAttachments,
+            onChanged: (bool value) => ref
+                .read(settingsProvider.notifier)
+                .setMailDownloadAttachments(value),
+          ),
+          const Divider(),
           _SectionHeader(title: l10n.settingsSectionLegal),
           ListTile(
             leading: const Icon(Icons.info_outline),

@@ -39,10 +39,23 @@ abstract interface class MailGateway {
   });
 
   /// Loads one message from [mailboxPath] as safe plain text, plus attachments.
+  ///
+  /// Image attachments always carry their bytes (for the inline preview); other
+  /// attachment bytes are decoded only when [includeAttachmentBytes] is true.
   Future<MailMessageDetail> fetchMessage(
     MailCredentials credentials, {
     String mailboxPath = kInboxPath,
     required String id,
+    bool includeAttachmentBytes = false,
+  });
+
+  /// Loads several messages from [mailboxPath] in ONE IMAP session, for
+  /// efficient background prefetch. Missing ids are simply skipped.
+  Future<List<MailMessageDetail>> fetchMessages(
+    MailCredentials credentials, {
+    String mailboxPath = kInboxPath,
+    required List<String> ids,
+    bool includeAttachmentBytes = false,
   });
 
   /// Marks a message as \Seen. Best effort — failure is non-fatal to the caller.

@@ -87,8 +87,12 @@ class MailAccountController extends AsyncNotifier<MailAccountState> {
   }
 
   /// Closes any connection state and removes both fields from secure storage.
+  /// Also wipes the offline mail cache so nothing survives for the next account.
   Future<void> signOut() async {
     await _store.clear();
+    try {
+      await ref.read(mailCacheStoreProvider).clear();
+    } catch (_) {}
     state = const AsyncData(MailAccountState());
   }
 }

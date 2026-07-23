@@ -15,6 +15,7 @@ import '../domain/mail_gateway.dart';
 import '../domain/mail_message.dart';
 import 'compose_draft.dart';
 import 'mail_error_messages.dart';
+import 'recipient_field.dart';
 
 /// Compose a text-only message. The sender is always the signed-in account
 /// address — there is no From field to edit. A send in flight disables the
@@ -166,32 +167,20 @@ class _MailComposeScreenState extends ConsumerState<MailComposeScreen> {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
-              TextFormField(
+              RecipientAutocompleteField(
                 controller: _toController,
                 enabled: !sending,
-                keyboardType: TextInputType.emailAddress,
-                autocorrect: false,
-                enableSuggestions: false,
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText: l10n.mailComposeTo,
-                  helperText: l10n.mailComposeRecipientsHint,
-                  prefixIcon: const Icon(Icons.alternate_email),
-                ),
+                label: l10n.mailComposeTo,
+                helperText: l10n.mailComposeRecipientsHint,
+                icon: Icons.alternate_email,
                 validator: _validateTo,
               ),
               const SizedBox(height: AppSpacing.md),
-              TextFormField(
+              RecipientAutocompleteField(
                 controller: _ccController,
                 enabled: !sending,
-                keyboardType: TextInputType.emailAddress,
-                autocorrect: false,
-                enableSuggestions: false,
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText: l10n.mailComposeCc,
-                  prefixIcon: const Icon(Icons.group_outlined),
-                ),
+                label: l10n.mailComposeCc,
+                icon: Icons.group_outlined,
                 validator: _validateCc,
               ),
               const SizedBox(height: AppSpacing.md),

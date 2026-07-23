@@ -30,6 +30,10 @@ abstract final class PreferenceKeys {
   /// The slugs the user is currently subscribed to.
   static const String channelSelectedSlugs = 'news.channels.selected.v1';
 
+  /// `1` when the mail sync should also download attachment bytes for offline
+  /// use, absent/`0` otherwise. Stored as an int flag.
+  static const String mailDownloadAttachments = 'mail.downloadAttachments.v1';
+
   /// Current schema version of the channel subscription store.
   static const int channelStoreCurrentVersion = 1;
 }

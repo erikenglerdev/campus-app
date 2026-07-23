@@ -1,9 +1,12 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Sommer
 
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../core/locale/formatters.dart';
@@ -181,10 +184,23 @@ class _AttachmentView extends StatelessWidget {
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
+  Future<void> _share() async {
+    final Uint8List? bytes = attachment.bytes;
+    if (bytes == null) return;
+    await SharePlus.instance.share(
+      ShareParams(
+        files: <XFile>[XFile.fromData(bytes, mimeType: attachment.mediaType)],
+        fileNameOverrides: <String>[attachment.filename],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     final TextTheme text = Theme.of(context).textTheme;
     final int? size = attachment.sizeBytes;
+    final Uint8List? imageBytes = attachment.isImage ? attachment.bytes : null;
     final String subtitle = <String>[
       attachment.mediaType,
       if (size != null) _sizeLabel(size),
@@ -196,11 +212,11 @@ class _AttachmentView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          if (attachment.imageBytes != null)
+          if (imageBytes != null)
             ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 320),
               child: Image.memory(
-                attachment.imageBytes!,
+                imageBytes,
                 fit: BoxFit.contain,
                 errorBuilder: (_, _, _) => const SizedBox.shrink(),
               ),
@@ -217,6 +233,14 @@ class _AttachmentView extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             subtitle: Text(subtitle, style: text.bodySmall),
+            // A share/save action only appears once the content is downloaded.
+            trailing: attachment.isDownloaded
+                ? IconButton(
+                    onPressed: _share,
+                    tooltip: l10n.mailAttachmentShare,
+                    icon: const Icon(Icons.ios_share),
+                  )
+                : null,
           ),
         ],
       ),

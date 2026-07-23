@@ -75,16 +75,17 @@ class MailMessageDetail {
 
 /// One attachment of a message.
 ///
-/// [imageBytes] is populated only for image attachments so they can be shown
-/// inline from memory — no file is written and nothing is fetched from the
-/// network. Other attachments carry metadata only.
+/// [bytes] holds the decoded content: images always carry it (for the inline
+/// preview from memory — no file written, nothing fetched from the network),
+/// and other types carry it only once downloaded (the offline setting). When
+/// [bytes] is null only metadata is known.
 @immutable
 class MailAttachment {
   const MailAttachment({
     required this.filename,
     required this.mediaType,
     this.sizeBytes,
-    this.imageBytes,
+    this.bytes,
   });
 
   final String filename;
@@ -92,9 +93,12 @@ class MailAttachment {
   /// e.g. `image/png`, `application/pdf`.
   final String mediaType;
   final int? sizeBytes;
-  final Uint8List? imageBytes;
+  final Uint8List? bytes;
 
   bool get isImage => mediaType.toLowerCase().startsWith('image/');
+
+  /// True when the content is on the device (previewable / shareable offline).
+  bool get isDownloaded => bytes != null;
 }
 
 /// An outgoing plain-text message.

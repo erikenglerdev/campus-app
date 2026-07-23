@@ -48,6 +48,9 @@ dependencies:
   # Credentials in the device keychain/keystore. NEVER SharedPreferences/Hive.
   flutter_secure_storage: ^10.3.1
 
+  # Share/save downloaded mail attachments via the OS share sheet.
+  share_plus: ^12.0.0
+
   # App version for the About screen
   package_info_plus: ^9.0.0
 

@@ -26,13 +26,38 @@ Hochschule Anhalt verbindet. Es gibt bewusst **keinen** serverseitigen Mail-Prox
 - Das Passwort erscheint **nie** in Logs, Exceptions, Telemetrie, `toString()` oder
   Debug-Ausgaben. Das Protokoll-Debugging von `enough_mail` ist **aus**
   (`isLogEnabled: false`).
-- E-Mail-Inhalte werden **nicht dauerhaft** gespeichert; der bestehende Hive-Cache wird
-  für Mail **nicht** genutzt.
+- **Offline-Cache (bewusste Entscheidung):** Für schnelles und offline-fähiges Öffnen
+  werden INBOX-Kopfzeilen und -Inhalte (und, wenn eingeschaltet, Anhänge) in einer
+  **eigenen** Hive-Box (`campus_mail_cache_v1`, app-privat) zwischengespeichert. Das
+  **Passwort** liegt weiterhin **ausschließlich** im sicheren Schlüsselspeicher, **nie**
+  im Cache. „Account entfernen“ **löscht den Cache vollständig**.
 - HTML-Mails werden zu **reinem Text** reduziert. Kein WebView, kein JavaScript, **keine**
   automatische Nachladung entfernter Bilder. Links laufen nur über den bestehenden
   sicheren URL-Launcher (`https`/`mailto`/`tel`).
-- Verbindungen werden bei `dispose`/Account-Entfernen geschlossen. „Account entfernen“
-  löscht Adresse und Passwort vollständig aus dem sicheren Speicher.
+- Verbindungen werden je Aufruf geöffnet und geschlossen. „Account entfernen“ löscht
+  Adresse und Passwort vollständig aus dem sicheren Speicher.
+
+## Offline & Synchronisierung
+
+- Der Posteingang wird aus dem Cache angezeigt — sofort und offline. Ein
+  Hintergrund-Sync (`MailSyncController`) hält ihn frisch, ohne die Bedienung zu
+  blockieren.
+- **Ausgelöst** wird der Sync beim **App-Start**, bei **Anmeldung**, **alle 10 Minuten**
+  (`kMailSyncInterval`, geplant im App-Shell) und **manuell** (Sync-Button /
+  Pull-to-Refresh).
+- Der Sync holt die **50 neuesten** INBOX-Header, **akkumuliert** sie in den Cache
+  (nichts wird gelöscht — der Offline-Bestand wächst über 50 hinaus) und lädt die
+  vollständigen Inhalte **neuer** Nachrichten im Hintergrund nach.
+- **Anhänge herunterladen** ist optional (Einstellungen → Studentische E-Mail). Nur bei
+  aktivierter Einstellung werden auch Nicht-Bild-Anhänge für die Offline-Nutzung geladen
+  und lassen sich über das OS-Teilen-Menü (`share_plus`) teilen/speichern; Bilder werden
+  ohnehin inline aus dem Speicher angezeigt.
+- **Empfängervorschläge:** Beim Verfassen schlägt das An-/Cc-Feld Adressen aus der
+  gecachten Mailhistorie (From/To/Cc) vor.
+
+> Anmerkung: Es gibt **kein** Sync, während die App vollständig geschlossen ist — dafür
+> wären native Hintergrunddienste (WorkManager/BGTaskScheduler) nötig, die dieses MVP
+> bewusst nicht einbindet. Sync läuft, solange die App läuft, plus beim nächsten Start.
 
 ## Schichten
 

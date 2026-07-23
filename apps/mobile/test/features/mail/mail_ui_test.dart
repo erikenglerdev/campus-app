@@ -4,6 +4,8 @@
 import 'dart:typed_data';
 
 import 'package:campus_koethen/features/mail/application/mail_providers.dart';
+import 'package:campus_koethen/features/mail/data/mail_cache.dart';
+import 'package:campus_koethen/features/mail/domain/mail_cache_store.dart';
 import 'package:campus_koethen/features/mail/domain/mail_credentials.dart';
 import 'package:campus_koethen/features/mail/domain/mail_folder.dart';
 import 'package:campus_koethen/features/mail/domain/mail_message.dart';
@@ -26,11 +28,13 @@ const MailCredentials _creds = MailCredentials(
 
 List<Override> _mail(
   FakeMailGateway gateway,
-  InMemoryMailCredentialStore store,
-) {
+  InMemoryMailCredentialStore store, {
+  MailCacheStore? cache,
+}) {
   return <Override>[
     mailGatewayProvider.overrideWithValue(gateway),
     mailCredentialStoreProvider.overrideWithValue(store),
+    if (cache != null) mailCacheStoreProvider.overrideWithValue(cache),
   ];
 }
 
@@ -151,17 +155,17 @@ void main() {
       expect(find.text('E-Mail-Adresse'), findsOneWidget);
     });
 
-    testWidgets('shows the inbox when an account is stored', (
+    testWidgets('shows the cached inbox when an account is stored', (
       WidgetTester tester,
     ) async {
       final store = InMemoryMailCredentialStore()..write(_creds);
+      // The INBOX is served from the offline cache — pre-populate it.
+      final MemoryMailCache cache = MemoryMailCache();
+      await cache.saveHeaders(<MailMessageHeader>[_header()]);
       await pumpScreen(
         tester,
         const MailScreen(),
-        overrides: _mail(
-          FakeMailGateway(inbox: <MailMessageHeader>[_header()]),
-          store,
-        ),
+        overrides: _mail(FakeMailGateway(), store, cache: cache),
       );
       await tester.pumpAndSettle();
 
@@ -223,7 +227,14 @@ void main() {
       expect(gateway.verifyCalls, 1);
       expect(store.writes, 1);
       expect(store.lastWritten?.displayName, 'Max Mustermensch');
-      expect(find.text('Posteingang'), findsOneWidget);
+      // The gate switched to the inbox (its app-bar title is the folder name).
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.text('Posteingang'),
+        ),
+        findsOneWidget,
+      );
     });
   });
 
@@ -278,7 +289,7 @@ void main() {
             MailAttachment(
               filename: 'bild.png',
               mediaType: 'image/png',
-              imageBytes: Uint8List.fromList(_pngBytes),
+              bytes: Uint8List.fromList(_pngBytes),
             ),
           ],
         ),

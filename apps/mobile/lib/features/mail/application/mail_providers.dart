@@ -4,8 +4,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/enough_mail_gateway.dart';
+import '../data/mail_cache.dart';
 import '../data/secure_mail_credential_store.dart';
 import '../domain/hsa_mail_profile.dart';
+import '../domain/mail_cache_store.dart';
 import '../domain/mail_credential_store.dart';
 import '../domain/mail_gateway.dart';
 
@@ -21,3 +23,8 @@ final Provider<MailCredentialStore> mailCredentialStoreProvider =
 final Provider<MailGateway> mailGatewayProvider = Provider<MailGateway>(
   (Ref ref) => EnoughMailGateway(ref.watch(hsaMailProfileProvider)),
 );
+
+/// Offline mail cache. Overridden in `main()` with the Hive-backed store and in
+/// tests with an in-memory one; the default keeps widget tests off the disk.
+final Provider<MailCacheStore> mailCacheStoreProvider =
+    Provider<MailCacheStore>((Ref ref) => MemoryMailCache());

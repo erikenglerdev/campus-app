@@ -185,6 +185,7 @@ class EnoughMailGateway implements MailGateway {
     domain.MailCredentials credentials, {
     String mailboxPath = kInboxPath,
     required String id,
+    bool includeAttachmentBytes = false,
   }) async {
     return _guard(() async {
       return _withImap<model.MailMessageDetail>(credentials, (
@@ -200,7 +201,45 @@ class EnoughMailGateway implements MailGateway {
         if (result.messages.isEmpty) {
           throw const MailFailure(MailFailureKind.protocol);
         }
-        return _toDetail(result.messages.first);
+        return _toDetail(result.messages.first, includeAttachmentBytes);
+      });
+    });
+  }
+
+  @override
+  Future<List<model.MailMessageDetail>> fetchMessages(
+    domain.MailCredentials credentials, {
+    String mailboxPath = kInboxPath,
+    required List<String> ids,
+    bool includeAttachmentBytes = false,
+  }) async {
+    if (ids.isEmpty) return const <model.MailMessageDetail>[];
+    return _guard(() async {
+      return _withImap<List<model.MailMessageDetail>>(credentials, (
+        ImapClient client,
+      ) async {
+        await _select(client, mailboxPath);
+        final List<int> uids = ids
+            .map(int.tryParse)
+            .whereType<int>()
+            .toList(growable: false);
+        final List<model.MailMessageDetail> details =
+            <model.MailMessageDetail>[];
+        // One session, one fetch per id: enough_mail returns whole messages per
+        // UID; a tighter batch API is not worth the risk of partial parsing.
+        for (final int uid in uids) {
+          final FetchImapResult result = await client.uidFetchMessages(
+            MessageSequence.fromRange(uid, uid, isUidSequence: true),
+            '(UID FLAGS ENVELOPE BODY.PEEK[])',
+            responseTimeout: _timeout,
+          );
+          if (result.messages.isNotEmpty) {
+            details.add(
+              _toDetail(result.messages.first, includeAttachmentBytes),
+            );
+          }
+        }
+        return details;
       });
     });
   }
@@ -322,7 +361,10 @@ class EnoughMailGateway implements MailGateway {
     );
   }
 
-  model.MailMessageDetail _toDetail(MimeMessage m) {
+  model.MailMessageDetail _toDetail(
+    MimeMessage m,
+    bool includeAttachmentBytes,
+  ) {
     final MailAddress? from = m.from?.firstOrNull ?? m.sender;
     final String? plain = m.decodeTextPlainPart();
     final String body = (plain != null && plain.trim().isNotEmpty)
@@ -351,25 +393,26 @@ class EnoughMailGateway implements MailGateway {
           .toList(),
       date: m.decodeDate(),
       body: body,
-      attachments: _attachmentsOf(m),
+      attachments: _attachmentsOf(m, includeAttachmentBytes),
     );
   }
 
-  /// Extracts attachment metadata. Image bytes are decoded from the already
-  /// downloaded message (no extra fetch, no network, no file written) so they
-  /// can be previewed inline; other types carry metadata only.
-  List<model.MailAttachment> _attachmentsOf(MimeMessage m) {
+  /// Extracts attachment metadata. Bytes are decoded from the already downloaded
+  /// message (no extra fetch, no network, no file written): images always (for
+  /// the inline preview) and — when [includeFiles] — other types too, so a
+  /// downloaded attachment is available offline.
+  List<model.MailAttachment> _attachmentsOf(MimeMessage m, bool includeFiles) {
     final List<ContentInfo> infos = m.findContentInfo();
     return infos.map((ContentInfo info) {
       final String type = info.mediaType?.text ?? 'application/octet-stream';
-      final Uint8List? bytes = info.isImage
+      final Uint8List? bytes = (info.isImage || includeFiles)
           ? m.getPart(info.fetchId)?.decodeContentBinary()
           : null;
       return model.MailAttachment(
         filename: info.fileName ?? info.fetchId,
         mediaType: type,
         sizeBytes: info.size ?? bytes?.length,
-        imageBytes: bytes,
+        bytes: bytes,
       );
     }).toList();
   }

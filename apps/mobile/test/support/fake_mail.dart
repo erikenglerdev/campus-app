@@ -51,6 +51,7 @@ class FakeMailGateway implements MailGateway {
     this.sendError,
     this.sentCopy = SentCopyResult.appended,
     this.folders = const <MailFolder>[],
+    this.detailsById = const <String, MailMessageDetail>{},
   });
 
   MailFailure? verifyError;
@@ -61,9 +62,13 @@ class FakeMailGateway implements MailGateway {
   SentCopyResult sentCopy;
   List<MailFolder> folders;
 
+  /// Full messages returned by [fetchMessage]/[fetchMessages], keyed by id.
+  Map<String, MailMessageDetail> detailsById;
+
   int verifyCalls = 0;
   int sendCalls = 0;
   int appendCalls = 0;
+  bool lastIncludeAttachmentBytes = false;
   final List<String> markedSeen = <String>[];
   final List<String> fetchedMailboxes = <String>[];
   final List<OutgoingMessage> sent = <OutgoingMessage>[];
@@ -96,10 +101,26 @@ class FakeMailGateway implements MailGateway {
     MailCredentials credentials, {
     String mailboxPath = kInboxPath,
     required String id,
+    bool includeAttachmentBytes = false,
   }) async {
-    final MailMessageDetail? d = detail;
+    lastIncludeAttachmentBytes = includeAttachmentBytes;
+    final MailMessageDetail? d = detailsById[id] ?? detail;
     if (d == null) throw const MailFailure(MailFailureKind.protocol);
     return d;
+  }
+
+  @override
+  Future<List<MailMessageDetail>> fetchMessages(
+    MailCredentials credentials, {
+    String mailboxPath = kInboxPath,
+    required List<String> ids,
+    bool includeAttachmentBytes = false,
+  }) async {
+    lastIncludeAttachmentBytes = includeAttachmentBytes;
+    return ids
+        .map((String id) => detailsById[id])
+        .whereType<MailMessageDetail>()
+        .toList();
   }
 
   @override

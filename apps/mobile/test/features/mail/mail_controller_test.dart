@@ -8,11 +8,14 @@ import 'package:campus_koethen/features/mail/application/mail_compose_controller
 import 'package:campus_koethen/features/mail/application/mail_folders.dart';
 import 'package:campus_koethen/features/mail/application/mail_inbox_controller.dart';
 import 'package:campus_koethen/features/mail/application/mail_providers.dart';
+import 'package:campus_koethen/features/mail/application/mail_sync_controller.dart';
+import 'package:campus_koethen/features/mail/data/mail_cache.dart';
 import 'package:campus_koethen/features/mail/domain/mail_credentials.dart';
 import 'package:campus_koethen/features/mail/domain/mail_failure.dart';
 import 'package:campus_koethen/features/mail/domain/mail_folder.dart';
 import 'package:campus_koethen/features/mail/domain/mail_gateway.dart';
 import 'package:campus_koethen/features/mail/domain/mail_message.dart';
+import 'package:campus_koethen/core/prefs/settings_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
@@ -27,16 +30,36 @@ const MailCredentials _creds = MailCredentials(
 ProviderContainer _container({
   required FakeMailGateway gateway,
   required InMemoryMailCredentialStore store,
+  MemoryMailCache? cache,
 }) {
   final ProviderContainer container = ProviderContainer(
     overrides: <Override>[
       mailGatewayProvider.overrideWithValue(gateway),
       mailCredentialStoreProvider.overrideWithValue(store),
+      if (cache != null) mailCacheStoreProvider.overrideWithValue(cache),
     ],
   );
   addTearDown(container.dispose);
   return container;
 }
+
+MailMessageHeader _hdr(String id) => MailMessageHeader(
+  id: id,
+  subject: 'Subject $id',
+  from: const MailAddress(email: 'alice@hs-anhalt.de', name: 'Alice'),
+  date: DateTime.utc(2026, 7, 20, 9, int.parse(id)),
+  isSeen: false,
+  hasAttachments: false,
+);
+
+MailMessageDetail _dtl(String id) => MailMessageDetail(
+  id: id,
+  subject: 'Subject $id',
+  from: const MailAddress(email: 'alice@hs-anhalt.de', name: 'Alice'),
+  to: const <MailAddress>[MailAddress(email: 'stud@hs-anhalt.de')],
+  date: DateTime.utc(2026, 7, 20, 9, int.parse(id)),
+  body: 'Body $id',
+);
 
 void main() {
   group('account load', () {
@@ -198,58 +221,139 @@ void main() {
   });
 
   group('inbox', () {
-    test('loads headers for the signed-in account', () async {
-      final headers = <MailMessageHeader>[
-        MailMessageHeader(
-          id: '42',
-          subject: 'Hallo',
-          from: const MailAddress(email: 'a@b.de', name: 'Alice'),
-          date: DateTime.utc(2026, 7, 23, 8),
-          isSeen: false,
-          hasAttachments: true,
-        ),
-      ];
+    test('serves the INBOX from the offline cache', () async {
       final store = InMemoryMailCredentialStore()..write(_creds);
-      final gateway = FakeMailGateway(inbox: headers);
-      final container = _container(gateway: gateway, store: store);
+      final cache = MemoryMailCache();
+      await cache.saveHeaders(<MailMessageHeader>[_hdr('7')]);
+      final container = _container(
+        gateway: FakeMailGateway(),
+        store: store,
+        cache: cache,
+      );
       await container.read(mailAccountControllerProvider.future);
 
       final result = await container.read(mailInboxControllerProvider.future);
       expect(result, hasLength(1));
-      expect(result.first.subject, 'Hallo');
+      expect(result.first.id, '7');
     });
 
-    test('maps a timeout to a typed failure', () async {
+    test(
+      'a non-inbox folder fetch maps a timeout to a typed failure',
+      () async {
+        final store = InMemoryMailCredentialStore()..write(_creds);
+        final gateway = FakeMailGateway(
+          fetchInboxError: const MailFailure(MailFailureKind.timeout),
+        );
+        final container = _container(gateway: gateway, store: store);
+        await container.read(mailAccountControllerProvider.future);
+        // A non-INBOX folder is fetched online, so it can fail with a timeout.
+        container
+            .read(selectedMailboxProvider.notifier)
+            .select(const MailFolder(path: 'Archiv', name: 'Archiv'));
+
+        final Completer<AsyncValue<List<MailMessageHeader>>> settled =
+            Completer<AsyncValue<List<MailMessageHeader>>>();
+        container.listen<AsyncValue<List<MailMessageHeader>>>(
+          mailInboxControllerProvider,
+          (_, AsyncValue<List<MailMessageHeader>> next) {
+            if (!next.isLoading && !settled.isCompleted) settled.complete(next);
+          },
+          fireImmediately: true,
+        );
+
+        final AsyncValue<List<MailMessageHeader>> result = await settled.future;
+        expect(result.hasError, isTrue);
+        expect(
+          result.error,
+          isA<MailFailure>().having(
+            (e) => e.kind,
+            'kind',
+            MailFailureKind.timeout,
+          ),
+        );
+      },
+    );
+  });
+
+  group('sync', () {
+    test(
+      'caches headers and prefetches new bodies, accumulating over time',
+      () async {
+        final store = InMemoryMailCredentialStore()..write(_creds);
+        final cache = MemoryMailCache();
+        final gateway = FakeMailGateway(
+          inbox: <MailMessageHeader>[_hdr('1')],
+          detailsById: <String, MailMessageDetail>{'1': _dtl('1')},
+        );
+        final container = _container(
+          gateway: gateway,
+          store: store,
+          cache: cache,
+        );
+        await container.read(mailAccountControllerProvider.future);
+
+        await container.read(mailSyncControllerProvider.notifier).syncNow();
+        expect(
+          (await cache.readHeaders()).map((MailMessageHeader h) => h.id),
+          <String>['1'],
+        );
+        expect(await cache.cachedMessageIds(), <String>{'1'});
+
+        // The server now shows a newer message and message 1 has scrolled off.
+        gateway.inbox = <MailMessageHeader>[_hdr('2')];
+        gateway.detailsById = <String, MailMessageDetail>{'2': _dtl('2')};
+        await container.read(mailSyncControllerProvider.notifier).syncNow();
+
+        // Accumulated: the previously cached message stays, the new one is added.
+        expect(
+          (await cache.readHeaders())
+              .map((MailMessageHeader h) => h.id)
+              .toSet(),
+          <String>{'1', '2'},
+        );
+        expect(await cache.cachedMessageIds(), <String>{'1', '2'});
+      },
+    );
+
+    test('downloads attachment bytes only when the setting is on', () async {
       final store = InMemoryMailCredentialStore()..write(_creds);
+      final cache = MemoryMailCache();
       final gateway = FakeMailGateway(
-        fetchInboxError: const MailFailure(MailFailureKind.timeout),
+        inbox: <MailMessageHeader>[_hdr('1')],
+        detailsById: <String, MailMessageDetail>{'1': _dtl('1')},
       );
-      final container = _container(gateway: gateway, store: store);
+      final container = _container(
+        gateway: gateway,
+        store: store,
+        cache: cache,
+      );
       await container.read(mailAccountControllerProvider.future);
 
-      // Drive the inbox the way a screen does — subscribe and inspect the
-      // resulting AsyncValue — rather than awaiting `.future`, which waits for a
-      // *next* value that a one-shot failing build never produces.
-      final Completer<AsyncValue<List<MailMessageHeader>>> settled =
-          Completer<AsyncValue<List<MailMessageHeader>>>();
-      container.listen<AsyncValue<List<MailMessageHeader>>>(
-        mailInboxControllerProvider,
-        (_, AsyncValue<List<MailMessageHeader>> next) {
-          if (!next.isLoading && !settled.isCompleted) settled.complete(next);
-        },
-        fireImmediately: true,
-      );
+      await container.read(mailSyncControllerProvider.notifier).syncNow();
+      expect(gateway.lastIncludeAttachmentBytes, isFalse);
 
-      final AsyncValue<List<MailMessageHeader>> result = await settled.future;
-      expect(result.hasError, isTrue);
-      expect(
-        result.error,
-        isA<MailFailure>().having(
-          (e) => e.kind,
-          'kind',
-          MailFailureKind.timeout,
-        ),
+      await container
+          .read(settingsProvider.notifier)
+          .setMailDownloadAttachments(true);
+      // Force a fresh prefetch by using a message not yet cached.
+      gateway.inbox = <MailMessageHeader>[_hdr('2')];
+      gateway.detailsById = <String, MailMessageDetail>{'2': _dtl('2')};
+      await container.read(mailSyncControllerProvider.notifier).syncNow();
+      expect(gateway.lastIncludeAttachmentBytes, isTrue);
+    });
+  });
+
+  group('mergeInboxHeaders', () {
+    test('unions by id, newest first, keeping cached ones', () {
+      final List<MailMessageHeader> merged = mergeInboxHeaders(
+        <MailMessageHeader>[_hdr('1'), _hdr('2')],
+        <MailMessageHeader>[_hdr('3'), _hdr('2')],
       );
+      expect(merged.map((MailMessageHeader h) => h.id), <String>[
+        '3',
+        '2',
+        '1',
+      ]);
     });
   });
 
