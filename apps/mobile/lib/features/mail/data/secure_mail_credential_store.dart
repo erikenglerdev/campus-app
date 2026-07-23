@@ -27,6 +27,7 @@ class SecureMailCredentialStore implements MailCredentialStore {
 
   static const String _emailKey = 'mail.hsa.email';
   static const String _passwordKey = 'mail.hsa.password';
+  static const String _nameKey = 'mail.hsa.name';
 
   @override
   Future<MailCredentials?> read() async {
@@ -34,7 +35,12 @@ class SecureMailCredentialStore implements MailCredentialStore {
       final String? email = await _storage.read(key: _emailKey);
       final String? password = await _storage.read(key: _passwordKey);
       if (email == null || password == null) return null;
-      return MailCredentials(emailAddress: email, password: password);
+      final String? name = await _storage.read(key: _nameKey);
+      return MailCredentials(
+        emailAddress: email,
+        password: password,
+        displayName: (name != null && name.isNotEmpty) ? name : null,
+      );
     } catch (_) {
       // An unreadable keystore is treated as "no account", never as a reason
       // to fall back to insecure storage.
@@ -47,6 +53,12 @@ class SecureMailCredentialStore implements MailCredentialStore {
     try {
       await _storage.write(key: _emailKey, value: credentials.emailAddress);
       await _storage.write(key: _passwordKey, value: credentials.password);
+      final String? name = credentials.displayName;
+      if (name != null && name.isNotEmpty) {
+        await _storage.write(key: _nameKey, value: name);
+      } else {
+        await _storage.delete(key: _nameKey);
+      }
     } catch (_) {
       // Do not leak the platform exception (it could echo written values);
       // surface only the classification. Best-effort clean up a partial write.
@@ -61,5 +73,6 @@ class SecureMailCredentialStore implements MailCredentialStore {
   Future<void> clear() async {
     await _storage.delete(key: _emailKey);
     await _storage.delete(key: _passwordKey);
+    await _storage.delete(key: _nameKey);
   }
 }

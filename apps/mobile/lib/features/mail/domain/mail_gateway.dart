@@ -16,14 +16,6 @@ enum SentCopyResult {
   noSentFolder,
 }
 
-/// Result of a send: the send itself either happened or threw; if it happened,
-/// [sentCopy] records what became of the Sent-folder copy.
-class SendOutcome {
-  const SendOutcome({required this.sentCopy});
-
-  final SentCopyResult sentCopy;
-}
-
 /// The single boundary to enough_mail.
 ///
 /// No enough_mail type appears in this interface, so neither the UI nor the
@@ -50,10 +42,16 @@ abstract interface class MailGateway {
   /// Marks a message as \Seen. Best effort — failure is non-fatal to the caller.
   Future<void> markSeen(MailCredentials credentials, String id);
 
-  /// Sends a plain-text message via SMTP submission, then attempts to store a
-  /// copy in the Sent folder. Throws [MailFailure] if the SMTP send itself
-  /// fails; a failed Sent copy is reported via [SendOutcome], not thrown.
-  Future<SendOutcome> send(
+  /// Sends a plain-text message via SMTP submission. Throws [MailFailure] if the
+  /// send fails. Deliberately does NOT touch the Sent folder: storing a copy is
+  /// a separate, slower step (a second IMAP connection) that must not keep the
+  /// user waiting on the compose screen after the message has already left.
+  Future<void> send(MailCredentials credentials, OutgoingMessage message);
+
+  /// Best-effort copy of an already-sent message into the Sent/Gesendet folder.
+  /// Never throws: the send has already succeeded, so any problem here is
+  /// reported through [SentCopyResult], not by failing.
+  Future<SentCopyResult> appendToSent(
     MailCredentials credentials,
     OutgoingMessage message,
   );

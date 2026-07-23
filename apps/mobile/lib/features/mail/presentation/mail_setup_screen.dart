@@ -29,6 +29,7 @@ class MailSetupScreen extends ConsumerStatefulWidget {
 
 class _MailSetupScreenState extends ConsumerState<MailSetupScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
@@ -36,6 +37,7 @@ class _MailSetupScreenState extends ConsumerState<MailSetupScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -54,6 +56,7 @@ class _MailSetupScreenState extends ConsumerState<MailSetupScreen> {
           .signIn(
             email: _emailController.text,
             password: _passwordController.text,
+            displayName: _nameController.text,
           );
       // On success the gate rebuilds into the inbox; nothing else to do here.
     } catch (error) {
@@ -107,6 +110,19 @@ class _MailSetupScreenState extends ConsumerState<MailSetupScreen> {
                 child: Text(l10n.aboutIndependenceNotice),
               ),
               const SizedBox(height: AppSpacing.lg),
+              TextFormField(
+                controller: _nameController,
+                enabled: !_busy,
+                textCapitalization: TextCapitalization.words,
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(
+                  labelText: l10n.mailSetupNameLabel,
+                  helperText: l10n.mailSetupNameHint,
+                  helperMaxLines: 2,
+                  prefixIcon: const Icon(Icons.badge_outlined),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _emailController,
                 enabled: !_busy,

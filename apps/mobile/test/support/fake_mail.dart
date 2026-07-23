@@ -18,6 +18,9 @@ class InMemoryMailCredentialStore implements MailCredentialStore {
   int writes = 0;
   int clears = 0;
 
+  /// The most recently written credentials (synchronous peek for assertions).
+  MailCredentials? get lastWritten => _stored;
+
   @override
   Future<MailCredentials?> read() async => _stored;
 
@@ -57,8 +60,10 @@ class FakeMailGateway implements MailGateway {
 
   int verifyCalls = 0;
   int sendCalls = 0;
+  int appendCalls = 0;
   final List<String> markedSeen = <String>[];
   final List<OutgoingMessage> sent = <OutgoingMessage>[];
+  final List<OutgoingMessage> appended = <OutgoingMessage>[];
 
   @override
   Future<void> verifyConnection(MailCredentials credentials) async {
@@ -91,13 +96,22 @@ class FakeMailGateway implements MailGateway {
   }
 
   @override
-  Future<SendOutcome> send(
+  Future<void> send(
     MailCredentials credentials,
     OutgoingMessage message,
   ) async {
     sendCalls++;
     if (sendError != null) throw sendError!;
     sent.add(message);
-    return SendOutcome(sentCopy: sentCopy);
+  }
+
+  @override
+  Future<SentCopyResult> appendToSent(
+    MailCredentials credentials,
+    OutgoingMessage message,
+  ) async {
+    appendCalls++;
+    appended.add(message);
+    return sentCopy;
   }
 }

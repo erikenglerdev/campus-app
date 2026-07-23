@@ -189,36 +189,59 @@ class EnoughMailGateway implements MailGateway {
     });
   }
 
+  /// Builds the MIME message once so the sent copy is identical to what was
+  /// submitted. From is ALWAYS the account address; [displayName], if given,
+  /// becomes only the friendly label (`"Name" <address>`).
+  MimeMessage _buildMime(
+    domain.MailCredentials credentials,
+    model.OutgoingMessage message,
+  ) {
+    return MessageBuilder.buildSimpleTextMessage(
+      MailAddress(credentials.displayName ?? '', credentials.emailAddress),
+      message.to
+          .map((String address) => MailAddress('', address))
+          .toList(growable: false),
+      message.text,
+      subject: message.subject,
+      cc: message.cc
+          .map((String address) => MailAddress('', address))
+          .toList(growable: false),
+    );
+  }
+
   @override
-  Future<SendOutcome> send(
+  Future<void> send(
     domain.MailCredentials credentials,
     model.OutgoingMessage message,
   ) async {
-    // 1) SMTP send. If this throws, nothing was sent.
-    final MimeMessage mime = MessageBuilder.buildSimpleTextMessage(
-      MailAddress('', credentials.emailAddress), // From == the account address
-      <MailAddress>[MailAddress('', message.to)],
-      message.text,
-      subject: message.subject,
-    );
-
+    final MimeMessage mime = _buildMime(credentials, message);
+    // SMTP send only. If this throws, nothing was sent. Storing a Sent copy is
+    // a separate call so the UI is not blocked on a second IMAP round trip.
     await _guard(() async {
       await _withSmtp(credentials, (SmtpClient client) async {
         await client.sendMessage(mime);
       });
     });
+  }
 
-    // 2) Best-effort copy into the Sent folder. A failure here NEVER re-sends
-    // and NEVER downgrades the send: it is reported, not thrown.
+  @override
+  Future<SentCopyResult> appendToSent(
+    domain.MailCredentials credentials,
+    model.OutgoingMessage message,
+  ) async {
+    // Never throws: the message has already been sent, so a copy failure is a
+    // reported outcome, not an error.
     try {
-      final SentCopyResult copy = await _appendToSent(credentials, mime);
-      return SendOutcome(sentCopy: copy);
+      return await _appendMimeToSent(
+        credentials,
+        _buildMime(credentials, message),
+      );
     } catch (_) {
-      return const SendOutcome(sentCopy: SentCopyResult.appendFailed);
+      return SentCopyResult.appendFailed;
     }
   }
 
-  Future<SentCopyResult> _appendToSent(
+  Future<SentCopyResult> _appendMimeToSent(
     domain.MailCredentials credentials,
     MimeMessage mime,
   ) async {
@@ -282,6 +305,12 @@ class EnoughMailGateway implements MailGateway {
         name: from?.personalName,
       ),
       to: (m.to ?? const <MailAddress>[])
+          .map(
+            (MailAddress a) =>
+                model.MailAddress(email: a.email, name: a.personalName),
+          )
+          .toList(),
+      cc: (m.cc ?? const <MailAddress>[])
           .map(
             (MailAddress a) =>
                 model.MailAddress(email: a.email, name: a.personalName),

@@ -4,6 +4,7 @@
 import 'package:campus_koethen/features/mail/application/mail_providers.dart';
 import 'package:campus_koethen/features/mail/domain/mail_credentials.dart';
 import 'package:campus_koethen/features/mail/domain/mail_message.dart';
+import 'package:campus_koethen/features/mail/presentation/compose_draft.dart';
 import 'package:campus_koethen/features/mail/presentation/mail_compose_screen.dart';
 import 'package:campus_koethen/features/mail/presentation/mail_message_screen.dart';
 import 'package:campus_koethen/features/mail/presentation/mail_screen.dart';
@@ -109,7 +110,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextFormField).first, 'not-an-email');
+      // Field order: Name, Email, Password.
+      await tester.enterText(find.byType(TextFormField).at(1), 'not-an-email');
       await tester.tap(find.text('Verbindung prüfen und anmelden'));
       await tester.pumpAndSettle();
 
@@ -131,16 +133,22 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // Field order: Name, Email, Password.
       await tester.enterText(
         find.byType(TextFormField).at(0),
+        'Max Mustermensch',
+      );
+      await tester.enterText(
+        find.byType(TextFormField).at(1),
         'stud@hs-anhalt.de',
       );
-      await tester.enterText(find.byType(TextFormField).at(1), 'pw');
+      await tester.enterText(find.byType(TextFormField).at(2), 'pw');
       await tester.tap(find.text('Verbindung prüfen und anmelden'));
       await tester.pumpAndSettle();
 
       expect(gateway.verifyCalls, 1);
       expect(store.writes, 1);
+      expect(store.lastWritten?.displayName, 'Max Mustermensch');
       expect(find.text('Posteingang'), findsOneWidget);
     });
   });
@@ -237,15 +245,45 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // Field order: To, Cc, Subject, Body.
       await tester.enterText(find.byType(TextFormField).at(0), 'x@y.de');
-      await tester.enterText(find.byType(TextFormField).at(1), 'Betreff');
-      await tester.enterText(find.byType(TextFormField).at(2), 'Text');
+      await tester.enterText(find.byType(TextFormField).at(2), 'Betreff');
+      await tester.enterText(find.byType(TextFormField).at(3), 'Text');
       await tester.tap(find.byIcon(Icons.send_outlined));
       await tester.pumpAndSettle();
 
       expect(gateway.sendCalls, 1);
-      expect(gateway.sent.single.to, 'x@y.de');
+      expect(gateway.sent.single.to, <String>['x@y.de']);
       expect(find.text('Nachricht gesendet.'), findsOneWidget);
+    });
+
+    testWidgets('prefills recipients and subject from a reply draft', (
+      WidgetTester tester,
+    ) async {
+      final store = InMemoryMailCredentialStore()..write(_creds);
+      final gateway = FakeMailGateway();
+      await pumpScreen(
+        tester,
+        const MailComposeScreen(
+          draft: ComposeDraft(
+            to: <String>['alice@hs-anhalt.de'],
+            cc: <String>['bob@hs-anhalt.de'],
+            subject: 'Re: Hallo',
+          ),
+        ),
+        overrides: _mail(gateway, store),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('alice@hs-anhalt.de'), findsOneWidget);
+      expect(find.text('bob@hs-anhalt.de'), findsOneWidget);
+      expect(find.text('Re: Hallo'), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.send_outlined));
+      await tester.pumpAndSettle();
+
+      expect(gateway.sent.single.to, <String>['alice@hs-anhalt.de']);
+      expect(gateway.sent.single.cc, <String>['bob@hs-anhalt.de']);
     });
   });
 }

@@ -3,13 +3,17 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../core/locale/formatters.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
+import '../application/mail_account_controller.dart';
 import '../application/mail_inbox_controller.dart';
 import '../domain/mail_message.dart';
+import 'compose_draft.dart';
 import 'mail_error_messages.dart';
 
 /// Reads one message. The body is already reduced to safe plain text by the
@@ -20,6 +24,35 @@ class MailMessageScreen extends ConsumerWidget {
 
   final String id;
 
+  /// Opens the compose screen pre-filled as a reply (or reply-all) to [detail].
+  void _reply(
+    BuildContext context,
+    WidgetRef ref,
+    MailMessageDetail detail, {
+    required bool all,
+  }) {
+    final AppLocalizations l10n = context.l10n;
+    final String locale = Localizations.localeOf(context).languageCode;
+    final String sender = detail.from.display.trim().isEmpty
+        ? detail.from.email
+        : detail.from.display;
+    final String date = detail.date != null
+        ? AppDateFormats.dateTime(detail.date!, locale)
+        : '';
+    final String attribution = l10n.mailReplyAttribution(date, sender);
+    final String self =
+        ref.read(mailAccountControllerProvider).value?.emailAddress ?? '';
+
+    final ComposeDraft draft = all
+        ? ComposeDraft.replyAll(
+            detail,
+            selfEmail: self,
+            attribution: attribution,
+          )
+        : ComposeDraft.reply(detail, attribution: attribution);
+    context.push(AppRoutes.mailCompose, extra: draft);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AppLocalizations l10n = context.l10n;
@@ -27,9 +60,26 @@ class MailMessageScreen extends ConsumerWidget {
     final AsyncValue<MailMessageDetail> message = ref.watch(
       mailMessageProvider(id),
     );
+    final MailMessageDetail? detail = message.value;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.mailTitle)),
+      appBar: AppBar(
+        title: Text(l10n.mailTitle),
+        actions: detail == null
+            ? null
+            : <Widget>[
+                IconButton(
+                  onPressed: () => _reply(context, ref, detail, all: false),
+                  tooltip: l10n.mailReply,
+                  icon: const Icon(Icons.reply),
+                ),
+                IconButton(
+                  onPressed: () => _reply(context, ref, detail, all: true),
+                  tooltip: l10n.mailReplyAll,
+                  icon: const Icon(Icons.reply_all),
+                ),
+              ],
+      ),
       body: message.when(
         loading: () => const LoadingView(),
         error: (Object error, _) => EmptyView(

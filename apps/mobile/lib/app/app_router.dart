@@ -10,6 +10,7 @@ import '../features/canteen/presentation/canteen_screen.dart';
 import '../features/contacts/presentation/contact_area_screen.dart';
 import '../features/contacts/presentation/contacts_list_screen.dart';
 import '../features/legal/presentation/legal_placeholder_screen.dart';
+import '../features/mail/presentation/compose_draft.dart';
 import '../features/mail/presentation/mail_compose_screen.dart';
 import '../features/mail/presentation/mail_message_screen.dart';
 import '../features/mail/presentation/mail_screen.dart';
@@ -109,8 +110,12 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.news}) {
                     routes: <RouteBase>[
                       GoRoute(
                         path: 'compose',
-                        builder: (BuildContext _, GoRouterState _) =>
-                            const MailComposeScreen(),
+                        builder: (BuildContext _, GoRouterState state) =>
+                            MailComposeScreen(
+                              draft: state.extra is ComposeDraft
+                                  ? state.extra as ComposeDraft
+                                  : null,
+                            ),
                       ),
                       GoRoute(
                         path: 'message/:id',

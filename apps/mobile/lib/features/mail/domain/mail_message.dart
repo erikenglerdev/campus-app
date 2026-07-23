@@ -48,12 +48,16 @@ class MailMessageDetail {
     required this.date,
     required this.body,
     required this.hasUnsupportedAttachments,
+    this.cc = const <MailAddress>[],
   });
 
   final String id;
   final String subject;
   final MailAddress from;
   final List<MailAddress> to;
+
+  /// Carbon-copy recipients. Needed so "reply all" can address everyone.
+  final List<MailAddress> cc;
   final DateTime? date;
 
   /// Already reduced to safe plain text by the gateway: text/plain preferred,
@@ -65,15 +69,21 @@ class MailMessageDetail {
 }
 
 /// An outgoing plain-text message.
+///
+/// [to] and [cc] are lists so a normal message, a reply and a "reply all" all
+/// use the same shape. The sender is never part of this object — it is always
+/// the signed-in account address, set by the gateway.
 @immutable
 class OutgoingMessage {
   const OutgoingMessage({
     required this.to,
     required this.subject,
     required this.text,
+    this.cc = const <String>[],
   });
 
-  final String to;
+  final List<String> to;
+  final List<String> cc;
   final String subject;
   final String text;
 }

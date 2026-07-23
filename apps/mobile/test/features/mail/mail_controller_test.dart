@@ -84,6 +84,34 @@ void main() {
       expect(state.emailAddress, 'stud@hs-anhalt.de');
     });
 
+    test(
+      'stores an optional display name and exposes it in the state',
+      () async {
+        final gateway = FakeMailGateway();
+        final store = InMemoryMailCredentialStore();
+        final container = _container(gateway: gateway, store: store);
+        final controller = container.read(
+          mailAccountControllerProvider.notifier,
+        );
+        await container.read(mailAccountControllerProvider.future);
+
+        await controller.signIn(
+          email: 'stud@hs-anhalt.de',
+          password: 'pw',
+          displayName: '  Max Mustermensch  ',
+        );
+
+        final state = container
+            .read(mailAccountControllerProvider)
+            .requireValue;
+        expect(state.displayName, 'Max Mustermensch', reason: 'trimmed');
+        expect(await store.read(), isNotNull);
+        expect((await store.read())!.displayName, 'Max Mustermensch');
+        // The address stays the sole identity; the name is only cosmetic.
+        expect(state.emailAddress, 'stud@hs-anhalt.de');
+      },
+    );
+
     test('rejects an invalid email without ever calling the server', () async {
       final gateway = FakeMailGateway();
       final store = InMemoryMailCredentialStore();
@@ -224,22 +252,28 @@ void main() {
   });
 
   group('send', () {
+    const OutgoingMessage message = OutgoingMessage(
+      to: <String>['x@y.de'],
+      subject: 'Hi',
+      text: 'Body',
+    );
+
     Future<MailComposeController> composer(ProviderContainer container) async {
       await container.read(mailAccountControllerProvider.future);
       return container.read(mailComposeControllerProvider.notifier);
     }
 
-    test('sends once and reports the Sent copy result', () async {
+    test('submits the message via SMTP and reports success', () async {
       final store = InMemoryMailCredentialStore()..write(_creds);
-      final gateway = FakeMailGateway(sentCopy: SentCopyResult.appended);
+      final gateway = FakeMailGateway();
       final container = _container(gateway: gateway, store: store);
       final c = await composer(container);
 
-      final outcome = await c.send(to: 'x@y.de', subject: 'Hi', text: 'Body');
+      final bool sent = await c.send(message);
 
+      expect(sent, isTrue);
       expect(gateway.sendCalls, 1);
-      expect(gateway.sent.single.to, 'x@y.de');
-      expect(outcome!.sentCopy, SentCopyResult.appended);
+      expect(gateway.sent.single.to, <String>['x@y.de']);
     });
 
     test('does not double-send while a send is in flight', () async {
@@ -248,14 +282,15 @@ void main() {
       final container = _container(gateway: gateway, store: store);
       final c = await composer(container);
 
-      final f1 = c.send(to: 'x@y.de', subject: 'Hi', text: 'Body');
-      final f2 = c.send(to: 'x@y.de', subject: 'Hi', text: 'Body');
-      await Future.wait(<Future<void>>[f1.then((_) {}), f2.then((_) {})]);
+      final Future<bool> f1 = c.send(message);
+      final Future<bool> f2 = c.send(message);
+      final List<bool> results = await Future.wait(<Future<bool>>[f1, f2]);
 
+      expect(results, containsAll(<bool>[true, false]));
       expect(gateway.sendCalls, 1, reason: 'the second trigger is ignored');
     });
 
-    test('a failed SMTP send throws and never reports success', () async {
+    test('a failed SMTP send throws and never records a send', () async {
       final store = InMemoryMailCredentialStore()..write(_creds);
       final gateway = FakeMailGateway(
         sendError: const MailFailure(MailFailureKind.network),
@@ -263,26 +298,30 @@ void main() {
       final container = _container(gateway: gateway, store: store);
       final c = await composer(container);
 
-      await expectLater(
-        c.send(to: 'x@y.de', subject: 'Hi', text: 'Body'),
-        throwsA(isA<MailFailure>()),
-      );
+      await expectLater(c.send(message), throwsA(isA<MailFailure>()));
       expect(gateway.sent, isEmpty);
     });
 
-    test(
-      'a successful send with a failed Sent copy still counts as sent',
-      () async {
-        final store = InMemoryMailCredentialStore()..write(_creds);
-        final gateway = FakeMailGateway(sentCopy: SentCopyResult.appendFailed);
-        final container = _container(gateway: gateway, store: store);
-        final c = await composer(container);
+    test('stores the Sent copy separately and reports the result', () async {
+      final store = InMemoryMailCredentialStore()..write(_creds);
+      final gateway = FakeMailGateway(sentCopy: SentCopyResult.appended);
+      final container = _container(gateway: gateway, store: store);
+      final c = await composer(container);
 
-        final outcome = await c.send(to: 'x@y.de', subject: 'Hi', text: 'Body');
+      final SentCopyResult result = await c.appendSentCopy(message);
 
-        expect(gateway.sendCalls, 1);
-        expect(outcome!.sentCopy, SentCopyResult.appendFailed);
-      },
-    );
+      expect(result, SentCopyResult.appended);
+      expect(gateway.appendCalls, 1);
+      expect(gateway.appended.single.to, <String>['x@y.de']);
+    });
+
+    test('a failed Sent copy is reported, not thrown', () async {
+      final store = InMemoryMailCredentialStore()..write(_creds);
+      final gateway = FakeMailGateway(sentCopy: SentCopyResult.appendFailed);
+      final container = _container(gateway: gateway, store: store);
+      final c = await composer(container);
+
+      expect(await c.appendSentCopy(message), SentCopyResult.appendFailed);
+    });
   });
 }

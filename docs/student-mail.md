@@ -92,11 +92,22 @@ Posteingang / Detail
 
 Verfassen / Senden
 
-- [ ] „Von“ ist die eigene Kontoadresse (nicht editierbar).
-- [ ] Senden an eine gültige Adresse: Erfolgsmeldung; die Nachricht liegt danach im
-      Ordner „Gesendet“ des Webmailers.
-- [ ] Schnelles Doppeltippen auf „Senden“ verschickt **nur einmal**.
+- [ ] „Von” ist die eigene Kontoadresse (nicht editierbar); ist beim Einrichten ein
+      Anzeigename gesetzt, sehen Empfänger `”Name” <adresse>`.
+- [ ] Senden an eine gültige Adresse: die App kehrt **sofort** nach dem SMTP-Versand
+      zum Posteingang zurück (kein Verweilen im Sende-Screen); die Kopie im Ordner
+      „Gesendet” wird im Hintergrund abgelegt, ein Hinweis erscheint nur, wenn das
+      nicht klappt.
+- [ ] Mehrere Empfänger in „An”/„Cc” mit Komma getrennt werden alle adressiert.
+- [ ] Schnelles Doppeltippen auf „Senden” verschickt **nur einmal**.
 - [ ] Ungültiger Empfänger → Validierung, kein Sendeversuch.
+
+Antworten
+
+- [ ] „Antworten” öffnet den Verfassen-Screen mit dem Absender als Empfänger,
+      „Re: …”-Betreff und zitiertem Originaltext.
+- [ ] „Allen antworten” adressiert zusätzlich alle ursprünglichen Empfänger (Cc),
+      **ohne** die eigene Adresse.
 
 Barrierefreiheit / i18n
 
@@ -107,5 +118,5 @@ Barrierefreiheit / i18n
 ## Bekannte Grenzen (bewusst)
 
 Kein Hintergrund-Sync, kein IMAP IDLE, kein Anhang-Download, kein Verschieben/Löschen,
-keine Ordnerverwaltung, keine mehrfachen Konten. Der MVP liest, öffnet und schreibt
-reinen Text — mehr nicht.
+keine Ordnerverwaltung, keine mehrfachen Konten. Der MVP liest, öffnet, beantwortet und
+schreibt reinen Text — mehr nicht.
