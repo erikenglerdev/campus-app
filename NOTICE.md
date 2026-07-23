@@ -101,6 +101,27 @@ Dieses Projekt verwendet Open-Source-Abhängigkeiten aus den Ökosystemen npm (S
 Prisma) und pub.dev (Flutter, Riverpod, go_router, dio, hive_ce), die jeweils unter ihren eigenen
 Lizenzen stehen — überwiegend MIT, Apache-2.0 und BSD-3-Clause.
 
+Der Client für die studentische E-Mail nutzt zusätzlich:
+
+| Paket (pub.dev)         | Zweck                                   | Lizenz         |
+| ----------------------- | --------------------------------------- | -------------- |
+| `enough_mail`           | IMAP-/SMTP-/MIME-Client                 | `MPL-2.0`      |
+| `enough_convert`        | Zeichensatz-Dekodierung (transitiv)     | `MPL-2.0`      |
+| `flutter_secure_storage`| Geräte-Schlüsselspeicher für Zugangsdaten | `BSD-3-Clause` |
+| `meta`                  | Annotationen (`@immutable` u. a.)       | `BSD-3-Clause` |
+
+`enough_mail` und `enough_convert` stehen unter der **Mozilla Public License 2.0**. Ihr Quellcode
+wird **nicht** in dieses Repository einvendort und **nicht** verändert; er wird ausschließlich als
+unveränderte pub.dev-Abhängigkeit eingebunden. Die MPL-2.0 ist auf Dateiebene copyleft und über
+ihre „Secondary License“-Klausel (§ 3.3) mit der AGPL-3.0 des Projekts vereinbar.
+
+Da die App in ausgelieferter Form (APK/IPA) den kompilierten Code dieser Pakete enthält, verlangt
+MPL-2.0 § 3.2(b), Empfänger auf den **unveränderten Quellcode** hinzuweisen. Dieser ist öffentlich
+und unverändert verfügbar unter <https://pub.dev/packages/enough_mail> bzw.
+<https://pub.dev/packages/enough_convert>; die exakt eingebundene Version steht in
+`apps/mobile/pubspec.lock`. Zusätzlich zeigt der Flutter-Client den vollständigen MPL-Lizenztext
+zur Laufzeit über den `showLicensePage`-Dialog im About-Screen an.
+
 Die Abhängigkeiten werden **nicht** in dieses Repository einvendort. Maßgeblich und
 maschinenlesbar sind:
 
