@@ -15,9 +15,20 @@ abstract final class AppRoutes {
   static const String contactAreaName = 'contact-area';
   static const String contactAreaPath = ':slug';
 
-  static const String settings = '/settings';
-  static const String about = '/settings/about';
-  static const String imprint = '/settings/imprint';
-  static const String privacy = '/settings/privacy';
-  static const String channels = '/settings/channels';
+  /// "Mehr" is the fifth top-level destination. Settings and the student email
+  /// client both live underneath it — neither is a tab of its own.
+  static const String more = '/more';
+
+  // Student email client, nested under More.
+  static const String mail = '/more/mail';
+  static const String mailCompose = '/more/mail/compose';
+  static const String mailMessageName = 'mail-message';
+  static const String mailMessage = '/more/mail/message/:id';
+
+  // Settings is a sub-page of More.
+  static const String settings = '/more/settings';
+  static const String about = '/more/settings/about';
+  static const String imprint = '/more/settings/imprint';
+  static const String privacy = '/more/settings/privacy';
+  static const String channels = '/more/settings/channels';
 }

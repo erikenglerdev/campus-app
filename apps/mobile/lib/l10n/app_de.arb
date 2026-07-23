@@ -26,6 +26,10 @@
   "@navSettings": {
     "description": "Label des Einstellungen-Tabs in der unteren Navigation."
   },
+  "navMore": "Mehr",
+  "@navMore": {
+    "description": "Label des Mehr-Tabs in der unteren Navigation."
+  },
   "navigationSemanticLabel": "Hauptnavigation",
   "@navigationSemanticLabel": {
     "description": "Screenreader-Label der unteren Navigationsleiste."
@@ -543,8 +547,124 @@
   "@imprintPlaceholderBody": {},
   "privacyPlaceholderBody": "Diese Seite ist ein Platzhalter. Eine rechtsverbindliche Datenschutzerklärung liegt noch nicht vor. Es werden hier bewusst keine Angaben zu Verantwortlichen oder Verarbeitungszwecken gemacht.",
   "@privacyPlaceholderBody": {},
+  "privacyMailTitle": "Studentische E-Mail",
+  "@privacyMailTitle": {},
+  "privacyMailBody": "Wenn du die studentische E-Mail nutzt, verbindet sich die App direkt und verschlüsselt mit dem Mailserver der Hochschule Anhalt (mail.hs-anhalt.de). Es gibt keinen Zwischenserver: Weder die Server dieser App noch Dritte erhalten deine Zugangsdaten oder deine E-Mails. E-Mail-Adresse und Passwort werden ausschließlich im sicheren Schlüsselspeicher deines Geräts abgelegt. Nachrichteninhalte werden nur zur Anzeige geladen und nicht dauerhaft in der App gespeichert. Über „Account entfernen“ werden E-Mail-Adresse und Passwort vollständig vom Gerät gelöscht.",
+  "@privacyMailBody": {},
   "legalOperatorNotConfirmed": "Der Betreiber der App ist noch nicht bestätigt. Solange das nicht geklärt ist, wird an dieser Stelle keine verantwortliche Stelle benannt.",
   "@legalOperatorNotConfirmed": {},
   "legalNotPublishedHint": "Die App befindet sich in Entwicklung und ist nicht veröffentlicht.",
-  "@legalNotPublishedHint": {}
+  "@legalNotPublishedHint": {},
+
+  "moreTitle": "Mehr",
+  "@moreTitle": {},
+  "moreMail": "Studentische E-Mail",
+  "@moreMail": {},
+  "moreMailSubtitle": "Postfach der Hochschule Anhalt",
+  "@moreMailSubtitle": {},
+  "moreSettings": "Einstellungen",
+  "@moreSettings": {},
+
+  "mailTitle": "Studentische E-Mail",
+  "@mailTitle": {},
+  "mailSetupHeadline": "Mit dem Hochschulpostfach verbinden",
+  "@mailSetupHeadline": {},
+  "mailSetupIntro": "Die App verbindet sich direkt und verschlüsselt mit dem Mailserver der Hochschule Anhalt (mail.hs-anhalt.de). Es gibt keinen Zwischenserver.",
+  "@mailSetupIntro": {},
+  "mailSetupPrivacy": "Deine Zugangsdaten werden ausschließlich im sicheren Schlüsselspeicher dieses Geräts abgelegt. Sie erreichen niemals die Server dieser App, und diese App speichert keine E-Mails dauerhaft.",
+  "@mailSetupPrivacy": {},
+  "mailSetupEmailLabel": "E-Mail-Adresse",
+  "@mailSetupEmailLabel": {},
+  "mailSetupEmailHint": "vorname.nachname@hs-anhalt.de",
+  "@mailSetupEmailHint": {},
+  "mailSetupPasswordLabel": "Passwort",
+  "@mailSetupPasswordLabel": {},
+  "mailSetupSubmit": "Verbindung prüfen und anmelden",
+  "@mailSetupSubmit": {},
+  "mailSetupWebmailLink": "Webmail im Browser öffnen",
+  "@mailSetupWebmailLink": {},
+  "mailSetupInvalidEmail": "Bitte gib eine gültige E-Mail-Adresse ein.",
+  "@mailSetupInvalidEmail": {},
+  "mailSetupPasswordRequired": "Bitte gib dein Passwort ein.",
+  "@mailSetupPasswordRequired": {},
+
+  "mailInboxTitle": "Posteingang",
+  "@mailInboxTitle": {},
+  "mailInboxEmpty": "Keine Nachrichten im Posteingang.",
+  "@mailInboxEmpty": {},
+  "mailComposeTooltip": "Neue Nachricht verfassen",
+  "@mailComposeTooltip": {},
+  "mailRefresh": "Aktualisieren",
+  "@mailRefresh": {},
+  "mailRetry": "Erneut versuchen",
+  "@mailRetry": {},
+  "mailNoSubject": "(Kein Betreff)",
+  "@mailNoSubject": {},
+  "mailUnknownSender": "(Unbekannter Absender)",
+  "@mailUnknownSender": {},
+  "mailSignedInAs": "Angemeldet als {email}",
+  "@mailSignedInAs": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "mailAccountRemove": "Account entfernen",
+  "@mailAccountRemove": {},
+  "mailAccountRemoveConfirmTitle": "Account entfernen?",
+  "@mailAccountRemoveConfirmTitle": {},
+  "mailAccountRemoveConfirmBody": "E-Mail-Adresse und Passwort werden vollständig vom Gerät gelöscht. Deine E-Mails auf dem Server bleiben unverändert.",
+  "@mailAccountRemoveConfirmBody": {},
+  "mailAccountRemoveConfirm": "Entfernen",
+  "@mailAccountRemoveConfirm": {},
+  "mailCancel": "Abbrechen",
+  "@mailCancel": {},
+
+  "mailMessageAttachmentsUnsupported": "Diese Nachricht enthält Anhänge. Anhänge werden in dieser App nicht angezeigt.",
+  "@mailMessageAttachmentsUnsupported": {},
+  "mailMessageRemoteImagesBlocked": "Bilder aus dem Internet werden zum Schutz deiner Privatsphäre nicht automatisch geladen.",
+  "@mailMessageRemoteImagesBlocked": {},
+
+  "mailComposeTitle": "Neue Nachricht",
+  "@mailComposeTitle": {},
+  "mailComposeFrom": "Von {email}",
+  "@mailComposeFrom": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "mailComposeTo": "An",
+  "@mailComposeTo": {},
+  "mailComposeSubject": "Betreff",
+  "@mailComposeSubject": {},
+  "mailComposeBody": "Nachricht",
+  "@mailComposeBody": {},
+  "mailComposeSend": "Senden",
+  "@mailComposeSend": {},
+  "mailComposeInvalidRecipient": "Bitte gib eine gültige Empfängeradresse ein.",
+  "@mailComposeInvalidRecipient": {},
+  "mailComposeSent": "Nachricht gesendet.",
+  "@mailComposeSent": {},
+  "mailComposeSentNoCopy": "Nachricht gesendet. Es konnte keine Kopie im Ordner „Gesendet“ abgelegt werden.",
+  "@mailComposeSentNoCopy": {},
+
+  "mailErrorInvalidCredentials": "Anmeldung fehlgeschlagen. Bitte prüfe E-Mail-Adresse und Passwort.",
+  "@mailErrorInvalidCredentials": {},
+  "mailErrorNetwork": "Keine Verbindung zum Mailserver. Bitte prüfe deine Internetverbindung.",
+  "@mailErrorNetwork": {},
+  "mailErrorTimeout": "Zeitüberschreitung bei der Verbindung zum Mailserver.",
+  "@mailErrorTimeout": {},
+  "mailErrorTls": "Die gesicherte Verbindung zum Mailserver konnte nicht aufgebaut werden.",
+  "@mailErrorTls": {},
+  "mailErrorServerUnreachable": "Der Mailserver ist nicht erreichbar.",
+  "@mailErrorServerUnreachable": {},
+  "mailErrorProtocol": "Unerwartete Antwort vom Mailserver.",
+  "@mailErrorProtocol": {},
+  "mailErrorSecureStorage": "Die sichere Ablage auf diesem Gerät ist nicht verfügbar. Die Zugangsdaten können nicht gespeichert werden.",
+  "@mailErrorSecureStorage": {},
+  "mailErrorGeneric": "Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
+  "@mailErrorGeneric": {}
 }

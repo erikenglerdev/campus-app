@@ -31,11 +31,22 @@ dependencies:
   # Small scalar settings
   shared_preferences: ^2.5.3
 
+  # Annotations for pure-Dart domain models (@immutable)
+  meta: ^1.15.0
+
   # Formatting / i18n
   intl: any
 
   # Safe OS actions for links
   url_launcher: ^6.3.2
+
+
+  # Student email (IMAP/SMTP/MIME) — kept entirely behind MailGateway; no
+  # enough_mail type ever reaches the UI or the Riverpod controllers.
+  enough_mail: ^2.1.7
+
+  # Credentials in the device keychain/keystore. NEVER SharedPreferences/Hive.
+  flutter_secure_storage: ^10.3.1
 
   # App version for the About screen
   package_info_plus: ^9.0.0

@@ -1,0 +1,47 @@
+// Campus Köthen App · AGPL-3.0-only
+// Copyright © 2026 Erik Engler and Jona Sommer
+
+import 'package:meta/meta.dart';
+
+/// The only two inputs the login needs.
+///
+/// The email address is the IMAP username, the SMTP username AND the sender
+/// address. There is intentionally no separate username, login, matrikel or
+/// sender field, and nothing is derived from the address.
+///
+/// [toString] is overridden to guarantee the password can never leak into a
+/// log, an exception, telemetry or a debug dump.
+@immutable
+class MailCredentials {
+  const MailCredentials({required this.emailAddress, required this.password});
+
+  final String emailAddress;
+  final String password;
+
+  @override
+  bool operator ==(Object other) =>
+      other is MailCredentials &&
+      other.emailAddress == emailAddress &&
+      other.password == password;
+
+  @override
+  int get hashCode => Object.hash(emailAddress, password);
+
+  /// Deliberately omits the password AND the word "password" so no automatic
+  /// string interpolation can ever surface it.
+  @override
+  String toString() => 'MailCredentials(<redacted> for $emailAddress)';
+}
+
+/// Conservative email check: exactly one `@`, a non-empty local part, and a
+/// domain with a dot. Deliberately strict-but-simple rather than a full RFC
+/// grammar, which would accept forms no mail server here uses.
+bool isValidEmailAddress(String? raw) {
+  final String value = (raw ?? '').trim();
+  final RegExp pattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+  return pattern.hasMatch(value);
+}
+
+/// Trims surrounding whitespace only. The local part is case-sensitive per
+/// spec, so the address is never lowercased or otherwise rewritten.
+String normalizeEmailAddress(String raw) => raw.trim();

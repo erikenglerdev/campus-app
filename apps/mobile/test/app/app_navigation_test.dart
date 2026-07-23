@@ -70,7 +70,7 @@ void main() {
       bar.destinations.cast<NavigationDestination>().map(
         (NavigationDestination destination) => destination.label,
       ),
-      <String>['News', 'Stundenplan', 'Mensa', 'Kontakte', 'Einstellungen'],
+      <String>['News', 'Stundenplan', 'Mensa', 'Kontakte', 'Mehr'],
     );
   });
 
@@ -105,7 +105,7 @@ void main() {
       'Stundenplan',
       'Mensa',
       'Kontakte',
-      'Einstellungen',
+      'Mehr',
     ]) {
       expect(
         find.descendant(

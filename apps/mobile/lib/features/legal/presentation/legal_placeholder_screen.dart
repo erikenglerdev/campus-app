@@ -54,6 +54,18 @@ class LegalPlaceholderScreen extends StatelessWidget {
           Text(body, style: text.bodyLarge),
           const SizedBox(height: AppSpacing.lg),
           Text(l10n.legalOperatorNotConfirmed, style: text.bodyMedium),
+          if (page == LegalPage.privacy) ...<Widget>[
+            const SizedBox(height: AppSpacing.xl),
+            Semantics(
+              header: true,
+              child: Text(l10n.privacyMailTitle, style: text.titleMedium),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            // Factual description of how the mail feature handles data. This is
+            // transparency about the app's technical behaviour, not a binding
+            // privacy policy and names no operator — the release gate stands.
+            Text(l10n.privacyMailBody, style: text.bodyMedium),
+          ],
           const SizedBox(height: AppSpacing.xl),
           Semantics(
             header: true,

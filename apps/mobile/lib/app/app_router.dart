@@ -10,6 +10,10 @@ import '../features/canteen/presentation/canteen_screen.dart';
 import '../features/contacts/presentation/contact_area_screen.dart';
 import '../features/contacts/presentation/contacts_list_screen.dart';
 import '../features/legal/presentation/legal_placeholder_screen.dart';
+import '../features/mail/presentation/mail_compose_screen.dart';
+import '../features/mail/presentation/mail_message_screen.dart';
+import '../features/mail/presentation/mail_screen.dart';
+import '../features/more/presentation/more_screen.dart';
 import '../features/news/presentation/news_detail_screen.dart';
 import '../features/news/presentation/news_list_screen.dart';
 import '../features/settings/presentation/channel_settings_screen.dart';
@@ -94,29 +98,60 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.news}) {
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
-                path: AppRoutes.settings,
+                path: AppRoutes.more,
                 builder: (BuildContext _, GoRouterState _) =>
-                    const SettingsScreen(),
+                    const MoreScreen(),
                 routes: <RouteBase>[
                   GoRoute(
-                    path: 'about',
+                    path: 'mail',
                     builder: (BuildContext _, GoRouterState _) =>
-                        const AboutScreen(),
+                        const MailScreen(),
+                    routes: <RouteBase>[
+                      GoRoute(
+                        path: 'compose',
+                        builder: (BuildContext _, GoRouterState _) =>
+                            const MailComposeScreen(),
+                      ),
+                      GoRoute(
+                        path: 'message/:id',
+                        name: AppRoutes.mailMessageName,
+                        builder: (BuildContext _, GoRouterState state) =>
+                            MailMessageScreen(
+                              id: state.pathParameters['id'] ?? '',
+                            ),
+                      ),
+                    ],
                   ),
                   GoRoute(
-                    path: 'channels',
+                    path: 'settings',
                     builder: (BuildContext _, GoRouterState _) =>
-                        const ChannelSettingsScreen(),
-                  ),
-                  GoRoute(
-                    path: 'imprint',
-                    builder: (BuildContext _, GoRouterState _) =>
-                        const LegalPlaceholderScreen(page: LegalPage.imprint),
-                  ),
-                  GoRoute(
-                    path: 'privacy',
-                    builder: (BuildContext _, GoRouterState _) =>
-                        const LegalPlaceholderScreen(page: LegalPage.privacy),
+                        const SettingsScreen(),
+                    routes: <RouteBase>[
+                      GoRoute(
+                        path: 'about',
+                        builder: (BuildContext _, GoRouterState _) =>
+                            const AboutScreen(),
+                      ),
+                      GoRoute(
+                        path: 'channels',
+                        builder: (BuildContext _, GoRouterState _) =>
+                            const ChannelSettingsScreen(),
+                      ),
+                      GoRoute(
+                        path: 'imprint',
+                        builder: (BuildContext _, GoRouterState _) =>
+                            const LegalPlaceholderScreen(
+                              page: LegalPage.imprint,
+                            ),
+                      ),
+                      GoRoute(
+                        path: 'privacy',
+                        builder: (BuildContext _, GoRouterState _) =>
+                            const LegalPlaceholderScreen(
+                              page: LegalPage.privacy,
+                            ),
+                      ),
+                    ],
                   ),
                 ],
               ),
