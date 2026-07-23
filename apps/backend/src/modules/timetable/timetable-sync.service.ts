@@ -218,15 +218,21 @@ export class TimetableSyncService {
       }
 
       const now = new Date();
-      await this.prisma.$transaction(async (tx) => {
-        for (const group of seen) {
-          await tx.timetableGroup.upsert({
-            where: { source_externalId: { source: 'webuntis', externalId: group.externalId } },
-            create: { ...group, lastSeenAt: now },
-            update: { ...group, active: true, lastSeenAt: now },
-          });
-        }
-      });
+      await this.prisma.$transaction(
+        async (tx) => {
+          for (const group of seen) {
+            await tx.timetableGroup.upsert({
+              where: { source_externalId: { source: 'webuntis', externalId: group.externalId } },
+              create: { ...group, lastSeenAt: now },
+              update: { ...group, active: true, lastSeenAt: now },
+            });
+          }
+        },
+        // Same generous ceiling as the entries write: ~270 sequential upserts
+        // are comfortably within the default until one day they are not, so the
+        // catalogue gets the same headroom rather than a surprise P2028 later.
+        { timeout: 120_000, maxWait: 10_000 },
+      );
 
       // Only now — after a COMPLETE, non-empty, successful import — may a group
       // that upstream no longer offers be retired. It is deactivated, never
@@ -413,82 +419,96 @@ export class TimetableSyncService {
       const rangeEnd = new Date(`${to}T00:00:00.000Z`);
       const confirmedGroupIds = [...groupIdByExternal.values()];
 
-      const removed = await this.prisma.$transaction(async (tx) => {
-        const keptKeys: string[] = [];
+      const removed = await this.prisma.$transaction(
+        async (tx) => {
+          const keptKeys: string[] = [];
+          const links: Array<{ entryId: string; groupId: string }> = [];
 
-        for (const entry of entries.values()) {
-          const stored = await tx.timetableEntry.upsert({
-            where: { source_externalKey: { source: 'webuntis', externalKey: entry.externalKey } },
-            create: {
-              externalKey: entry.externalKey,
-              startsAt: entry.startsAt,
-              endsAt: entry.endsAt,
-              date: entry.date,
-              title: entry.title,
-              subjectCode: entry.subjectCode,
-              type: entry.type,
-              status: entry.status,
-              sourceStatus: entry.sourceStatus,
-              teachers: entry.teachers,
-              rooms: entry.rooms,
-              note: entry.note,
-            },
-            update: {
-              startsAt: entry.startsAt,
-              endsAt: entry.endsAt,
-              date: entry.date,
-              title: entry.title,
-              subjectCode: entry.subjectCode,
-              type: entry.type,
-              status: entry.status,
-              sourceStatus: entry.sourceStatus,
-              teachers: entry.teachers,
-              rooms: entry.rooms,
-              note: entry.note,
-              lastSeenAt: new Date(),
+          for (const entry of entries.values()) {
+            const stored = await tx.timetableEntry.upsert({
+              where: { source_externalKey: { source: 'webuntis', externalKey: entry.externalKey } },
+              create: {
+                externalKey: entry.externalKey,
+                startsAt: entry.startsAt,
+                endsAt: entry.endsAt,
+                date: entry.date,
+                title: entry.title,
+                subjectCode: entry.subjectCode,
+                type: entry.type,
+                status: entry.status,
+                sourceStatus: entry.sourceStatus,
+                teachers: entry.teachers,
+                rooms: entry.rooms,
+                note: entry.note,
+              },
+              update: {
+                startsAt: entry.startsAt,
+                endsAt: entry.endsAt,
+                date: entry.date,
+                title: entry.title,
+                subjectCode: entry.subjectCode,
+                type: entry.type,
+                status: entry.status,
+                sourceStatus: entry.sourceStatus,
+                teachers: entry.teachers,
+                rooms: entry.rooms,
+                note: entry.note,
+                lastSeenAt: new Date(),
+              },
+            });
+            keptKeys.push(entry.externalKey);
+
+            for (const externalId of entry.groupExternalIds) {
+              const groupId = groupIdByExternal.get(externalId);
+              if (groupId) {
+                links.push({ entryId: stored.id, groupId });
+              }
+            }
+          }
+
+          // One bulk insert instead of a per-link upsert. Links are only ever
+          // ADDED (the join table has no updatable columns), and skipDuplicates
+          // handles a re-run against the composite primary key — so this is
+          // behaviour-identical to the previous upsert loop, minus ~one
+          // round-trip per link. That is what took the write phase past Prisma's
+          // 5s interactive-transaction limit on real data (~800 entries): the
+          // fixtures were far too small to reveal it.
+          if (links.length > 0) {
+            await tx.timetableEntryGroup.createMany({ data: links, skipDuplicates: true });
+          }
+
+          // Withdraw links only inside the confirmed window and only for groups
+          // this response actually covered. An entry attended by a group outside
+          // the confirmed set keeps that link.
+          const withdrawn = await tx.timetableEntryGroup.deleteMany({
+            where: {
+              groupId: { in: confirmedGroupIds },
+              entry: {
+                source: 'webuntis',
+                date: { gte: rangeStart, lte: rangeEnd },
+                externalKey: { notIn: keptKeys },
+              },
             },
           });
-          keptKeys.push(entry.externalKey);
 
-          const linkIds = entry.groupExternalIds
-            .map((externalId) => groupIdByExternal.get(externalId))
-            .filter((id): id is string => Boolean(id));
-
-          for (const groupId of linkIds) {
-            await tx.timetableEntryGroup.upsert({
-              where: { entryId_groupId: { entryId: stored.id, groupId } },
-              create: { entryId: stored.id, groupId },
-              update: {},
-            });
-          }
-        }
-
-        // Withdraw links only inside the confirmed window and only for groups
-        // this response actually covered. An entry attended by a group outside
-        // the confirmed set keeps that link.
-        const withdrawn = await tx.timetableEntryGroup.deleteMany({
-          where: {
-            groupId: { in: confirmedGroupIds },
-            entry: {
+          // Only entries that now belong to NOBODY are cleaned up. A lesson still
+          // attended by another group survives.
+          const orphans = await tx.timetableEntry.deleteMany({
+            where: {
               source: 'webuntis',
               date: { gte: rangeStart, lte: rangeEnd },
-              externalKey: { notIn: keptKeys },
+              groups: { none: {} },
             },
-          },
-        });
+          });
 
-        // Only entries that now belong to NOBODY are cleaned up. A lesson still
-        // attended by another group survives.
-        const orphans = await tx.timetableEntry.deleteMany({
-          where: {
-            source: 'webuntis',
-            date: { gte: rangeStart, lte: rangeEnd },
-            groups: { none: {} },
-          },
-        });
-
-        return withdrawn.count + orphans.count;
-      });
+          return withdrawn.count + orphans.count;
+        },
+        // Generous ceiling for the whole-catalogue write. The worker owns these
+        // tables exclusively and runs hourly, so holding one transaction for a
+        // few seconds costs nothing; the default 5s was simply too tight for a
+        // real timetable.
+        { timeout: 120_000, maxWait: 10_000 },
+      );
 
       await this.prisma.timetableSyncRun.update({
         where: { id: run.id },

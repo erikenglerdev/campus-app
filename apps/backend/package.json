@@ -24,6 +24,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "seed:canteens": "ts-node -r tsconfig-paths/register src/cli/seed-canteens.ts",
     "sync:canteens": "ts-node -r tsconfig-paths/register src/cli/sync-canteens.ts",
+    "sync:timetable": "ts-node -r tsconfig-paths/register src/cli/sync-timetable.ts",
     "openapi:generate": "ts-node -r tsconfig-paths/register src/cli/generate-openapi.ts"
   },
   "dependencies": {
