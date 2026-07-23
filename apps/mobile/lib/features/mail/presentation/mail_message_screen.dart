@@ -1,12 +1,9 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Sommer
 
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../core/locale/formatters.dart';
@@ -18,6 +15,7 @@ import '../application/mail_folders.dart';
 import '../application/mail_inbox_controller.dart';
 import '../domain/mail_message.dart';
 import 'compose_draft.dart';
+import 'mail_attachment_view.dart';
 import 'mail_error_messages.dart';
 
 /// Reads one message. The body is already reduced to safe plain text by the
@@ -156,7 +154,12 @@ class _MessageBody extends StatelessWidget {
           for (final MailAttachment attachment in detail.attachments)
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: _AttachmentView(attachment: attachment),
+              child: MailAttachmentView(
+                attachment: attachment,
+                // Images from hs-anhalt.de show automatically; others wait for
+                // an explicit "load image" tap.
+                autoShowImages: isTrustedImageSender(detail.from.email),
+              ),
             ),
         ],
         const SizedBox(height: AppSpacing.xl),
@@ -166,84 +169,6 @@ class _MessageBody extends StatelessWidget {
           muted: true,
         ),
       ],
-    );
-  }
-}
-
-/// Renders one attachment: image attachments show an inline preview from
-/// memory (nothing is written to disk, nothing is fetched from the network);
-/// everything else shows a metadata tile.
-class _AttachmentView extends StatelessWidget {
-  const _AttachmentView({required this.attachment});
-
-  final MailAttachment attachment;
-
-  String _sizeLabel(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
-
-  Future<void> _share() async {
-    final Uint8List? bytes = attachment.bytes;
-    if (bytes == null) return;
-    await SharePlus.instance.share(
-      ShareParams(
-        files: <XFile>[XFile.fromData(bytes, mimeType: attachment.mediaType)],
-        fileNameOverrides: <String>[attachment.filename],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l10n = context.l10n;
-    final TextTheme text = Theme.of(context).textTheme;
-    final int? size = attachment.sizeBytes;
-    final Uint8List? imageBytes = attachment.isImage ? attachment.bytes : null;
-    final String subtitle = <String>[
-      attachment.mediaType,
-      if (size != null) _sizeLabel(size),
-    ].join(' · ');
-
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          if (imageBytes != null)
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 320),
-              child: Image.memory(
-                imageBytes,
-                fit: BoxFit.contain,
-                errorBuilder: (_, _, _) => const SizedBox.shrink(),
-              ),
-            ),
-          ListTile(
-            leading: Icon(
-              attachment.isImage
-                  ? Icons.image_outlined
-                  : Icons.insert_drive_file_outlined,
-            ),
-            title: Text(
-              attachment.filename,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Text(subtitle, style: text.bodySmall),
-            // A share/save action only appears once the content is downloaded.
-            trailing: attachment.isDownloaded
-                ? IconButton(
-                    onPressed: _share,
-                    tooltip: l10n.mailAttachmentShare,
-                    icon: const Icon(Icons.ios_share),
-                  )
-                : null,
-          ),
-        ],
-      ),
     );
   }
 }

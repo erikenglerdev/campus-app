@@ -53,6 +53,7 @@ dependencies:
 
   # App version for the About screen
   package_info_plus: ^9.0.0
+  pdfx: ^2.9.2
 
 dev_dependencies:
   flutter_test:

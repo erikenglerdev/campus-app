@@ -109,6 +109,7 @@ Der Client für die studentische E-Mail nutzt zusätzlich:
 | `enough_convert`        | Zeichensatz-Dekodierung (transitiv)     | `MPL-2.0`      |
 | `flutter_secure_storage`| Geräte-Schlüsselspeicher für Zugangsdaten | `BSD-3-Clause` |
 | `share_plus`            | Anhänge über das OS-Teilen-Menü teilen  | `BSD-3-Clause` |
+| `pdfx`                  | PDF-Anhänge in-App anzeigen (nativer Renderer) | `MIT`   |
 | `meta`                  | Annotationen (`@immutable` u. a.)       | `BSD-3-Clause` |
 
 `enough_mail` und `enough_convert` stehen unter der **Mozilla Public License 2.0**. Ihr Quellcode

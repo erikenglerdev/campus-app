@@ -112,9 +112,12 @@ Posteingang / Detail
 - [ ] Ungelesene sind nicht nur über Farbe erkennbar (Icon/Fettung).
 - [ ] Öffnen einer Nachricht zeigt reinen Text; sie wird als gelesen markiert.
 - [ ] HTML-Mail wird als Text dargestellt; entfernte Bilder werden **nicht** geladen.
-- [ ] Mail mit Anhang zeigt die Anhänge: Bilder als Inline-Vorschau (aus dem Speicher,
-      kein Netzwerkabruf, keine Datei geschrieben), andere Typen als Kachel mit Name,
-      Typ und Größe.
+- [ ] Mail mit Anhang zeigt die Anhänge; Bild-Anhänge von einer `@hs-anhalt.de`-Adresse
+      erscheinen automatisch inline, von anderen Absendern erst nach Tippen auf
+      „Bild laden“.
+- [ ] Tippen auf einen Anhang öffnet ihn **in der App**: Bilder zoombar, PDFs im
+      nativen Renderer (kein WebView), Textdateien als Text; andere Typen bieten
+      „Teilen/Speichern“.
 - [ ] Flugmodus → Aktualisieren zeigt einen Fehler mit „Erneut versuchen“, kein Absturz.
 
 Ordner
@@ -154,5 +157,5 @@ Barrierefreiheit / i18n
 
 Kein Hintergrund-Sync, kein IMAP IDLE, kein Verschieben/Löschen, keine Ordnerverwaltung
 (nur Lesen/Wechseln, kein Anlegen/Umbenennen), keine mehrfachen Konten. Anhänge werden
-**angezeigt** (Bilder inline, sonst Metadaten), aber nicht auf das Gerät gespeichert oder
-mit anderen Apps geöffnet. Der MVP liest, öffnet, beantwortet und schreibt reinen Text.
+**angezeigt** und lassen sich **in der App öffnen** (Bilder, PDF, Text) sowie über das
+OS-Menü teilen/speichern. Der MVP liest, öffnet, beantwortet und schreibt reinen Text.

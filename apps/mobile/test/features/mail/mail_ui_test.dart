@@ -304,12 +304,52 @@ void main() {
       expect(find.text('Betreff'), findsOneWidget);
       expect(find.text('Dies ist der Nachrichtentext.'), findsOneWidget);
       expect(gateway.markedSeen, contains('1'));
-      // Attachments are listed (metadata) and images previewed inline.
+      // Attachments are listed; the image previews inline because Alice's
+      // address is @hs-anhalt.de (a trusted sender).
       expect(find.text('Anhänge'), findsOneWidget);
       expect(find.text('bericht.pdf'), findsOneWidget);
       expect(find.text('bild.png'), findsOneWidget);
       expect(find.byType(Image), findsOneWidget);
     });
+
+    testWidgets(
+      'holds back images from untrusted senders behind "Bild laden"',
+      (WidgetTester tester) async {
+        final store = InMemoryMailCredentialStore()..write(_creds);
+        final gateway = FakeMailGateway(
+          detail: MailMessageDetail(
+            id: '1',
+            subject: 'Werbung',
+            from: const MailAddress(email: 'promo@example.com'),
+            to: const <MailAddress>[MailAddress(email: 'stud@hs-anhalt.de')],
+            date: null,
+            body: 'Body',
+            attachments: <MailAttachment>[
+              MailAttachment(
+                filename: 'bild.png',
+                mediaType: 'image/png',
+                bytes: Uint8List.fromList(_pngBytes),
+              ),
+            ],
+          ),
+        );
+        await pumpScreen(
+          tester,
+          const MailMessageScreen(id: '1'),
+          overrides: _mail(gateway, store),
+        );
+        await tester.pumpAndSettle();
+
+        // The image is not shown yet — only the "load image" button.
+        expect(find.text('Bild laden'), findsOneWidget);
+        expect(find.byType(Image), findsNothing);
+
+        await tester.tap(find.text('Bild laden'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(Image), findsOneWidget);
+      },
+    );
   });
 
   group('folders', () {
