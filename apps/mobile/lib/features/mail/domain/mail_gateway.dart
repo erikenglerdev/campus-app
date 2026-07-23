@@ -38,6 +38,16 @@ abstract interface class MailGateway {
     int limit = 50,
   });
 
+  /// Server-side search (IMAP SEARCH) over [mailboxPath]. Matches [query] in
+  /// BOTH the sender and the content, so it finds messages that are not cached
+  /// locally. Returns up to [limit] matching headers, newest first.
+  Future<List<MailMessageHeader>> searchMessages(
+    MailCredentials credentials, {
+    String mailboxPath = kInboxPath,
+    required String query,
+    int limit = 50,
+  });
+
   /// Loads one message from [mailboxPath] as safe plain text, plus attachments.
   ///
   /// Image attachments always carry their bytes (for the inline preview); other

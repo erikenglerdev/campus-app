@@ -13,6 +13,7 @@ import 'package:campus_koethen/features/mail/presentation/compose_draft.dart';
 import 'package:campus_koethen/features/mail/presentation/mail_compose_screen.dart';
 import 'package:campus_koethen/features/mail/presentation/mail_message_screen.dart';
 import 'package:campus_koethen/features/mail/presentation/mail_screen.dart';
+import 'package:campus_koethen/features/mail/presentation/mail_search_screen.dart';
 import 'package:campus_koethen/features/more/presentation/more_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -388,6 +389,43 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+  });
+
+  group('search', () {
+    testWidgets('searches the server and shows non-local results', (
+      WidgetTester tester,
+    ) async {
+      final store = InMemoryMailCredentialStore()..write(_creds);
+      final gateway = FakeMailGateway(
+        searchResults: <MailMessageHeader>[
+          MailMessageHeader(
+            id: '9',
+            subject: 'Rechnung 2026',
+            from: const MailAddress(
+              email: 'buchhaltung@hs-anhalt.de',
+              name: 'Buchhaltung',
+            ),
+            date: DateTime.utc(2026, 3, 1, 8),
+            isSeen: true,
+            hasAttachments: false,
+          ),
+        ],
+      );
+      await pumpScreen(
+        tester,
+        const MailSearchScreen(),
+        overrides: _mail(gateway, store),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'rechnung');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+
+      expect(gateway.lastSearchQuery, 'rechnung');
+      expect(find.text('Buchhaltung'), findsOneWidget);
+      expect(find.text('Rechnung 2026'), findsOneWidget);
     });
   });
 

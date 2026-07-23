@@ -14,6 +14,7 @@ import '../features/mail/presentation/compose_draft.dart';
 import '../features/mail/presentation/mail_compose_screen.dart';
 import '../features/mail/presentation/mail_message_screen.dart';
 import '../features/mail/presentation/mail_screen.dart';
+import '../features/mail/presentation/mail_search_screen.dart';
 import '../features/more/presentation/more_screen.dart';
 import '../features/news/presentation/news_detail_screen.dart';
 import '../features/news/presentation/news_list_screen.dart';
@@ -108,6 +109,11 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.news}) {
                     builder: (BuildContext _, GoRouterState _) =>
                         const MailScreen(),
                     routes: <RouteBase>[
+                      GoRoute(
+                        path: 'search',
+                        builder: (BuildContext _, GoRouterState _) =>
+                            const MailSearchScreen(),
+                      ),
                       GoRoute(
                         path: 'compose',
                         builder: (BuildContext _, GoRouterState state) =>

@@ -164,18 +164,48 @@ class EnoughMailGateway implements MailGateway {
           '(UID FLAGS ENVELOPE BODYSTRUCTURE)',
           responseTimeout: _timeout,
         );
-        final List<model.MailMessageHeader> headers =
-            result.messages.map(_toHeader).toList()
-              // Newest first.
-              ..sort((a, b) {
-                final DateTime? da = a.date;
-                final DateTime? db = b.date;
-                if (da == null && db == null) return 0;
-                if (da == null) return 1;
-                if (db == null) return -1;
-                return db.compareTo(da);
-              });
-        return headers;
+        return result.messages.map(_toHeader).toList()..sort(_newestFirst);
+      });
+    });
+  }
+
+  @override
+  Future<List<model.MailMessageHeader>> searchMessages(
+    domain.MailCredentials credentials, {
+    String mailboxPath = kInboxPath,
+    required String query,
+    int limit = 50,
+  }) async {
+    final String trimmed = query.trim();
+    if (trimmed.isEmpty) return const <model.MailMessageHeader>[];
+    return _guard(() async {
+      return _withImap<List<model.MailMessageHeader>>(credentials, (
+        ImapClient client,
+      ) async {
+        await _select(client, mailboxPath);
+        // IMAP quoted-string escaping; TEXT matches the whole message (headers,
+        // so the sender, AND the body, so the content). CHARSET UTF-8 lets
+        // umlauts match.
+        final String safe = trimmed
+            .replaceAll('\\', r'\\')
+            .replaceAll('"', r'\"');
+        final SearchImapResult result = await client.uidSearchMessages(
+          searchCriteria: 'CHARSET UTF-8 TEXT "$safe"',
+          responseTimeout: _timeout,
+        );
+        final MessageSequence? matches = result.matchingSequence;
+        if (matches == null || matches.isEmpty) {
+          return <model.MailMessageHeader>[];
+        }
+        // Fetch only the newest [limit] matches to bound the work.
+        final List<int> uids = matches.toList()..sort();
+        final List<int> newest = uids.reversed.take(limit).toList();
+        final FetchImapResult fetched = await client.uidFetchMessages(
+          MessageSequence.fromIds(newest, isUid: true),
+          '(UID FLAGS ENVELOPE BODYSTRUCTURE)',
+          responseTimeout: _timeout,
+        );
+        return fetched.messages.map(_toHeader).toList()..sort(_newestFirst);
       });
     });
   }
@@ -345,6 +375,19 @@ class EnoughMailGateway implements MailGateway {
   }
 
   // --- Mapping --------------------------------------------------------------
+
+  /// Sorts headers newest first; messages without a date sink to the end.
+  static int _newestFirst(
+    model.MailMessageHeader a,
+    model.MailMessageHeader b,
+  ) {
+    final DateTime? da = a.date;
+    final DateTime? db = b.date;
+    if (da == null && db == null) return 0;
+    if (da == null) return 1;
+    if (db == null) return -1;
+    return db.compareTo(da);
+  }
 
   model.MailMessageHeader _toHeader(MimeMessage m) {
     final MailAddress? from = m.from?.firstOrNull ?? m.sender;

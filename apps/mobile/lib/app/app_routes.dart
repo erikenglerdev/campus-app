@@ -21,6 +21,7 @@ abstract final class AppRoutes {
 
   // Student email client, nested under More.
   static const String mail = '/more/mail';
+  static const String mailSearch = '/more/mail/search';
   static const String mailCompose = '/more/mail/compose';
   static const String mailMessageName = 'mail-message';
   static const String mailMessage = '/more/mail/message/:id';

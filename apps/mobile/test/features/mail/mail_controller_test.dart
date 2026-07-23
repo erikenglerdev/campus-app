@@ -8,6 +8,7 @@ import 'package:campus_koethen/features/mail/application/mail_compose_controller
 import 'package:campus_koethen/features/mail/application/mail_folders.dart';
 import 'package:campus_koethen/features/mail/application/mail_inbox_controller.dart';
 import 'package:campus_koethen/features/mail/application/mail_providers.dart';
+import 'package:campus_koethen/features/mail/application/mail_search_controller.dart';
 import 'package:campus_koethen/features/mail/application/mail_sync_controller.dart';
 import 'package:campus_koethen/features/mail/data/mail_cache.dart';
 import 'package:campus_koethen/features/mail/domain/mail_credentials.dart';
@@ -340,6 +341,43 @@ void main() {
       gateway.detailsById = <String, MailMessageDetail>{'2': _dtl('2')};
       await container.read(mailSyncControllerProvider.notifier).syncNow();
       expect(gateway.lastIncludeAttachmentBytes, isTrue);
+    });
+  });
+
+  group('search', () {
+    test('runs a server search over the selected mailbox', () async {
+      final store = InMemoryMailCredentialStore()..write(_creds);
+      final gateway = FakeMailGateway(
+        searchResults: <MailMessageHeader>[_hdr('9')],
+      );
+      final container = _container(gateway: gateway, store: store);
+      await container.read(mailAccountControllerProvider.future);
+
+      await container
+          .read(mailSearchControllerProvider.notifier)
+          .run('  Rechnung ');
+
+      expect(gateway.lastSearchQuery, 'Rechnung', reason: 'trimmed');
+      expect(gateway.lastSearchMailbox, 'INBOX');
+      final result = container.read(mailSearchControllerProvider).requireValue;
+      expect(result.map((MailMessageHeader h) => h.id), <String>['9']);
+    });
+
+    test('a blank query clears without hitting the server', () async {
+      final store = InMemoryMailCredentialStore()..write(_creds);
+      final gateway = FakeMailGateway(
+        searchResults: <MailMessageHeader>[_hdr('9')],
+      );
+      final container = _container(gateway: gateway, store: store);
+      await container.read(mailAccountControllerProvider.future);
+
+      await container.read(mailSearchControllerProvider.notifier).run('   ');
+
+      expect(gateway.lastSearchQuery, isNull);
+      expect(
+        container.read(mailSearchControllerProvider).requireValue,
+        isEmpty,
+      );
     });
   });
 

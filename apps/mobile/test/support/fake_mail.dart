@@ -52,6 +52,7 @@ class FakeMailGateway implements MailGateway {
     this.sentCopy = SentCopyResult.appended,
     this.folders = const <MailFolder>[],
     this.detailsById = const <String, MailMessageDetail>{},
+    this.searchResults = const <MailMessageHeader>[],
   });
 
   MailFailure? verifyError;
@@ -64,6 +65,11 @@ class FakeMailGateway implements MailGateway {
 
   /// Full messages returned by [fetchMessage]/[fetchMessages], keyed by id.
   Map<String, MailMessageDetail> detailsById;
+
+  /// Headers returned by [searchMessages]. Records the last query/mailbox.
+  List<MailMessageHeader> searchResults;
+  String? lastSearchQuery;
+  String? lastSearchMailbox;
 
   int verifyCalls = 0;
   int sendCalls = 0;
@@ -94,6 +100,19 @@ class FakeMailGateway implements MailGateway {
     fetchedMailboxes.add(mailboxPath);
     if (fetchInboxError != null) throw fetchInboxError!;
     return inbox;
+  }
+
+  @override
+  Future<List<MailMessageHeader>> searchMessages(
+    MailCredentials credentials, {
+    String mailboxPath = kInboxPath,
+    required String query,
+    int limit = 50,
+  }) async {
+    lastSearchQuery = query;
+    lastSearchMailbox = mailboxPath;
+    if (fetchInboxError != null) throw fetchInboxError!;
+    return searchResults;
   }
 
   @override

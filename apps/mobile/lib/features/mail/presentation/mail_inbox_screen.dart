@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/app_routes.dart';
-import '../../../core/locale/formatters.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
@@ -19,6 +18,7 @@ import '../domain/mail_message.dart';
 import 'mail_error_messages.dart';
 import 'mail_folder_labels.dart';
 import 'mail_folder_picker.dart';
+import 'mail_header_tile.dart';
 
 /// Shows the newest headers of the selected mailbox. The INBOX comes from the
 /// offline cache and is kept fresh by the background sync; a manual sync button
@@ -89,6 +89,11 @@ class MailInboxScreen extends ConsumerWidget {
                     ),
                   )
                 : const Icon(Icons.sync),
+          ),
+          IconButton(
+            onPressed: () => context.push(AppRoutes.mailSearch),
+            tooltip: l10n.mailSearchTooltip,
+            icon: const Icon(Icons.search),
           ),
           IconButton(
             onPressed: () => showMailFolderPicker(context),
@@ -174,69 +179,11 @@ class MailInboxScreen extends ConsumerWidget {
               separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (BuildContext context, int index) {
                 final MailMessageHeader header = headers[index];
-                return _MailHeaderTile(header: header, locale: locale);
+                return MailHeaderTile(header: header, locale: locale);
               },
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _MailHeaderTile extends StatelessWidget {
-  const _MailHeaderTile({required this.header, required this.locale});
-
-  final MailMessageHeader header;
-  final String locale;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l10n = context.l10n;
-    final TextTheme text = Theme.of(context).textTheme;
-    final FontWeight weight = header.isSeen
-        ? FontWeight.normal
-        : FontWeight.w700;
-    final String sender = header.from.display.trim().isEmpty
-        ? l10n.mailUnknownSender
-        : header.from.display;
-    final String subject = header.subject.trim().isEmpty
-        ? l10n.mailNoSubject
-        : header.subject;
-
-    return ListTile(
-      leading: header.isSeen
-          ? const Icon(Icons.mail_outline)
-          : const Icon(Icons.markunread),
-      title: Text(
-        sender,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: text.bodyLarge?.copyWith(fontWeight: weight),
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            subject,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: text.bodyMedium?.copyWith(fontWeight: weight),
-          ),
-          if (header.date != null)
-            Text(
-              AppDateFormats.dateTime(header.date!, locale),
-              style: text.bodySmall,
-            ),
-        ],
-      ),
-      trailing: header.hasAttachments
-          ? const Icon(Icons.attach_file, size: AppSizes.icon)
-          : null,
-      isThreeLine: header.date != null,
-      onTap: () => context.pushNamed(
-        AppRoutes.mailMessageName,
-        pathParameters: <String, String>{'id': header.id},
       ),
     );
   }

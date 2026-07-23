@@ -120,6 +120,12 @@ Posteingang / Detail
       „Teilen/Speichern“.
 - [ ] Flugmodus → Aktualisieren zeigt einen Fehler mit „Erneut versuchen“, kein Absturz.
 
+Suche
+
+- [ ] Das Lupen-Symbol öffnet die Suche; sie findet über **IMAP SEARCH** auf dem
+      Server (also **auch nicht-lokale** Mails) nach **Absender und Inhalt**.
+- [ ] Ein Treffer öffnet die Nachricht (wird bei Bedarf nachgeladen und gecacht).
+
 Ordner
 
 - [ ] Das Ordner-Symbol öffnet die Liste **aller** Server-Ordner (IMAP LIST); ein
