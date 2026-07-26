@@ -110,6 +110,9 @@ Der Client für die studentische E-Mail nutzt zusätzlich:
 | `flutter_secure_storage`| Geräte-Schlüsselspeicher für Zugangsdaten | `BSD-3-Clause` |
 | `share_plus`            | Anhänge über das OS-Teilen-Menü teilen  | `BSD-3-Clause` |
 | `pdfx`                  | PDF-Anhänge in-App anzeigen (nativer Renderer) | `MIT`   |
+| `html`                  | HIS-QIS-HTML parsen (Notenspiegel)      | `BSD-3-Clause` |
+| `dio_cookie_manager`    | Cookie-Handling für den QIS-Abruf (dio) | `MIT`          |
+| `cookie_jar`            | In-Memory-Cookie-Jar für den QIS-Abruf  | `MIT`          |
 | `meta`                  | Annotationen (`@immutable` u. a.)       | `BSD-3-Clause` |
 
 `enough_mail` und `enough_convert` stehen unter der **Mozilla Public License 2.0**. Ihr Quellcode

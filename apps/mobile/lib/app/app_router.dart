@@ -15,6 +15,7 @@ import '../features/mail/presentation/mail_compose_screen.dart';
 import '../features/mail/presentation/mail_message_screen.dart';
 import '../features/mail/presentation/mail_screen.dart';
 import '../features/mail/presentation/mail_search_screen.dart';
+import '../features/grades/presentation/grades_screen.dart';
 import '../features/more/presentation/more_screen.dart';
 import '../features/news/presentation/news_detail_screen.dart';
 import '../features/news/presentation/news_list_screen.dart';
@@ -132,6 +133,11 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.news}) {
                             ),
                       ),
                     ],
+                  ),
+                  GoRoute(
+                    path: 'grades',
+                    builder: (BuildContext _, GoRouterState _) =>
+                        const GradesScreen(),
                   ),
                   GoRoute(
                     path: 'settings',

@@ -26,6 +26,9 @@ abstract final class AppRoutes {
   static const String mailMessageName = 'mail-message';
   static const String mailMessage = '/more/mail/message/:id';
 
+  // Student grades (HIS-QIS), nested under More.
+  static const String grades = '/more/grades';
+
   // Settings is a sub-page of More.
   static const String settings = '/more/settings';
   static const String about = '/more/settings/about';

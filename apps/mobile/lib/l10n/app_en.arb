@@ -371,12 +371,16 @@
   "privacyPlaceholderBody": "This page is a placeholder. A legally binding privacy policy does not exist yet. No information about controllers or processing purposes is stated here on purpose.",
   "privacyMailTitle": "Student email",
   "privacyMailBody": "When you use the student email feature, the app connects directly and encrypted to the Hochschule Anhalt mail server (mail.hs-anhalt.de). There is no intermediary server: neither this app's servers nor third parties receive your credentials or your emails. Your email address and password are stored only in your device's secure keystore. Message contents are loaded only for display and are not stored permanently in the app. Using \"Remove account\" deletes your email address and password from the device completely.",
+  "privacyGradesTitle": "Grades",
+  "privacyGradesBody": "When you use the grades feature, the app connects directly and encrypted to Hochschule Anhalt's HIS-QIS exam portal (service.ssc.hs-anhalt.de). There is no intermediary server: neither this app's servers nor third parties receive your credentials or your grades. Your username and password are stored only in your device's secure keystore; grades are cached locally, encrypted with a device-held key. An automatic fetch happens at most once every 24 hours, plus manually on request. Using \"Delete credentials and local grades\" removes your credentials, grades and the encryption key from the device completely.",
   "legalOperatorNotConfirmed": "The operator of the app has not been confirmed yet. Until that is settled, no responsible entity is named here.",
   "legalNotPublishedHint": "The app is under development and has not been published.",
 
   "moreTitle": "More",
   "moreMail": "Student email",
   "moreMailSubtitle": "Hochschule Anhalt mailbox",
+  "moreGrades": "Grades",
+  "moreGradesSubtitle": "Your transcript from the exam portal",
   "moreSettings": "Settings",
 
   "mailTitle": "Student email",
@@ -452,5 +456,66 @@
   "mailErrorServerUnreachable": "The mail server cannot be reached.",
   "mailErrorProtocol": "Unexpected response from the mail server.",
   "mailErrorSecureStorage": "Secure storage is not available on this device. Your credentials cannot be saved.",
-  "mailErrorGeneric": "Something went wrong. Please try again later."
+  "mailErrorGeneric": "Something went wrong. Please try again later.",
+
+  "gradesTitle": "Grades",
+  "gradeSetupHeadline": "Connect to the exam portal",
+  "gradeSetupIntro": "The app connects directly and encrypted to Hochschule Anhalt's HIS-QIS exam portal (service.ssc.hs-anhalt.de). There is no intermediary server.",
+  "gradeSetupPrivacy": "Neither the campus backend nor Strapi receives your credentials or grades. Your credentials are kept only in this device's secure keystore, and grades are cached encrypted on the device.",
+  "gradeSetupConsent": "I agree that my credentials are stored locally in this device's secure keystore.",
+  "gradeSetupConsentRequired": "Please agree to the local storage.",
+  "gradeSetupUsernameLabel": "Username",
+  "gradeSetupPasswordLabel": "Password",
+  "gradeSetupUsernameRequired": "Please enter your username.",
+  "gradeSetupPasswordRequired": "Please enter your password.",
+  "gradeSetupSubmit": "Sign in and load grades",
+  "gradeSetupPortalLink": "Open in the exam portal",
+
+  "gradesLastUpdated": "Last updated: {when}",
+  "@gradesLastUpdated": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "gradesNeverSynced": "Not updated yet",
+  "gradesRefresh": "Refresh",
+  "gradesSyncing": "Loading grades …",
+  "gradesEmpty": "No grades found yet.",
+  "gradesUpdateFailed": "The update failed. Showing the grades from the last successful sync.",
+  "gradesRetry": "Try again",
+  "gradesReenter": "Change credentials",
+  "gradesDeleteAction": "Delete credentials and local grades",
+  "gradesDeleteConfirmTitle": "Delete everything?",
+  "gradesDeleteConfirmBody": "Your username, password and the locally stored grades will be removed from this device completely.",
+  "gradesDeleteConfirm": "Delete",
+  "gradesCancel": "Cancel",
+
+  "gradeNoGrade": "No grade",
+  "gradePassedUngraded": "Passed (ungraded)",
+  "gradeStatusPassed": "Passed",
+  "gradeStatusFailed": "Failed",
+  "gradeStatusPresent": "Exam registered",
+
+  "gradeDetailTitle": "Exam details",
+  "gradeFieldExamNumber": "Exam number",
+  "gradeFieldGrade": "Grade",
+  "gradeFieldStatus": "Status",
+  "gradeFieldAttempt": "Attempt",
+  "gradeFieldDate": "Exam date",
+  "gradeFieldExaminer": "Examiner",
+  "gradeFieldBonus": "Bonus",
+  "gradeFieldPoints": "Points",
+
+  "gradeErrorInvalidCredentials": "Sign-in failed. Please check your username and password.",
+  "gradeErrorNetwork": "No connection to the exam portal. Please check your internet connection.",
+  "gradeErrorTimeout": "The connection to the exam portal timed out.",
+  "gradeErrorTls": "The secure connection to the exam portal could not be established.",
+  "gradeErrorPortalUnavailable": "The exam portal is currently unavailable.",
+  "gradeErrorStructureChanged": "The exam portal has changed. The grades could not be read.",
+  "gradeErrorSecureStorage": "Secure storage is not available on this device. Your credentials cannot be saved.",
+  "gradeErrorCache": "The locally stored grades could not be loaded.",
+  "gradeErrorSessionExpired": "The session expired. Please try again.",
+  "gradeErrorGeneric": "Something went wrong. Please try again later."
 }

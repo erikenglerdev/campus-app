@@ -65,6 +65,13 @@ class LegalPlaceholderScreen extends StatelessWidget {
             // transparency about the app's technical behaviour, not a binding
             // privacy policy and names no operator — the release gate stands.
             Text(l10n.privacyMailBody, style: text.bodyMedium),
+            const SizedBox(height: AppSpacing.lg),
+            Semantics(
+              header: true,
+              child: Text(l10n.privacyGradesTitle, style: text.titleMedium),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(l10n.privacyGradesBody, style: text.bodyMedium),
           ],
           const SizedBox(height: AppSpacing.xl),
           Semantics(

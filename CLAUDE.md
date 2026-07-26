@@ -23,8 +23,20 @@ Diese Datei ist für automatisierte und menschliche Beiträge gleichermaßen ver
 
 ## 2. Systemgrenzen — Architekturverstöße sind Blocker
 
-1. Flutter spricht **ausschließlich** mit der Campus API unter `/v1`.
-   Kein direkter Zugriff auf Strapi oder `meine-mensa.de` aus der App.
+1. Öffentliche, redaktionelle und allgemeine Campusdaten laufen **ausschließlich** über die
+   Campus API unter `/v1`. Kein direkter Zugriff auf Strapi oder `meine-mensa.de` aus der App.
+
+   **Eng begrenzte, ausdrücklich beschlossene Ausnahme (nur diese):** Persönliche, besonders
+   sensible, nutzerauthentifizierte Dienste dürfen aus Datenschutzgründen **direkt** vom Gerät
+   an den jeweiligen offiziellen Anbieter angebunden werden, damit weder Campus-Backend noch
+   Strapi Zugangsdaten oder personenbezogene Inhalte erhalten. Aktuell sind das **genau zwei**:
+   - der **Studenten-Mailclient** → direkt zu `mail.hs-anhalt.de` (IMAPS/SMTP);
+   - der **HIS-QIS-Notenspiegel** → direkt und **nur** zu `https://service.ssc.hs-anhalt.de`.
+
+   Für diese Ausnahmen gilt: **kein** Backend-Proxy, **keine** serverseitige Speicherung, **kein**
+   Analytics-/Logging-Umweg. Zugangsdaten nur im Keychain/Keystore, sensible Inhalte nur
+   verschlüsselt lokal. Dies ist **keine** allgemeine Erlaubnis für beliebige direkte
+   Drittanbieterzugriffe — jede weitere Ausnahme muss hier ausdrücklich ergänzt werden.
 2. Das Backend liest Strapi **ausschließlich** über dessen REST-API mit einem serverseitigen
    Read-only-Token. Kein direkter Zugriff auf Strapi-Tabellen, keine gemeinsame Prisma-Verbindung.
 3. Redaktionelle Inhalte leben in Strapi. Importierte Mensadaten und Sync-Zustände leben in der
