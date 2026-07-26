@@ -1,5 +1,5 @@
 // Campus Köthen App · AGPL-3.0-only
-// Copyright © 2026 Erik Engler and Jona Sommer
+// Copyright © 2026 Erik Engler and Jona Loreen Sommer
 //
 // Security-focused tests for the Moodle HTTP client. No real network, no real
 // credentials — a scripted adapter stands in for Moodle. The point of these

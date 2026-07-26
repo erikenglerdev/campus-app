@@ -4,7 +4,7 @@
   "private": true,
   "description": "Published OpenAPI contract for the Campus Köthen API (/v1)",
   "license": "AGPL-3.0-only",
-  "author": "Erik Engler and Jona Sommer",
+  "author": "Erik Engler and Jona Loreen Sommer",
   "main": "openapi.json",
   "files": [
     "openapi.json",

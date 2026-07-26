@@ -4,7 +4,7 @@
   "private": true,
   "description": "Campus K\u00f6then editorial CMS (Strapi 5 Community)",
   "license": "AGPL-3.0-only",
-  "author": "Erik Engler and Jona Sommer",
+  "author": "Erik Engler and Jona Loreen Sommer",
   "scripts": {
     "build": "strapi build && node scripts/inject-prism-shim.mjs",
     "console": "strapi console",

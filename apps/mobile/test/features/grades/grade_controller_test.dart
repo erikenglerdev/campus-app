@@ -1,5 +1,5 @@
 // Campus Köthen App · AGPL-3.0-only
-// Copyright © 2026 Erik Engler and Jona Sommer
+// Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
 import 'package:campus_koethen/features/grades/application/grade_account_controller.dart';
 import 'package:campus_koethen/features/grades/application/grades_controller.dart';

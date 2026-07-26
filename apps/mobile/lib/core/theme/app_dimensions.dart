@@ -1,5 +1,5 @@
 // Campus Köthen App · AGPL-3.0-only
-// Copyright © 2026 Erik Engler and Jona Sommer
+// Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
 /// Typed spacing scale. Screens never use raw magic numbers for layout.
 abstract final class AppSpacing {

@@ -1,4 +1,4 @@
-<!-- Campus Köthen App · AGPL-3.0-only · Copyright © 2026 Erik Engler and Jona Sommer -->
+<!-- Campus Köthen App · AGPL-3.0-only · Copyright © 2026 Erik Engler and Jona Loreen Sommer -->
 
 # Moodle-Integration & quellenübergreifender Kalender
 

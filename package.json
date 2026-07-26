@@ -4,7 +4,7 @@
   "private": true,
   "description": "Campus K\u00f6then App \u2014 an independent, unofficial campus app monorepo (Strapi CMS, NestJS Campus API + worker, Flutter mobile client).",
   "license": "AGPL-3.0-only",
-  "author": "Erik Engler and Jona Sommer",
+  "author": "Erik Engler and Jona Loreen Sommer",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/erikenglerdev/campus-app.git"

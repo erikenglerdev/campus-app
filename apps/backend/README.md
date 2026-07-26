@@ -1,6 +1,6 @@
 # Campus API and canteen worker
 
-Campus Köthen App · `AGPL-3.0-only` · Copyright © 2026 Erik Engler and Jona Sommer
+Campus Köthen App · `AGPL-3.0-only` · Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
 NestJS service that is the **only** interface the mobile app talks to. It wraps
 Strapi and the canteen source so the client never reaches either directly.

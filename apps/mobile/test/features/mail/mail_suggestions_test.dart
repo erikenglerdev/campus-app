@@ -1,5 +1,5 @@
 // Campus Köthen App · AGPL-3.0-only
-// Copyright © 2026 Erik Engler and Jona Sommer
+// Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
 import 'package:campus_koethen/features/mail/application/mail_suggestions.dart';
 import 'package:campus_koethen/features/mail/data/mail_cache.dart';

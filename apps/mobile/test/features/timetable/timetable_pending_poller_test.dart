@@ -1,5 +1,5 @@
 // Campus Köthen App · AGPL-3.0-only
-// Copyright © 2026 Erik Engler and Jona Sommer
+// Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
 import 'package:campus_koethen/features/timetable/application/timetable_pending_poller.dart';
 import 'package:fake_async/fake_async.dart';

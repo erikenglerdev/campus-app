@@ -2,7 +2,7 @@
 
 Published contract of the **Campus Köthen API**, generated from the NestJS DTOs.
 
-`AGPL-3.0-only` · Copyright © 2026 Erik Engler and Jona Sommer
+`AGPL-3.0-only` · Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
 ## Files
 

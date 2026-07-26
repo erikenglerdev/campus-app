@@ -1,6 +1,6 @@
 # CLAUDE.md — Verbindliche Regeln für die Arbeit an diesem Repository
 
-Projekt: **Campus Köthen App** · Lizenz: **AGPL-3.0-only** · `Copyright © 2026 Erik Engler and Jona Sommer`
+Projekt: **Campus Köthen App** · Lizenz: **AGPL-3.0-only** · `Copyright © 2026 Erik Engler and Jona Loreen Sommer`
 
 Diese Datei ist für automatisierte und menschliche Beiträge gleichermaßen verbindlich.
 

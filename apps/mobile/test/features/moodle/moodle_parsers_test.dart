@@ -1,5 +1,5 @@
 // Campus Köthen App · AGPL-3.0-only
-// Copyright © 2026 Erik Engler and Jona Sommer
+// Copyright © 2026 Erik Engler and Jona Loreen Sommer
 //
 // Parser unit tests. All fixtures are synthetic and use fictional courses
 // ("Beispielkurs Informatik", "Musterseminar", "Übungsblatt 1"). No real

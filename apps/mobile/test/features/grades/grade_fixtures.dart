@@ -1,5 +1,5 @@
 // Campus Köthen App · AGPL-3.0-only
-// Copyright © 2026 Erik Engler and Jona Sommer
+// Copyright © 2026 Erik Engler and Jona Loreen Sommer
 //
 // Anonymised HIS-QIS fixtures. NONE of these contain real names, matrikel
 // numbers, examiners, exams or grades — every value is invented for testing.

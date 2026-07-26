@@ -4,7 +4,7 @@
   "description": "Campus K\u00f6then API and canteen synchronization worker",
   "private": true,
   "license": "AGPL-3.0-only",
-  "author": "Erik Engler and Jona Sommer",
+  "author": "Erik Engler and Jona Loreen Sommer",
   "scripts": {
     "build": "nest build",
     "start": "nest start",

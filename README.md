@@ -134,7 +134,7 @@ flutter gen-l10n && dart format --output=none --set-exit-if-changed . \
 
 **AGPL-3.0-only** — siehe [LICENSE](LICENSE).
 
-`Copyright © 2026 Erik Engler and Jona Sommer`
+`Copyright © 2026 Erik Engler and Jona Loreen Sommer`
 
 Drittanbieter-Abhängigkeiten und separat lizenzierte Assets (u. a. die gebündelte
 Manrope-Schrift unter SIL OFL 1.1) sind in [NOTICE.md](NOTICE.md) dokumentiert.

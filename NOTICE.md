@@ -4,7 +4,7 @@
 
 ```text
 Campus Köthen App
-Copyright © 2026 Erik Engler and Jona Sommer
+Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU Affero General Public License as published by the Free

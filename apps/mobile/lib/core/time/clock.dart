@@ -1,5 +1,5 @@
 // Campus Köthen App · AGPL-3.0-only
-// Copyright © 2026 Erik Engler and Jona Sommer
+// Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
 /// An injectable time source, so time-dependent logic (e.g. rolling 24-hour
 /// sync windows) can be tested with a controllable clock instead of the wall
