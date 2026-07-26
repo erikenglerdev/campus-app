@@ -36,6 +36,13 @@ class MoreScreen extends StatelessWidget {
             onTap: () => context.push(AppRoutes.grades),
           ),
           ListTile(
+            leading: const Icon(Icons.cast_for_education_outlined),
+            title: Text(l10n.moreMoodle),
+            subtitle: Text(l10n.moreMoodleSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(AppRoutes.moodle),
+          ),
+          ListTile(
             leading: const Icon(Icons.settings_outlined),
             title: Text(l10n.moreSettings),
             trailing: const Icon(Icons.chevron_right),

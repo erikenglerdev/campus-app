@@ -113,7 +113,16 @@ Der Client für die studentische E-Mail nutzt zusätzlich:
 | `html`                  | HIS-QIS-HTML parsen (Notenspiegel)      | `BSD-3-Clause` |
 | `dio_cookie_manager`    | Cookie-Handling für den QIS-Abruf (dio) | `MIT`          |
 | `cookie_jar`            | In-Memory-Cookie-Jar für den QIS-Abruf  | `MIT`          |
+| `table_calendar`        | Monatsraster des quellenübergreifenden Kalenders | `Apache-2.0` |
+| `simple_gesture_detector`| Gesten für `table_calendar` (transitiv) | `Apache-2.0`  |
 | `meta`                  | Annotationen (`@immutable` u. a.)       | `BSD-3-Clause` |
+
+Die Moodle-Integration nutzt ausschließlich bereits vorhandene Abhängigkeiten (`dio`,
+`flutter_secure_storage`, `hive_ce`, `pdfx`, `share_plus`, `html`, `url_launcher`) und führt keine
+weiteren ein. Der quellenübergreifende Kalender fügt `table_calendar` (und dessen transitive
+Abhängigkeit `simple_gesture_detector`) hinzu; beide stehen unter **Apache-2.0**, das mit der
+AGPL-3.0-only des Projekts kompatibel ist. Eine ausführliche Bewertung steht in
+[`docs/legal/dependency-licenses.md`](docs/legal/dependency-licenses.md).
 
 `enough_mail` und `enough_convert` stehen unter der **Mozilla Public License 2.0**. Ihr Quellcode
 wird **nicht** in dieses Repository einvendort und **nicht** verändert; er wird ausschließlich als

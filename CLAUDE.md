@@ -29,9 +29,14 @@ Diese Datei ist für automatisierte und menschliche Beiträge gleichermaßen ver
    **Eng begrenzte, ausdrücklich beschlossene Ausnahme (nur diese):** Persönliche, besonders
    sensible, nutzerauthentifizierte Dienste dürfen aus Datenschutzgründen **direkt** vom Gerät
    an den jeweiligen offiziellen Anbieter angebunden werden, damit weder Campus-Backend noch
-   Strapi Zugangsdaten oder personenbezogene Inhalte erhalten. Aktuell sind das **genau zwei**:
+   Strapi Zugangsdaten oder personenbezogene Inhalte erhalten. Aktuell sind das **genau drei**:
    - der **Studenten-Mailclient** → direkt zu `mail.hs-anhalt.de` (IMAPS/SMTP);
-   - der **HIS-QIS-Notenspiegel** → direkt und **nur** zu `https://service.ssc.hs-anhalt.de`.
+   - der **HIS-QIS-Notenspiegel** → direkt und **nur** zu `https://service.ssc.hs-anhalt.de`;
+   - die **Moodle-Integration** (Kurse, Materialien, Aufgaben, Ankündigungen, Deadlines) →
+     direkt und **nur** zu `https://moodle.hs-anhalt.de`. Kein Moodle-Token, keine Kurs-,
+     Aufgaben-, Abgabe-, Ankündigungs- oder Deadline-Daten dürfen ein Campus-Köthen-Backend
+     erreichen. Der quellenübergreifende Kalender führt Stundenplan (Campus API) und
+     Moodle-Deadlines **ausschließlich lokal auf dem Gerät** zusammen.
 
    Für diese Ausnahmen gilt: **kein** Backend-Proxy, **keine** serverseitige Speicherung, **kein**
    Analytics-/Logging-Umweg. Zugangsdaten nur im Keychain/Keystore, sensible Inhalte nur

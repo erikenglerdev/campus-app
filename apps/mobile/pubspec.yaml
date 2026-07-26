@@ -58,6 +58,10 @@ dependencies:
   dio_cookie_manager: ^3.5.0
   cookie_jar: ^4.0.9
 
+  # Month-grid view for the cross-source calendar (Apache-2.0). List view is
+  # built from plain widgets; only the month grid uses this package.
+  table_calendar: ^3.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,21 +1,22 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Sommer
 
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:pdfx/pdfx.dart';
-import 'package:share_plus/share_plus.dart';
 
+import '../../../core/documents/app_document.dart';
+import '../../../core/documents/document_share_service.dart';
+import '../../../core/documents/document_viewer_screen.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../l10n/l10n.dart';
 import '../domain/mail_message.dart';
 
 /// True when [email] belongs to the hs-anhalt.de domain (or a subdomain).
 ///
-/// Images from such senders are shown automatically; images from anyone else
-/// are held back behind a "load image" tap.
+/// Mail-specific: images from such senders are shown automatically; images from
+/// anyone else are held back behind a "load image" tap. This trust rule stays in
+/// the mail feature and never leaks into the generic document viewer.
 bool isTrustedImageSender(String email) {
   final int at = email.lastIndexOf('@');
   if (at < 0) return false;
@@ -23,34 +24,20 @@ bool isTrustedImageSender(String email) {
   return domain == 'hs-anhalt.de' || domain.endsWith('.hs-anhalt.de');
 }
 
-bool _isPdf(MailAttachment a) =>
-    a.mediaType.toLowerCase() == 'application/pdf' ||
-    a.filename.toLowerCase().endsWith('.pdf');
+const DocumentShareService _shareService = DocumentShareService();
 
-bool _isText(MailAttachment a) => a.mediaType.toLowerCase().startsWith('text/');
-
-String _sizeLabel(int bytes) {
-  if (bytes < 1024) return '$bytes B';
-  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
-  return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-}
-
-Future<void> _shareAttachment(MailAttachment a) async {
-  final Uint8List? bytes = a.bytes;
-  if (bytes == null) return;
-  await SharePlus.instance.share(
-    ShareParams(
-      files: <XFile>[XFile.fromData(bytes, mimeType: a.mediaType)],
-      fileNameOverrides: <String>[a.filename],
-    ),
-  );
-}
+AppDocument _asDocument(MailAttachment a) => AppDocument(
+  filename: a.filename,
+  mediaType: a.mediaType,
+  bytes: a.bytes!,
+  sizeBytes: a.sizeBytes,
+);
 
 /// One attachment in the message detail.
 ///
 /// Image attachments from trusted senders preview inline; images from other
 /// senders stay hidden behind a "load image" button. Tapping any downloaded
-/// attachment opens it in an in-app viewer.
+/// attachment opens it in the shared [DocumentViewerScreen].
 class MailAttachmentView extends StatefulWidget {
   const MailAttachmentView({
     required this.attachment,
@@ -80,7 +67,8 @@ class _MailAttachmentViewState extends State<MailAttachmentView> {
     }
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (BuildContext _) => AttachmentViewerScreen(attachment: _a),
+        builder: (BuildContext _) =>
+            DocumentViewerScreen(document: _asDocument(_a)),
       ),
     );
   }
@@ -92,7 +80,7 @@ class _MailAttachmentViewState extends State<MailAttachmentView> {
     final int? size = _a.sizeBytes;
     final String subtitle = <String>[
       _a.mediaType,
-      if (size != null) _sizeLabel(size),
+      if (size != null) humanFileSize(size),
     ].join(' · ');
 
     final Widget tile = ListTile(
@@ -105,7 +93,7 @@ class _MailAttachmentViewState extends State<MailAttachmentView> {
       trailing: _a.bytes == null
           ? null
           : IconButton(
-              onPressed: () => _shareAttachment(_a),
+              onPressed: () => _shareService.share(_asDocument(_a)),
               tooltip: l10n.mailAttachmentShare,
               icon: const Icon(Icons.ios_share),
             ),
@@ -169,107 +157,6 @@ class _MailAttachmentViewState extends State<MailAttachmentView> {
             ),
           tile,
         ],
-      ),
-    );
-  }
-}
-
-/// Full-screen in-app viewer for a downloaded attachment: images (zoomable),
-/// PDFs (native renderer, no WebView) and plain text. Anything else offers a
-/// share/save action instead.
-class AttachmentViewerScreen extends StatefulWidget {
-  const AttachmentViewerScreen({required this.attachment, super.key});
-
-  final MailAttachment attachment;
-
-  @override
-  State<AttachmentViewerScreen> createState() => _AttachmentViewerScreenState();
-}
-
-class _AttachmentViewerScreenState extends State<AttachmentViewerScreen> {
-  PdfControllerPinch? _pdf;
-
-  @override
-  void initState() {
-    super.initState();
-    final MailAttachment a = widget.attachment;
-    final Uint8List? bytes = a.bytes;
-    if (bytes != null && _isPdf(a)) {
-      _pdf = PdfControllerPinch(document: PdfDocument.openData(bytes));
-    }
-  }
-
-  @override
-  void dispose() {
-    _pdf?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l10n = context.l10n;
-    final MailAttachment a = widget.attachment;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(a.filename, maxLines: 1, overflow: TextOverflow.ellipsis),
-        actions: <Widget>[
-          if (a.bytes != null)
-            IconButton(
-              onPressed: () => _shareAttachment(a),
-              tooltip: l10n.mailAttachmentShare,
-              icon: const Icon(Icons.ios_share),
-            ),
-        ],
-      ),
-      body: _body(context, l10n, a),
-    );
-  }
-
-  Widget _body(BuildContext context, AppLocalizations l10n, MailAttachment a) {
-    final Uint8List? bytes = a.bytes;
-    if (bytes == null) {
-      return _Centered(text: l10n.mailAttachmentNotDownloaded);
-    }
-    if (a.isImage) {
-      return InteractiveViewer(
-        maxScale: 5,
-        child: Center(
-          child: Image.memory(
-            bytes,
-            errorBuilder: (_, _, _) =>
-                _Centered(text: l10n.mailAttachmentPreviewUnavailable),
-          ),
-        ),
-      );
-    }
-    if (_pdf != null) {
-      return PdfViewPinch(controller: _pdf!);
-    }
-    if (_isText(a)) {
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: SelectableText(
-          utf8.decode(bytes, allowMalformed: true),
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      );
-    }
-    return _Centered(text: l10n.mailAttachmentPreviewUnavailable);
-  }
-}
-
-class _Centered extends StatelessWidget {
-  const _Centered({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Text(text, textAlign: TextAlign.center),
       ),
     );
   }

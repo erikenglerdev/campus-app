@@ -7,7 +7,9 @@ abstract final class AppRoutes {
   static const String newsDetailName = 'news-detail';
   static const String newsDetailPath = ':slug';
 
-  static const String timetable = '/timetable';
+  /// The second top-level destination is the cross-source calendar. The
+  /// timetable is no longer a tab of its own — it is the calendar's first source.
+  static const String calendar = '/calendar';
 
   static const String canteen = '/canteen';
 
@@ -28,6 +30,11 @@ abstract final class AppRoutes {
 
   // Student grades (HIS-QIS), nested under More.
   static const String grades = '/more/grades';
+
+  // Moodle (direct integration), nested under More.
+  static const String moodle = '/more/moodle';
+  static const String moodleCourseName = 'moodle-course';
+  static const String moodleCoursePath = 'course/:id';
 
   // Settings is a sub-page of More.
   static const String settings = '/more/settings';

@@ -70,24 +70,26 @@ void main() {
       bar.destinations.cast<NavigationDestination>().map(
         (NavigationDestination destination) => destination.label,
       ),
-      <String>['News', 'Stundenplan', 'Mensa', 'Kontakte', 'Mehr'],
+      <String>['News', 'Kalender', 'Mensa', 'Kontakte', 'Mehr'],
     );
   });
 
-  testWidgets('navigates to the timetable', (WidgetTester tester) async {
+  testWidgets('navigates to the calendar', (WidgetTester tester) async {
     await pumpApp(tester);
 
-    await tester.tap(find.text('Stundenplan'));
+    await tester.tap(find.text('Kalender'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Noch kein Kurs gewählt'), findsOneWidget);
+    // The calendar's explicit view toggle (month vs list) is shown.
+    expect(find.text('Liste'), findsOneWidget);
   });
 
   testWidgets('starts on the news route', (WidgetTester tester) async {
     await pumpApp(tester);
 
-    expect(AppRoutes.timetable, '/timetable');
-    expect(find.text('Noch kein Kurs gewählt'), findsNothing);
+    expect(AppRoutes.calendar, '/calendar');
+    // The calendar view toggle is not shown until the Kalender tab is opened.
+    expect(find.text('Liste'), findsNothing);
   });
 
   testWidgets('keeps five destinations usable on a narrow device', (
@@ -102,7 +104,7 @@ void main() {
     expect(tester.takeException(), isNull);
     for (final String label in <String>[
       'News',
-      'Stundenplan',
+      'Kalender',
       'Mensa',
       'Kontakte',
       'Mehr',
@@ -129,17 +131,17 @@ void main() {
       reason: 'every one of the five destinations stays hittable',
     );
 
-    await tester.tap(find.text('Stundenplan'));
+    await tester.tap(find.text('Kalender'));
     await tester.pumpAndSettle();
-    expect(find.text('Noch kein Kurs gewählt'), findsOneWidget);
+    expect(find.text('Liste'), findsOneWidget);
   });
 
   testWidgets('renders the English navigation', (WidgetTester tester) async {
     await pumpApp(tester, locale: AppLocales.english);
 
-    await tester.tap(find.text('Timetable'));
+    await tester.tap(find.text('Calendar'));
     await tester.pumpAndSettle();
 
-    expect(find.text('No course chosen yet'), findsOneWidget);
+    expect(find.text('List'), findsOneWidget);
   });
 }

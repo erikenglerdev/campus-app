@@ -35,6 +35,9 @@ abstract final class AppSizes {
   /// Icon size used in list rows.
   static const double icon = 24;
 
+  /// Compact icon size used inside chips and dense controls.
+  static const double iconSmall = 18;
+
   /// Icon size used in empty/error states.
   static const double illustrationIcon = 48;
 }

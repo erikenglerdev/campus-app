@@ -35,8 +35,8 @@ class AppShell extends StatelessWidget {
             NavigationDestination(
               icon: const Icon(Icons.calendar_month_outlined),
               selectedIcon: const Icon(Icons.calendar_month),
-              label: l10n.navTimetable,
-              tooltip: l10n.navTimetable,
+              label: l10n.navCalendar,
+              tooltip: l10n.navCalendar,
             ),
             NavigationDestination(
               icon: const Icon(Icons.restaurant_outlined),

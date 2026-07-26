@@ -9,6 +9,7 @@ import '../features/about/presentation/about_screen.dart';
 import '../features/canteen/presentation/canteen_screen.dart';
 import '../features/contacts/presentation/contact_area_screen.dart';
 import '../features/contacts/presentation/contacts_list_screen.dart';
+import '../features/calendar/presentation/calendar_screen.dart';
 import '../features/legal/presentation/legal_placeholder_screen.dart';
 import '../features/mail/presentation/compose_draft.dart';
 import '../features/mail/presentation/mail_compose_screen.dart';
@@ -16,12 +17,13 @@ import '../features/mail/presentation/mail_message_screen.dart';
 import '../features/mail/presentation/mail_screen.dart';
 import '../features/mail/presentation/mail_search_screen.dart';
 import '../features/grades/presentation/grades_screen.dart';
+import '../features/moodle/presentation/moodle_course_screen.dart';
+import '../features/moodle/presentation/moodle_screen.dart';
 import '../features/more/presentation/more_screen.dart';
 import '../features/news/presentation/news_detail_screen.dart';
 import '../features/news/presentation/news_list_screen.dart';
 import '../features/settings/presentation/channel_settings_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
-import '../features/timetable/presentation/timetable_screen.dart';
 import 'app_routes.dart';
 import 'app_shell.dart';
 
@@ -64,9 +66,9 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.news}) {
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
-                path: AppRoutes.timetable,
+                path: AppRoutes.calendar,
                 builder: (BuildContext _, GoRouterState _) =>
-                    const TimetableScreen(),
+                    const CalendarScreen(),
               ),
             ],
           ),
@@ -138,6 +140,25 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.news}) {
                     path: 'grades',
                     builder: (BuildContext _, GoRouterState _) =>
                         const GradesScreen(),
+                  ),
+                  GoRoute(
+                    path: 'moodle',
+                    builder: (BuildContext _, GoRouterState _) =>
+                        const MoodleScreen(),
+                    routes: <RouteBase>[
+                      GoRoute(
+                        path: AppRoutes.moodleCoursePath,
+                        name: AppRoutes.moodleCourseName,
+                        builder: (BuildContext _, GoRouterState state) =>
+                            MoodleCourseScreen(
+                              courseId:
+                                  int.tryParse(
+                                    state.pathParameters['id'] ?? '',
+                                  ) ??
+                                  0,
+                            ),
+                      ),
+                    ],
                   ),
                   GoRoute(
                     path: 'settings',
