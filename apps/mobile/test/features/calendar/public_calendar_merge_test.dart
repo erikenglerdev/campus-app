@@ -20,11 +20,18 @@ PublicCalendar cal(String slug, String color) => PublicCalendar(
   googleOpenUrl: 'https://calendar.google.com/calendar/render?cid=x',
 );
 
-PublicCalendarEvent event(String slug, String id) => PublicCalendarEvent(
+PublicCalendarEvent event(
+  String slug,
+  String id, {
+  String? description,
+  String? location,
+}) => PublicCalendarEvent(
   id: id,
   calendarId: 'c-$slug',
   calendarSlug: slug,
   title: 'Öffentliche Veranstaltung',
+  description: description,
+  location: location,
   start: DateTime.utc(2026, 6, 10, 8),
   end: DateTime.utc(2026, 6, 10, 9),
 );
@@ -61,6 +68,32 @@ void main() {
       expect(e.calendarSlug, 'a');
       expect(e.sourceLabel, 'Kalender a');
       expect(e.colorArgb, const Color(0xFF5B3FD0).toARGB32());
+    });
+
+    test('carries the room (location) and description onto the entry', () {
+      final List<CalendarEntry> entries = publicCalendarEventsToCalendarEntries(
+        <PublicCalendarEvent>[
+          event(
+            'a',
+            'e1',
+            description: 'Bitte Studienausweis mitbringen',
+            location: 'Raum 3.14, Gebäude 06',
+          ),
+        ],
+        <String, PublicCalendar>{'a': cal('a', '#5B3FD0')},
+      );
+      final CalendarEntry e = entries.first;
+      expect(e.location, 'Raum 3.14, Gebäude 06');
+      expect(e.subtitle, 'Bitte Studienausweis mitbringen');
+    });
+
+    test('leaves subtitle and location null when the event has neither', () {
+      final CalendarEntry e = publicCalendarEventsToCalendarEntries(
+        <PublicCalendarEvent>[event('a', 'e1')],
+        <String, PublicCalendar>{'a': cal('a', '#5B3FD0')},
+      ).first;
+      expect(e.location, isNull);
+      expect(e.subtitle, isNull);
     });
 
     test(

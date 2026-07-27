@@ -76,6 +76,9 @@ List<CalendarEntry> publicCalendarEventsToCalendarEntries(
       end: e.end,
       allDay: e.allDay,
       isCancelled: e.status == 'cancelled',
+      // The room comes from the ICS LOCATION, the description from DESCRIPTION —
+      // both only present when the calendar enables showLocation/showDescription.
+      subtitle: e.description,
       location: e.location,
       calendarSlug: e.calendarSlug,
       sourceLabel: calendar?.name ?? e.calendarSlug,
