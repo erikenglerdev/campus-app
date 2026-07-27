@@ -12,10 +12,10 @@ Für den quellenübergreifenden Kalender wird genau **eine** direkte Abhängigke
 (`table_calendar`), die genau **eine** transitive Abhängigkeit nachzieht
 (`simple_gesture_detector`). Die Moodle-Integration führt **keine** neue Abhängigkeit ein.
 
-| Paket                     | Version | Lizenz       | Quelle                                                                     | Verwendungszweck                                              | Kompatibilitätsbewertung                                                                                                    |
-| ------------------------- | ------- | ------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| `table_calendar`          | 3.2.0   | `Apache-2.0` | `LICENSE` im Paket · <https://github.com/aleksanderwozniak/table_calendar> | Monatsraster (Kalenderansicht) des Kalender-Tabs             | **Kompatibel.** Apache-2.0 ist einseitig mit (A)GPLv3 verträglich; darf in ein AGPL-3.0-Werk aufgenommen werden.           |
-| `simple_gesture_detector` | 0.2.1   | `Apache-2.0` | `LICENSE` im Paket · <https://github.com/aleksanderwozniak/simple_gesture_detector> | Wisch-Gesten für `table_calendar` (transitiv)        | **Kompatibel.** Apache-2.0, siehe oben. Einzige transitive Neu-Abhängigkeit von `table_calendar`.                          |
+| Paket                     | Version | Lizenz       | Quelle                                                                              | Verwendungszweck                                 | Kompatibilitätsbewertung                                                                                         |
+| ------------------------- | ------- | ------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `table_calendar`          | 3.2.0   | `Apache-2.0` | `LICENSE` im Paket · <https://github.com/aleksanderwozniak/table_calendar>          | Monatsraster (Kalenderansicht) des Kalender-Tabs | **Kompatibel.** Apache-2.0 ist einseitig mit (A)GPLv3 verträglich; darf in ein AGPL-3.0-Werk aufgenommen werden. |
+| `simple_gesture_detector` | 0.2.1   | `Apache-2.0` | `LICENSE` im Paket · <https://github.com/aleksanderwozniak/simple_gesture_detector> | Wisch-Gesten für `table_calendar` (transitiv)    | **Kompatibel.** Apache-2.0, siehe oben. Einzige transitive Neu-Abhängigkeit von `table_calendar`.                |
 
 Beide Pakete stammen vom selben Autor, enthalten je eine unveränderte `Apache License, Version 2.0`
 als `LICENSE`-Datei, ziehen keine weiteren Nicht-Flutter-Pakete nach und bündeln **keine** Schriften,
@@ -27,14 +27,14 @@ kein eingebettetes JavaScript und keine sonstigen Assets mit abweichender Lizenz
 Die Moodle-Integration nutzt ausschließlich Abhängigkeiten, die bereits für Mail/Noten geprüft und
 in [`../../NOTICE.md`](../../NOTICE.md) dokumentiert sind:
 
-| Paket                    | Lizenz         | Nutzung in der Moodle-Integration                                        |
-| ------------------------ | -------------- | ------------------------------------------------------------------------ |
-| `dio`                    | `MIT`          | HTTPS-Transport (nur `moodle.hs-anhalt.de`), Datei-Download              |
-| `flutter_secure_storage` | `BSD-3-Clause` | Ablage des Web-Service-Tokens im Keychain/Keystore                       |
-| `hive_ce`                | `Apache-2.0`   | verschlüsselter lokaler Cache (256-Bit-Schlüssel in Secure Storage)      |
-| `pdfx`                   | `MIT`          | PDF-Vorschau heruntergeladener Materialien (geteilter DocumentViewer)    |
-| `share_plus`             | `BSD-3-Clause` | „Teilen/Speichern" als sichere Alternative zur In-App-Vorschau           |
-| `html`                   | `BSD-3-Clause` | Reduktion von Moodle-HTML (Kurs-/Modulbeschreibungen) auf sicheren Text  |
+| Paket                    | Lizenz         | Nutzung in der Moodle-Integration                                       |
+| ------------------------ | -------------- | ----------------------------------------------------------------------- |
+| `dio`                    | `MIT`          | HTTPS-Transport (nur `moodle.hs-anhalt.de`), Datei-Download             |
+| `flutter_secure_storage` | `BSD-3-Clause` | Ablage des Web-Service-Tokens im Keychain/Keystore                      |
+| `hive_ce`                | `Apache-2.0`   | verschlüsselter lokaler Cache (256-Bit-Schlüssel in Secure Storage)     |
+| `pdfx`                   | `MIT`          | PDF-Vorschau heruntergeladener Materialien (geteilter DocumentViewer)   |
+| `share_plus`             | `BSD-3-Clause` | „Teilen/Speichern" als sichere Alternative zur In-App-Vorschau          |
+| `html`                   | `BSD-3-Clause` | Reduktion von Moodle-HTML (Kurs-/Modulbeschreibungen) auf sicheren Text |
 | `url_launcher`           | `BSD-3-Clause` | Öffnen externer Moodle-Links **ohne** Token (nur `https`)               |
 
 ## 3. Prüfvorgehen
@@ -47,7 +47,32 @@ in [`../../NOTICE.md`](../../NOTICE.md) dokumentiert sind:
 - Eingebettete Schriften/JS/Assets, sowie `Commons-Clause`/`BSL`/`SSPL`/`PolyForm`/`NC`/`ND`
   ausgeschlossen.
 
-## 4. Ergebnis
+## 4. Ergebnis (Moodle/Kalender)
 
 Alle neuen direkten und transitiven Abhängigkeiten sind mit `AGPL-3.0-only` **verträglich**. Das
 Lizenz-Gate für diese Arbeit ist erfüllt.
+
+---
+
+# Abhängigkeits-Lizenzen — öffentliche Google-Kalender (ICS)
+
+Für die serverseitige ICS-Synchronisation öffentlicher Google-Kalender kommt genau **eine** neue
+direkte Abhängigkeit im Backend hinzu; sie hat **keine** Laufzeit-Abhängigkeiten (Transitive =
+leer). Kein Flutter-Paket wird neu eingeführt (die App nutzt das bereits vorhandene `url_launcher`).
+
+| Paket     | Version | Lizenz    | Quelle                                                              | Zweck                                                                                                                                             | Transitive Prüfung                                                                                                                                                                           | AGPL-3.0-Bewertung                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --------- | ------- | --------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ical.js` | 2.2.1   | `MPL-2.0` | `LICENSE` im Paket · <https://github.com/kewisch/ical.js> (Mozilla) | RFC-5545-Parser (VTIMEZONE, RRULE/RDATE/EXDATE, RECURRENCE-ID, Ganztag, DST) — nur Parsing des bereits geladenen Textes, **kein** Netzwerkzugriff | `dependencies: {}` in der veröffentlichten `package.json` und im installierten `node_modules/.pnpm/ical.js@2.2.1/…/package.json` verifiziert → **keine** transitiven Laufzeit-Abhängigkeiten | **Kompatibel.** MPL-2.0 ist dateiweise Copyleft und über die „Secondary License"-Klausel (§ 3.3) mit der AGPL-3.0 des Projekts vereinbar — dieselbe Bewertung wie für `enough_mail`/`enough_convert` (siehe [`../../NOTICE.md`](../../NOTICE.md) §4). Der Quellcode wird **nicht** einvendort und **nicht** verändert; er wird ausschließlich als unveränderte npm-Abhängigkeit eingebunden. Eigene TypeScript-Typen (`dist/types/module.d.ts`) — kein `@types`-Paket nötig. |
+
+Prüfvorgehen: `npm view ical.js@2.2.1 license dependencies types` und die installierte
+`package.json` gelesen (`license: MPL-2.0`, `dependencies: {}`, `types: dist/types/module.d.ts`);
+eine `LICENSE`-Datei liegt dem Paket bei. **Es wird bewusst KEINE URL-Fetch-Funktion des Parsers
+verwendet** — der Netzwerkzugriff bleibt ausschließlich im abgesicherten `GooglePublicIcsClient`;
+dem Parser wird nur der bereits vollständig geladene, größenbegrenzte Text übergeben.
+
+Da die MPL-2.0 dateiweise Copyleft ist und der Backend-Container den kompilierten Code enthält, wird
+der Hinweis auf den **unveränderten** Quellcode in [`../../NOTICE.md`](../../NOTICE.md) geführt
+(öffentlich und unverändert unter <https://www.npmjs.com/package/ical.js>; die exakt eingebundene
+Version steht in `apps/backend/pnpm-lock.yaml`).
+
+**Ergebnis:** Das Lizenz-Gate für die öffentliche-Kalender-Integration ist erfüllt.

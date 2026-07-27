@@ -1,0 +1,166 @@
+{
+  "kind": "collectionType",
+  "collectionName": "public_calendars",
+  "info": {
+    "singularName": "public-calendar",
+    "pluralName": "public-calendars",
+    "displayName": "Public Calendar",
+    "description": "A public Google calendar, synced read-only via its PUBLIC ICS feed. Fully dynamic: publishing one here makes it appear in the app after the first successful backend sync — no app or backend code change."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "maxLength": 80,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "slug": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "maxLength": 80,
+      "regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "description": {
+      "type": "text",
+      "maxLength": 500,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "googleShareUrl": {
+      "type": "string",
+      "required": true,
+      "maxLength": 2048,
+      "regex": "^https://calendar\\.google\\.com/calendar/(render|u/[0-9]+(/r)?)\\?.*cid=.+$",
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "colorHex": {
+      "type": "string",
+      "required": true,
+      "default": "#5B3FD0",
+      "minLength": 7,
+      "maxLength": 7,
+      "regex": "^#[0-9A-Fa-f]{6}$",
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "iconKey": {
+      "type": "string",
+      "required": true,
+      "default": "calendar",
+      "maxLength": 60,
+      "regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0,
+      "required": true,
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true,
+      "required": true,
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "defaultSubscribed": {
+      "type": "boolean",
+      "default": false,
+      "required": true,
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "attribution": {
+      "type": "string",
+      "maxLength": 200,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "showDescription": {
+      "type": "boolean",
+      "default": false,
+      "required": true,
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "showLocation": {
+      "type": "boolean",
+      "default": false,
+      "required": true,
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "timeZone": {
+      "type": "string",
+      "default": "Europe/Berlin",
+      "maxLength": 64,
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "ownerContact": {
+      "type": "string",
+      "private": true,
+      "maxLength": 200,
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    }
+  }
+}

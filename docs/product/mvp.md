@@ -32,7 +32,7 @@ Platzhalterseiten der App.
 | Sichtbarer App-Name        | Campus Köthen                                                                                                   |
 | Bundle-ID / Application ID | `dev.erikengler.campuskoethen`                                                                                  |
 | Lizenz                     | `AGPL-3.0-only`                                                                                                 |
-| Copyright                  | Copyright © 2026 Erik Engler and Jona Loreen Sommer                                                                    |
+| Copyright                  | Copyright © 2026 Erik Engler and Jona Loreen Sommer                                                             |
 | Vorgesehener Betreiber     | Studierendenrat der Hochschule Anhalt — **noch nicht bestätigt**, daher aktuell nicht als Betreiber ausgewiesen |
 | Sprachen                   | Deutsch (Standard/Fallback), Englisch                                                                           |
 

@@ -42,6 +42,18 @@ Diese Datei ist für automatisierte und menschliche Beiträge gleichermaßen ver
    Analytics-/Logging-Umweg. Zugangsdaten nur im Keychain/Keystore, sensible Inhalte nur
    verschlüsselt lokal. Dies ist **keine** allgemeine Erlaubnis für beliebige direkte
    Drittanbieterzugriffe — jede weitere Ausnahme muss hier ausdrücklich ergänzt werden.
+
+   **Öffentliche Google-Kalender** sind dagegen **öffentliche** Campusdaten und laufen bewusst über
+   den **öffentlichen** Backend-Pfad: Der Campus-Worker liest die in Strapi gepflegte öffentliche
+   Freigabe, konstruiert daraus **selbst** den festen öffentlichen ICS-Feed
+   (`https://calendar.google.com/calendar/ical/{ID}/public/basic.ics`), lädt und normalisiert ihn
+   und speichert die Termine in PostgreSQL; die App liest sie über die Campus API. **Kein** Google
+   API Key, **kein** Google-OAuth, **kein** Google-SDK, **keine** Anbindung persönlicher
+   Google-Konten. Die App ruft den ICS-Feed **nie** direkt ab. Google-Kalender-ID und Feed-URL
+   bleiben backendintern. Die Zusammenführung mit dem Stundenplan (Campus API) und den
+   Moodle-Deadlines (direkt) geschieht weiterhin **ausschließlich lokal** in Flutter. Details:
+   [`docs/public-calendars.md`](docs/public-calendars.md).
+
 2. Das Backend liest Strapi **ausschließlich** über dessen REST-API mit einem serverseitigen
    Read-only-Token. Kein direkter Zugriff auf Strapi-Tabellen, keine gemeinsame Prisma-Verbindung.
 3. Redaktionelle Inhalte leben in Strapi. Importierte Mensadaten und Sync-Zustände leben in der

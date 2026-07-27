@@ -3,8 +3,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../core/locale/formatters.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/status_banner.dart';
@@ -46,6 +48,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       appBar: AppBar(
         title: Text(l10n.calendarTitle),
         actions: <Widget>[
+          IconButton(
+            tooltip: l10n.calendarManageTooltip,
+            onPressed: () => context.push(AppRoutes.calendarManage),
+            icon: const Icon(Icons.tune_outlined),
+          ),
           IconButton(
             tooltip: l10n.calendarToday,
             onPressed: () =>
@@ -334,11 +341,24 @@ class _EntryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
     final TextTheme text = Theme.of(context).textTheme;
-    final bool isMoodle = entry.source == CalendarSource.moodle;
     final String time = entry.end == null
         ? AppDateFormats.time(entry.start, locale)
         : '${AppDateFormats.time(entry.start, locale)} – '
               '${AppDateFormats.time(entry.end!, locale)}';
+
+    // Source is always conveyed with a text label (and an icon), never by
+    // colour alone; the public-calendar colour is an extra decorative accent.
+    final String sourceLabel = switch (entry.source) {
+      CalendarSource.moodle => l10n.calendarSourceMoodle,
+      CalendarSource.timetable => l10n.calendarSourceTimetable,
+      CalendarSource.publicCalendar =>
+        entry.sourceLabel ?? l10n.calendarSourcePublic,
+    };
+    final IconData icon = switch (entry.source) {
+      CalendarSource.moodle => Icons.event_available_outlined,
+      CalendarSource.timetable => Icons.schedule_outlined,
+      CalendarSource.publicCalendar => Icons.public_outlined,
+    };
 
     final List<String> subtitleParts = <String>[
       if (entry.subtitle != null && entry.subtitle!.isNotEmpty) entry.subtitle!,
@@ -346,11 +366,22 @@ class _EntryTile extends StatelessWidget {
     ];
 
     return ListTile(
-      leading: Icon(
-        isMoodle ? Icons.event_available_outlined : Icons.schedule_outlined,
-      ),
+      leading: entry.colorArgb != null
+          ? Container(
+              width: AppSizes.icon,
+              alignment: Alignment.center,
+              child: Container(
+                width: AppSizes.iconSmall,
+                height: AppSizes.iconSmall,
+                decoration: BoxDecoration(
+                  color: Color(entry.colorArgb!),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            )
+          : Icon(icon),
       title: Text(
-        entry.title.isEmpty ? l10n.calendarSourceTimetable : entry.title,
+        entry.title.isEmpty ? sourceLabel : entry.title,
         style: entry.isCancelled
             ? text.bodyLarge?.copyWith(decoration: TextDecoration.lineThrough)
             : null,
@@ -358,8 +389,7 @@ class _EntryTile extends StatelessWidget {
       subtitle: Text(
         <String>[
           time,
-          // Source is conveyed with a text label, never colour alone.
-          isMoodle ? l10n.calendarSourceMoodle : l10n.calendarSourceTimetable,
+          sourceLabel,
           if (entry.isCancelled) l10n.timetableStatusCancelled,
           ...subtitleParts,
         ].join(' · '),

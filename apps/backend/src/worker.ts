@@ -6,6 +6,7 @@ import { JsonLogger } from './common/logger/json-logger.service';
 import { ENV } from './config/app-config.module';
 import { Env } from './config/env.schema';
 import { CanteenSyncService } from './modules/canteen/canteen-sync.service';
+import { PublicCalendarSyncService } from './modules/public-calendar/public-calendar-sync.service';
 import { TimetableSyncService } from './modules/timetable/timetable-sync.service';
 
 /**
@@ -139,6 +140,45 @@ async function bootstrap(): Promise<void> {
     logger.log('[timetable] disabled by configuration (WEBUNTIS_ENABLED=false); no jobs scheduled');
   }
 
+  // --- Public calendars ----------------------------------------------------
+  const publicCalendar = app.get(PublicCalendarSyncService);
+
+  const catalogJob = new WorkerJob(
+    'public-calendar-catalog',
+    env.PUBLIC_CALENDAR_CATALOG_SYNC_CRON,
+    logger,
+    async (trigger) => {
+      const outcome = await publicCalendar.syncCatalog();
+      logger.log(
+        `[public-calendar-catalog:${trigger}] ${outcome.status} ` +
+          `(written=${outcome.written} deactivated=${outcome.deactivated} rejected=${outcome.rejected})`,
+      );
+    },
+  );
+
+  const calendarEventsJob = new WorkerJob(
+    'public-calendar-events',
+    env.PUBLIC_CALENDAR_EVENT_SYNC_CRON,
+    logger,
+    async (trigger) => {
+      const outcomes = await publicCalendar.syncEvents();
+      for (const outcome of outcomes) {
+        logger.log(
+          `[public-calendar-events:${trigger}] ${outcome.slug}: ${outcome.status} ` +
+            `(written=${outcome.written} removed=${outcome.removed})`,
+        );
+      }
+    },
+  );
+
+  if (env.PUBLIC_CALENDAR_ENABLED) {
+    jobs.push(catalogJob, calendarEventsJob);
+  } else {
+    logger.log(
+      '[public-calendar] disabled by configuration (PUBLIC_CALENDAR_ENABLED=false); no jobs scheduled',
+    );
+  }
+
   for (const job of jobs) {
     job.start();
   }
@@ -149,6 +189,10 @@ async function bootstrap(): Promise<void> {
   if (env.WEBUNTIS_ENABLED && env.WEBUNTIS_SYNC_ON_BOOT) {
     await groupJob.trigger('boot');
     await entryJob.trigger('boot');
+  }
+  if (env.PUBLIC_CALENDAR_ENABLED && env.PUBLIC_CALENDAR_SYNC_ON_BOOT) {
+    await catalogJob.trigger('boot');
+    await calendarEventsJob.trigger('boot');
   }
 
   const shutdown = (signal: string): void => {

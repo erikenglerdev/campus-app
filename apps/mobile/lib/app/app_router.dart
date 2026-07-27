@@ -10,6 +10,7 @@ import '../features/canteen/presentation/canteen_screen.dart';
 import '../features/contacts/presentation/contact_area_screen.dart';
 import '../features/contacts/presentation/contacts_list_screen.dart';
 import '../features/calendar/presentation/calendar_screen.dart';
+import '../features/calendar/presentation/manage_calendars_screen.dart';
 import '../features/legal/presentation/legal_placeholder_screen.dart';
 import '../features/mail/presentation/compose_draft.dart';
 import '../features/mail/presentation/mail_compose_screen.dart';
@@ -69,6 +70,13 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.news}) {
                 path: AppRoutes.calendar,
                 builder: (BuildContext _, GoRouterState _) =>
                     const CalendarScreen(),
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: AppRoutes.calendarManagePath,
+                    builder: (BuildContext _, GoRouterState _) =>
+                        const ManageCalendarsScreen(),
+                  ),
+                ],
               ),
             ],
           ),

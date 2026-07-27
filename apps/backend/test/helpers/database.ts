@@ -29,6 +29,7 @@ export function createTestPrisma(): PrismaClient {
 /** Wipes all operational tables. Order respects foreign keys. */
 export async function resetDatabase(prisma: PrismaClient): Promise<void> {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE meal_prices, meals, sync_runs, ingredient_definitions, canteens RESTART IDENTITY CASCADE',
+    'TRUNCATE TABLE meal_prices, meals, sync_runs, ingredient_definitions, canteens, ' +
+      'public_calendar_events, public_calendar_sync_runs, public_calendars RESTART IDENTITY CASCADE',
   );
 }

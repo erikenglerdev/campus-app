@@ -106,6 +106,60 @@ export const envSchema = z.object({
   WEBUNTIS_LOOKAHEAD_DAYS: z.coerce.number().int().min(1).max(180).default(28),
   WEBUNTIS_STALE_AFTER_MINUTES: z.coerce.number().int().min(5).max(10_080).default(180),
 
+  // --- Public Google calendars (public ICS feed) ---------------------------
+  /**
+   * OFF by default. The feature ships complete but dormant until public
+   * calendars are actually configured in Strapi. NO Google API key exists —
+   * the worker downloads the public ICS feed directly, so there is deliberately
+   * no GOOGLE_API_KEY / OAuth / service-account configuration anywhere.
+   */
+  PUBLIC_CALENDAR_ENABLED: booleanFromEnv.default(false),
+  PUBLIC_CALENDAR_HTTP_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120_000).default(20_000),
+  PUBLIC_CALENDAR_RETRY_ATTEMPTS: z.coerce.number().int().min(0).max(5).default(2),
+  /** Politeness delay between consecutive feed downloads. */
+  PUBLIC_CALENDAR_REQUEST_SPACING_MS: z.coerce.number().int().min(0).max(60_000).default(1_000),
+  /**
+   * Catalogue (Strapi → read-model): every 10 minutes, so a newly published
+   * calendar appears quickly. The reconcile is cheap (a bounded Strapi read).
+   */
+  PUBLIC_CALENDAR_CATALOG_SYNC_CRON: z.string().min(1).default('*/10 * * * *'),
+  /**
+   * Events: every 10 minutes. Kept polite by conditional requests
+   * (If-None-Match / If-Modified-Since → 304) and a content-hash short-circuit,
+   * so unchanged feeds skip parsing/persistence; the overlap guard prevents
+   * runs from piling up.
+   */
+  PUBLIC_CALENDAR_EVENT_SYNC_CRON: z.string().min(1).default('*/10 * * * *'),
+  PUBLIC_CALENDAR_SYNC_ON_BOOT: booleanFromEnv.default(false),
+  /** Largest feed we will buffer, as a runaway guard. */
+  PUBLIC_CALENDAR_MAX_FEED_BYTES: z.coerce
+    .number()
+    .int()
+    .min(64_000)
+    .max(64_000_000)
+    .default(8_000_000),
+  PUBLIC_CALENDAR_MAX_EVENTS: z.coerce.number().int().min(10).max(50_000).default(5_000),
+  PUBLIC_CALENDAR_MAX_OCCURRENCES: z.coerce.number().int().min(10).max(200_000).default(10_000),
+  PUBLIC_CALENDAR_MAX_OCCURRENCES_PER_EVENT: z.coerce
+    .number()
+    .int()
+    .min(10)
+    .max(20_000)
+    .default(750),
+  PUBLIC_CALENDAR_MAX_TEXT_LENGTH: z.coerce.number().int().min(100).max(10_000).default(2_000),
+  PUBLIC_CALENDAR_LOOKBACK_DAYS: z.coerce.number().int().min(0).max(365).default(30),
+  PUBLIC_CALENDAR_LOOKAHEAD_DAYS: z.coerce.number().int().min(1).max(730).default(180),
+  PUBLIC_CALENDAR_STALE_AFTER_MINUTES: z.coerce.number().int().min(5).max(43_200).default(720),
+  /** Fallback zone for floating (zone-less) event times only. */
+  PUBLIC_CALENDAR_FALLBACK_TIME_ZONE: z.string().min(1).default('Europe/Berlin'),
+  PUBLIC_CALENDAR_USER_AGENT: z
+    .string()
+    .min(1)
+    .default('CampusKoethen/1.0 (+https://dev.erikengler.campuskoethen)'),
+  /** API bounds: max calendars per aggregated/combined request, max date range. */
+  PUBLIC_CALENDAR_API_MAX_CALENDARS: z.coerce.number().int().min(1).max(100).default(50),
+  PUBLIC_CALENDAR_API_MAX_RANGE_DAYS: z.coerce.number().int().min(1).max(400).default(120),
+
   // --- Observability -------------------------------------------------------
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   /** Pretty console output for humans; JSON is the default and the server format. */

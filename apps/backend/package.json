@@ -1,7 +1,7 @@
 {
   "name": "@campus/backend",
   "version": "0.1.0",
-  "description": "Campus K\u00f6then API and canteen synchronization worker",
+  "description": "Campus Köthen API and canteen synchronization worker",
   "private": true,
   "license": "AGPL-3.0-only",
   "author": "Erik Engler and Jona Loreen Sommer",
@@ -37,6 +37,7 @@
     "@prisma/adapter-pg": "^7.9.0",
     "@prisma/client": "^7.9.0",
     "cron": "^4.4.0",
+    "ical.js": "2.2.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "zod": "^4.4.3"

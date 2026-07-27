@@ -103,19 +103,19 @@ Lizenzen stehen — überwiegend MIT, Apache-2.0 und BSD-3-Clause.
 
 Der Client für die studentische E-Mail nutzt zusätzlich:
 
-| Paket (pub.dev)         | Zweck                                   | Lizenz         |
-| ----------------------- | --------------------------------------- | -------------- |
-| `enough_mail`           | IMAP-/SMTP-/MIME-Client                 | `MPL-2.0`      |
-| `enough_convert`        | Zeichensatz-Dekodierung (transitiv)     | `MPL-2.0`      |
-| `flutter_secure_storage`| Geräte-Schlüsselspeicher für Zugangsdaten | `BSD-3-Clause` |
-| `share_plus`            | Anhänge über das OS-Teilen-Menü teilen  | `BSD-3-Clause` |
-| `pdfx`                  | PDF-Anhänge in-App anzeigen (nativer Renderer) | `MIT`   |
-| `html`                  | HIS-QIS-HTML parsen (Notenspiegel)      | `BSD-3-Clause` |
-| `dio_cookie_manager`    | Cookie-Handling für den QIS-Abruf (dio) | `MIT`          |
-| `cookie_jar`            | In-Memory-Cookie-Jar für den QIS-Abruf  | `MIT`          |
-| `table_calendar`        | Monatsraster des quellenübergreifenden Kalenders | `Apache-2.0` |
-| `simple_gesture_detector`| Gesten für `table_calendar` (transitiv) | `Apache-2.0`  |
-| `meta`                  | Annotationen (`@immutable` u. a.)       | `BSD-3-Clause` |
+| Paket (pub.dev)           | Zweck                                            | Lizenz         |
+| ------------------------- | ------------------------------------------------ | -------------- |
+| `enough_mail`             | IMAP-/SMTP-/MIME-Client                          | `MPL-2.0`      |
+| `enough_convert`          | Zeichensatz-Dekodierung (transitiv)              | `MPL-2.0`      |
+| `flutter_secure_storage`  | Geräte-Schlüsselspeicher für Zugangsdaten        | `BSD-3-Clause` |
+| `share_plus`              | Anhänge über das OS-Teilen-Menü teilen           | `BSD-3-Clause` |
+| `pdfx`                    | PDF-Anhänge in-App anzeigen (nativer Renderer)   | `MIT`          |
+| `html`                    | HIS-QIS-HTML parsen (Notenspiegel)               | `BSD-3-Clause` |
+| `dio_cookie_manager`      | Cookie-Handling für den QIS-Abruf (dio)          | `MIT`          |
+| `cookie_jar`              | In-Memory-Cookie-Jar für den QIS-Abruf           | `MIT`          |
+| `table_calendar`          | Monatsraster des quellenübergreifenden Kalenders | `Apache-2.0`   |
+| `simple_gesture_detector` | Gesten für `table_calendar` (transitiv)          | `Apache-2.0`   |
+| `meta`                    | Annotationen (`@immutable` u. a.)                | `BSD-3-Clause` |
 
 Die Moodle-Integration nutzt ausschließlich bereits vorhandene Abhängigkeiten (`dio`,
 `flutter_secure_storage`, `hive_ce`, `pdfx`, `share_plus`, `html`, `url_launcher`) und führt keine
@@ -135,6 +135,19 @@ und unverändert verfügbar unter <https://pub.dev/packages/enough_mail> bzw.
 <https://pub.dev/packages/enough_convert>; die exakt eingebundene Version steht in
 `apps/mobile/pubspec.lock`. Zusätzlich zeigt der Flutter-Client den vollständigen MPL-Lizenztext
 zur Laufzeit über den `showLicensePage`-Dialog im About-Screen an.
+
+Das **Backend** nutzt für den RFC-5545-Parser der öffentlichen Google-Kalender zusätzlich:
+
+| Paket (npm) | Zweck                                                                        | Lizenz    |
+| ----------- | ---------------------------------------------------------------------------- | --------- |
+| `ical.js`   | ICS-/iCalendar-Parser (Mozilla), reines Parsing des bereits geladenen Textes | `MPL-2.0` |
+
+`ical.js` (Version in `apps/backend/pnpm-lock.yaml`) steht ebenfalls unter der **Mozilla Public
+License 2.0** und hat **keine** Laufzeit-Abhängigkeiten. Der Quellcode wird nicht einvendort und
+nicht verändert; er wird als unveränderte npm-Abhängigkeit eingebunden. Der unveränderte Quellcode
+ist öffentlich unter <https://www.npmjs.com/package/ical.js> verfügbar. Netzwerkfunktionen des
+Pakets werden bewusst nicht verwendet — der Feed-Abruf bleibt im abgesicherten Backend-Client.
+Bewertung: [`docs/legal/dependency-licenses.md`](docs/legal/dependency-licenses.md).
 
 Die Abhängigkeiten werden **nicht** in dieses Repository einvendort. Maßgeblich und
 maschinenlesbar sind:

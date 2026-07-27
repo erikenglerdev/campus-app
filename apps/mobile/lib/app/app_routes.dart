@@ -11,6 +11,10 @@ abstract final class AppRoutes {
   /// timetable is no longer a tab of its own — it is the calendar's first source.
   static const String calendar = '/calendar';
 
+  /// "Manage calendars" (Y-of-X public calendar selection + Google buttons).
+  static const String calendarManagePath = 'manage';
+  static const String calendarManage = '/calendar/manage';
+
   static const String canteen = '/canteen';
 
   static const String contacts = '/contacts';

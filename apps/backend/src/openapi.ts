@@ -27,5 +27,6 @@ export function buildOpenApiConfig(builder: DocumentBuilder) {
     .addTag('news', 'News channels and articles')
     .addTag('contacts', 'Contact areas and persons')
     .addTag('canteens', 'Canteens and menus')
+    .addTag('public-calendars', 'Public Google calendars (read-only, synced via public ICS)')
     .build();
 }

@@ -9,7 +9,7 @@ import 'package:meta/meta.dart';
 /// new source means adding a value here, a mapper to [CalendarEntry], and wiring
 /// one contribution in the aggregator. Nothing merges on any server — every
 /// source stays in its own feature and is combined only here, on-device.
-enum CalendarSource { timetable, moodle }
+enum CalendarSource { timetable, moodle, publicCalendar }
 
 /// One unified item on the calendar, independent of its source.
 @immutable
@@ -24,6 +24,9 @@ class CalendarEntry {
     this.subtitle,
     this.location,
     this.isCancelled = false,
+    this.calendarSlug,
+    this.sourceLabel,
+    this.colorArgb,
   });
 
   final String id;
@@ -43,6 +46,17 @@ class CalendarEntry {
   /// A cancelled timetable slot — conveyed with icon + text, never colour only.
   final bool isCancelled;
 
+  /// For a public-calendar entry: the slug of the calendar it belongs to.
+  final String? calendarSlug;
+
+  /// A per-source display label (e.g. the public calendar's name). Combined
+  /// with the colour so the source is never distinguished by colour alone.
+  final String? sourceLabel;
+
+  /// Optional decorative accent colour (ARGB), e.g. a public calendar's colour.
+  /// Never the sole carrier of state — always paired with a label/icon.
+  final int? colorArgb;
+
   /// The local calendar day the entry falls on (midnight, local time).
   DateTime get day => DateTime(start.year, start.month, start.day);
 
@@ -57,7 +71,10 @@ class CalendarEntry {
       other.allDay == allDay &&
       other.subtitle == subtitle &&
       other.location == location &&
-      other.isCancelled == isCancelled;
+      other.isCancelled == isCancelled &&
+      other.calendarSlug == calendarSlug &&
+      other.sourceLabel == sourceLabel &&
+      other.colorArgb == colorArgb;
 
   @override
   int get hashCode => Object.hash(
@@ -70,6 +87,9 @@ class CalendarEntry {
     subtitle,
     location,
     isCancelled,
+    calendarSlug,
+    sourceLabel,
+    colorArgb,
   );
 }
 

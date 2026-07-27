@@ -157,7 +157,7 @@ model SyncRun {
 model TimetableContext {
   id String @id @default(uuid())
 
-  source String @default("webuntis")
+  source     String @default("webuntis")
   /// External school year id. Server-side only.
   externalId String
   name       String
@@ -165,10 +165,10 @@ model TimetableContext {
   validFrom DateTime @db.Date
   validTo   DateTime @db.Date
 
-  active           Boolean   @default(true)
-  lastSeenAt       DateTime  @default(now())
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  active     Boolean  @default(true)
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@unique([source, externalId])
   @@index([source, active])
@@ -207,7 +207,7 @@ model TimetableGroup {
 model TimetableEntry {
   id String @id @default(uuid())
 
-  source String @default("webuntis")
+  source      String @default("webuntis")
   /// Stable upsert key derived from the source's `ids[]`. Repeating an import
   /// therefore updates rather than duplicates.
   externalKey String
@@ -223,9 +223,9 @@ model TimetableEntry {
   subjectCode String?
 
   /// Normalised: regular_teaching | additional | unknown
-  type String
+  type         String
   /// Normalised: regular | changed | cancelled | unknown
-  status String
+  status       String
   /// The untouched upstream value, so a new vocabulary can be diagnosed later
   /// without re-reading the source.
   sourceStatus String?
@@ -271,7 +271,7 @@ model TimetableSyncRun {
 
   source String @default("webuntis")
   /// context | groups | entries
-  kind String
+  kind   String
 
   startedAt  DateTime  @default(now())
   finishedAt DateTime?
@@ -297,4 +297,141 @@ model TimetableSyncRun {
   @@index([kind, status, startedAt])
   @@index([status, startedAt])
   @@map("timetable_sync_runs")
+}
+
+// ---------------------------------------------------------------------------
+// Public calendars (public Google calendars, synced via their public ICS feed)
+//
+// Strapi remains the canonical editorial source of the calendar DEFINITIONS.
+// This is a minimal OPERATIONAL read-model: it exists so a calendar appears
+// only after validation AND a first successful ICS sync, so a Strapi outage
+// cannot take the public calendar API down, and so events have stable local ids.
+//
+// The server-internal Google calendar id and the feed URL are NEVER exposed
+// through the API. Raw ICS is never stored. No attendee/organiser data exists.
+// ---------------------------------------------------------------------------
+
+/// The validated, operational mirror of one published Strapi public-calendar.
+model PublicCalendar {
+  id String @id @default(uuid())
+
+  /// Stable public identifier used by the API and the app.
+  slug             String @unique
+  /// Decoded from the editor's public share link. Server-side ONLY; never a DTO
+  /// field and never logged.
+  googleCalendarId String
+
+  nameDe        String
+  nameEn        String?
+  descriptionDe String?
+  descriptionEn String?
+
+  colorHex          String
+  iconKey           String
+  sortOrder         Int     @default(0)
+  isActive          Boolean @default(true)
+  defaultSubscribed Boolean @default(false)
+  attributionDe     String?
+  attributionEn     String?
+  showDescription   Boolean @default(false)
+  showLocation      Boolean @default(false)
+  fallbackTimeZone  String  @default("Europe/Berlin")
+
+  /// pending | ready | stale | revoked | unavailable | invalid
+  operationalStatus String @default("pending")
+
+  /// Conditional-request validators from the last successful download.
+  lastEtag        String?
+  lastModified    String?
+  /// SHA-256 of the last successfully processed feed body — never the body.
+  lastContentHash String?
+
+  lastCatalogSyncAt    DateTime?
+  lastSuccessfulSyncAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events PublicCalendarEvent[]
+
+  @@index([isActive, sortOrder])
+  @@index([operationalStatus])
+  @@map("public_calendars")
+}
+
+/// A single normalised occurrence. Recurrences are expanded into rows within a
+/// bounded window; `occurrenceKey` (uid + recurrence slot) keeps them unique.
+model PublicCalendarEvent {
+  id String @id @default(uuid())
+
+  calendarId String
+  calendar   PublicCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+
+  /// Stable identity of this occurrence within the calendar.
+  occurrenceKey String
+  uid           String
+  recurrenceId  String?
+  sequence      Int?
+
+  title       String
+  /// Only present when the calendar's showDescription flag is set. Plain text.
+  description String?
+  /// Only present when the calendar's showLocation flag is set. Plain text.
+  location    String?
+
+  /// Absolute instants. All-day events store UTC-midnight of the local date and
+  /// an EXCLUSIVE end.
+  startsAt DateTime
+  endsAt   DateTime
+  allDay   Boolean  @default(false)
+
+  /// confirmed | tentative | cancelled
+  status String @default("confirmed")
+
+  sourceUpdatedAt DateTime?
+  importedAt      DateTime  @default(now())
+  lastSeenAt      DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([calendarId, occurrenceKey])
+  @@index([calendarId, startsAt])
+  @@index([startsAt])
+  @@map("public_calendar_events")
+}
+
+/// Audit trail. Never stores the feed URL, the raw calendar id, raw ICS or any
+/// VEVENT component — only counts and a classified, redacted error.
+model PublicCalendarSyncRun {
+  id String @id @default(uuid())
+
+  /// Slug of the calendar this run covered (null for a catalogue run).
+  calendarSlug String?
+  /// catalog | events
+  kind         String
+
+  /// running | success | empty | notModified | stale | revoked | failed | disabled
+  status String
+
+  rangeFrom DateTime? @db.Date
+  rangeTo   DateTime? @db.Date
+
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  feedBytes                  Int @default(0)
+  calendarComponentsReceived Int @default(0)
+  eventsReceived             Int @default(0)
+  eventsExpanded             Int @default(0)
+  recordsAccepted            Int @default(0)
+  recordsRejected            Int @default(0)
+  recordsWritten             Int @default(0)
+  recordsRemoved             Int @default(0)
+
+  /// Classification only. Never a header, URL, raw payload or person's name.
+  errorCode    String?
+  errorMessage String?
+
+  @@index([kind, status, startedAt])
+  @@index([status, startedAt])
+  @@map("public_calendar_sync_runs")
 }

@@ -498,6 +498,204 @@
           "timetable"
         ]
       }
+    },
+    "/v1/calendars": {
+      "get": {
+        "description": "Only active, validated calendars that have synced at least once. The Google calendar id and feed URL are never exposed; each item carries a safe googleOpenUrl.",
+        "operationId": "PublicCalendarController_list_v1",
+        "parameters": [
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "de",
+                "en"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicCalendarDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List public calendars (read-only, synced from their public ICS feed).",
+        "tags": [
+          "public-calendars"
+        ]
+      }
+    },
+    "/v1/calendars/events": {
+      "get": {
+        "description": "Pass one `calendar` slug per selected calendar. An empty selection returns an empty list (never \"all calendars\"). Each event carries calendarId and calendarSlug.",
+        "operationId": "PublicCalendarController_aggregated_v1",
+        "parameters": [
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "de",
+                "en"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "YYYY-MM-DD",
+            "schema": {}
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "YYYY-MM-DD",
+            "schema": {}
+          },
+          {
+            "name": "calendar",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicCalendarEventDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Aggregated events across several selected public calendars.",
+        "tags": [
+          "public-calendars"
+        ]
+      }
+    },
+    "/v1/calendars/google-view-url": {
+      "get": {
+        "description": "Server-constructed HTTPS URL (one src per calendar). This is a shared VIEW only — it never adds anything to a user's personal Google account.",
+        "operationId": "PublicCalendarController_googleViewUrl_v1",
+        "parameters": [
+          {
+            "name": "calendar",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleViewUrlDataDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "A combined calendar.google.com embed URL for the selected calendars.",
+        "tags": [
+          "public-calendars"
+        ]
+      }
+    },
+    "/v1/calendars/{slug}/events": {
+      "get": {
+        "operationId": "PublicCalendarController_single_v1",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "de",
+                "en"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "YYYY-MM-DD",
+            "schema": {}
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "YYYY-MM-DD",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicCalendarEventDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Events of a single public calendar in a date range.",
+        "tags": [
+          "public-calendars"
+        ]
+      }
     }
   },
   "info": {
@@ -530,6 +728,10 @@
     {
       "name": "canteens",
       "description": "Canteens and menus"
+    },
+    {
+      "name": "public-calendars",
+      "description": "Public Google calendars (read-only, synced via public ICS)"
     }
   ],
   "servers": [],
@@ -1689,6 +1891,133 @@
         "required": [
           "data",
           "meta"
+        ]
+      },
+      "PublicCalendarDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "object",
+            "nullable": true
+          },
+          "colorHex": {
+            "type": "string",
+            "example": "#5B3FD0"
+          },
+          "iconKey": {
+            "type": "string",
+            "example": "calendar"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "defaultSubscribed": {
+            "type": "boolean"
+          },
+          "attribution": {
+            "type": "object",
+            "nullable": true
+          },
+          "dataState": {
+            "type": "string",
+            "description": "ready | stale",
+            "example": "ready"
+          },
+          "lastSuccessfulSyncAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "dataStale": {
+            "type": "boolean"
+          },
+          "googleOpenUrl": {
+            "type": "string",
+            "description": "Safe HTTPS link to open this calendar in Google Calendar."
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "colorHex",
+          "iconKey",
+          "sortOrder",
+          "defaultSubscribed",
+          "dataState",
+          "dataStale",
+          "googleOpenUrl"
+        ]
+      },
+      "PublicCalendarEventDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "calendarId": {
+            "type": "string"
+          },
+          "calendarSlug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "object",
+            "nullable": true
+          },
+          "location": {
+            "type": "object",
+            "nullable": true
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "allDay": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "description": "confirmed | tentative | cancelled"
+          }
+        },
+        "required": [
+          "id",
+          "calendarId",
+          "calendarSlug",
+          "title",
+          "start",
+          "end",
+          "allDay",
+          "status"
+        ]
+      },
+      "GoogleViewUrlDataDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "A calendar.google.com embed URL for the selected calendars."
+          }
+        },
+        "required": [
+          "url"
         ]
       }
     }

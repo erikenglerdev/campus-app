@@ -1,9 +1,11 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
+import '../../../core/theme/hex_color.dart';
 import '../../moodle/domain/moodle_deadline.dart';
 import '../../timetable/data/timetable_models.dart';
 import '../domain/calendar_entry.dart';
+import '../domain/public_calendar.dart';
 
 /// Pure mapping + aggregation for the cross-source calendar.
 ///
@@ -55,6 +57,31 @@ List<CalendarEntry> moodleDeadlinesToCalendarEntries(
         ),
       )
       .toList();
+}
+
+/// Maps aggregated public-calendar events to calendar entries, resolving each
+/// event's colour and display name from the catalogue (by slug). The colour is
+/// only a decorative accent — the calendar name is always carried too.
+List<CalendarEntry> publicCalendarEventsToCalendarEntries(
+  List<PublicCalendarEvent> events,
+  Map<String, PublicCalendar> bySlug,
+) {
+  return events.map((PublicCalendarEvent e) {
+    final PublicCalendar? calendar = bySlug[e.calendarSlug];
+    return CalendarEntry(
+      id: 'publicCalendar:${e.calendarSlug}:${e.id}',
+      source: CalendarSource.publicCalendar,
+      title: e.title.isEmpty ? (calendar?.name ?? e.calendarSlug) : e.title,
+      start: e.start,
+      end: e.end,
+      allDay: e.allDay,
+      isCancelled: e.status == 'cancelled',
+      location: e.location,
+      calendarSlug: e.calendarSlug,
+      sourceLabel: calendar?.name ?? e.calendarSlug,
+      colorArgb: parseHexColorArgb(calendar?.colorHex),
+    );
+  }).toList();
 }
 
 /// Merges entries from any number of sources: deduplicates by [CalendarEntry.id]

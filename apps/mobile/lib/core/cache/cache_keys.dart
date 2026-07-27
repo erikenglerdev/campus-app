@@ -49,4 +49,20 @@ abstract final class CacheKeys {
     required String from,
     required String to,
   }) => 'timetable.entries.$locale.$groupId.$from.$to';
+
+  /// Full public-calendar catalogue.
+  static String publicCalendars(String locale) => 'calendars.public.$locale';
+
+  /// Aggregated events of the SELECTED public calendars for one window.
+  /// The key carries the locale, the sorted selection and both bounds, so
+  /// another selection, week or language is never served from a foreign entry.
+  static String publicCalendarEvents({
+    required String locale,
+    required List<String> slugs,
+    required String from,
+    required String to,
+  }) {
+    final List<String> sorted = List<String>.of(slugs)..sort();
+    return 'calendars.public.events.$locale.${sorted.join('+')}.$from.$to';
+  }
 }

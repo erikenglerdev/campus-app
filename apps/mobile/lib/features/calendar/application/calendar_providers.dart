@@ -12,6 +12,7 @@ import '../../timetable/application/timetable_week.dart';
 import '../../timetable/data/timetable_models.dart';
 import '../domain/calendar_entry.dart';
 import 'calendar_merge.dart';
+import 'public_calendar_providers.dart';
 
 /// Month grid or agenda list — the two explicit calendar views.
 enum CalendarViewMode { month, list }
@@ -83,6 +84,8 @@ class CalendarData {
     this.needsGroup = false,
     this.moodleConnected = false,
     this.hasMoodleError = false,
+    this.publicCalendarsLoading = false,
+    this.hasPublicCalendarError = false,
   });
 
   final List<CalendarEntry> entries;
@@ -95,6 +98,9 @@ class CalendarData {
 
   final bool moodleConnected;
   final bool hasMoodleError;
+
+  final bool publicCalendarsLoading;
+  final bool hasPublicCalendarError;
 
   List<CalendarEntry> forDay(DateTime day) => entriesForDay(entries, day);
   Set<DateTime> get eventDays => calendarEventDays(entries);
@@ -159,10 +165,23 @@ final Provider<CalendarData> calendarDataProvider = Provider<CalendarData>((
     }
   }
 
+  // --- Source 3: public Google calendars (via Campus API). Independent too.
+  final List<CalendarEntry> publicEntries = <CalendarEntry>[];
+  bool publicLoading = false;
+  bool publicError = false;
+  ref
+      .watch(publicCalendarMonthEntriesProvider)
+      .when(
+        data: (List<CalendarEntry> entries) => publicEntries.addAll(entries),
+        loading: () => publicLoading = true,
+        error: (_, _) => publicError = true,
+      );
+
   return CalendarData(
     entries: mergeCalendarEntries(<CalendarEntry>[
       ...timetableEntries,
       ...moodleEntries,
+      ...publicEntries,
     ]),
     enabledSources: enabled,
     timetableLoading: timetableLoading,
@@ -170,5 +189,7 @@ final Provider<CalendarData> calendarDataProvider = Provider<CalendarData>((
     needsGroup: needsGroup,
     moodleConnected: moodleConnected,
     hasMoodleError: moodleError,
+    publicCalendarsLoading: publicLoading,
+    hasPublicCalendarError: publicError,
   );
 });
