@@ -40,6 +40,10 @@ abstract final class AppRoutes {
   static const String moodleCourseName = 'moodle-course';
   static const String moodleCoursePath = 'course/:id';
 
+  // Local, on-device to-do list, nested under More.
+  static const String todosPath = 'todos';
+  static const String todos = '/more/todos';
+
   // Settings is a sub-page of More.
   static const String settings = '/more/settings';
   static const String about = '/more/settings/about';

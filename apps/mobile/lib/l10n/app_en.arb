@@ -619,5 +619,16 @@
   "calendarSelectAtLeastOne": "Select at least one public calendar.",
   "calendarGoogleCombinedNote": "Only public Google calendars can be opened together. The timetable and Moodle are not included.",
   "calendarSelectedCountLabel": "{count, plural, =0{No calendars selected} =1{1 calendar selected} other{{count} calendars selected}}",
-  "calendarGoogleLinkFailed": "The Google link could not be opened."
+  "calendarGoogleLinkFailed": "The Google link could not be opened.",
+
+  "moreTodos": "Tasks",
+  "moreTodosSubtitle": "Local to-do list, on this device only",
+
+  "todosTitle": "Tasks",
+  "todoAddHint": "New task …",
+  "todoAdd": "Add",
+  "todoDelete": "Delete",
+  "todoClearCompleted": "Clear completed",
+  "todoEmptyTitle": "No tasks",
+  "todoEmptyMessage": "Add your first task above. The list stays local to this device only."
 }

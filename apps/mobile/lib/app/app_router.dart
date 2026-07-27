@@ -25,6 +25,7 @@ import '../features/news/presentation/news_detail_screen.dart';
 import '../features/news/presentation/news_list_screen.dart';
 import '../features/settings/presentation/channel_settings_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
+import '../features/todos/presentation/todos_screen.dart';
 import 'app_routes.dart';
 import 'app_shell.dart';
 
@@ -167,6 +168,11 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.news}) {
                             ),
                       ),
                     ],
+                  ),
+                  GoRoute(
+                    path: AppRoutes.todosPath,
+                    builder: (BuildContext _, GoRouterState _) =>
+                        const TodosScreen(),
                   ),
                   GoRoute(
                     path: 'settings',

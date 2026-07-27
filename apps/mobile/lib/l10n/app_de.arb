@@ -1047,5 +1047,25 @@
   "calendarSelectedCountLabel": "{count, plural, =0{Keine Kalender ausgewählt} =1{1 Kalender ausgewählt} other{{count} Kalender ausgewählt}}",
   "@calendarSelectedCountLabel": { "placeholders": { "count": { "type": "int" } } },
   "calendarGoogleLinkFailed": "Der Google-Link konnte nicht geöffnet werden.",
-  "@calendarGoogleLinkFailed": {}
+  "@calendarGoogleLinkFailed": {},
+
+  "moreTodos": "Aufgaben",
+  "@moreTodos": {},
+  "moreTodosSubtitle": "Lokale To-do-Liste, nur auf diesem Gerät",
+  "@moreTodosSubtitle": {},
+
+  "todosTitle": "Aufgaben",
+  "@todosTitle": {},
+  "todoAddHint": "Neue Aufgabe …",
+  "@todoAddHint": {},
+  "todoAdd": "Hinzufügen",
+  "@todoAdd": {},
+  "todoDelete": "Löschen",
+  "@todoDelete": {},
+  "todoClearCompleted": "Erledigte entfernen",
+  "@todoClearCompleted": {},
+  "todoEmptyTitle": "Keine Aufgaben",
+  "@todoEmptyTitle": {},
+  "todoEmptyMessage": "Füge oben deine erste Aufgabe hinzu. Die Liste bleibt nur lokal auf diesem Gerät.",
+  "@todoEmptyMessage": {}
 }
