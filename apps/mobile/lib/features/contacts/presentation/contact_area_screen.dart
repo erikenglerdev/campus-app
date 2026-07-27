@@ -6,10 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/links/safe_link_launcher.dart';
 import '../../../core/network/loaded.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/content_blocks_view.dart';
 import '../../../core/widgets/icon_keys.dart';
 import '../../../core/widgets/offline_notice.dart';
+import '../../../core/widgets/remote_image.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/status_banner.dart';
 import '../../../l10n/l10n.dart';
@@ -109,8 +111,8 @@ class _AreaDetail extends StatelessWidget {
           Text(l10n.contactNoPersonsMessage, style: text.bodyMedium)
         else
           for (final ContactPerson person in area.persons) ...<Widget>[
-            _PersonCard(person: person),
-            const SizedBox(height: AppSpacing.md),
+            _PersonTile(person: person),
+            const SizedBox(height: AppSpacing.sm),
           ],
       ],
     );
@@ -175,30 +177,103 @@ class _ContactDetails extends StatelessWidget {
   }
 }
 
-class _PersonCard extends StatelessWidget {
-  const _PersonCard({required this.person});
+/// A compact, tappable row for one person: name + role only. Tapping it opens
+/// the full details in a bottom sheet, so the list stays scannable while every
+/// field the editorial team maintains stays one tap away.
+class _PersonTile extends StatelessWidget {
+  const _PersonTile({required this.person});
+
+  final ContactPerson person;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme text = Theme.of(context).textTheme;
+    return Card(
+      margin: EdgeInsets.zero,
+      child: ListTile(
+        leading: const Icon(Icons.person_outline),
+        title: Text(person.name, style: text.titleSmall),
+        subtitle: person.role != null ? Text(person.role!) : null,
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => showContactPersonDetails(context, person),
+      ),
+    );
+  }
+}
+
+/// Opens the full details of [person] in a modal bottom sheet.
+Future<void> showContactPersonDetails(
+  BuildContext context,
+  ContactPerson person,
+) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    useSafeArea: true,
+    builder: (BuildContext _) => _PersonDetailsSheet(person: person),
+  );
+}
+
+/// Every field the API delivers for one person: photo, name, role, description
+/// and the contact channels. A field that is not maintained is hidden, never
+/// shown as an empty row.
+class _PersonDetailsSheet extends StatelessWidget {
+  const _PersonDetailsSheet({required this.person});
 
   final ContactPerson person;
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
+    final AppColors colors = context.colors;
     final TextTheme text = Theme.of(context).textTheme;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(person.name, style: text.titleSmall),
-            if (person.role != null) ...<Widget>[
-              const SizedBox(height: AppSpacing.xxs),
-              Text(person.role!, style: text.bodySmall),
-            ],
-            if (person.description != null) ...<Widget>[
-              const SizedBox(height: AppSpacing.sm),
-              Text(person.description!, style: text.bodyMedium),
-            ],
+    final bool hasChannels =
+        person.email != null || person.phone != null || person.website != null;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.xl,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (person.profileImageUrl != null) ...<Widget>[
+            Center(
+              child: SizedBox(
+                width: AppSizes.illustrationIcon * 2,
+                child: ClipOval(
+                  child: RemoteImage(
+                    url: person.profileImageUrl!,
+                    alternativeText: person.name,
+                    aspectRatio: 1,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+          Semantics(
+            header: true,
+            child: Text(person.name, style: text.headlineSmall),
+          ),
+          if (person.role != null) ...<Widget>[
+            const SizedBox(height: AppSpacing.xxs),
+            Text(
+              person.role!,
+              style: text.titleSmall?.copyWith(color: colors.textSecondary),
+            ),
+          ],
+          if (person.description != null) ...<Widget>[
+            const SizedBox(height: AppSpacing.md),
+            Text(person.description!, style: text.bodyMedium),
+          ],
+          if (hasChannels) ...<Widget>[
+            const SizedBox(height: AppSpacing.sm),
             if (person.email != null)
               ContactActionTile(
                 icon: Icons.mail_outline,
@@ -221,7 +296,7 @@ class _PersonCard extends StatelessWidget {
                 uri: Uri.tryParse(person.website!),
               ),
           ],
-        ),
+        ],
       ),
     );
   }
