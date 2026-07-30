@@ -81,8 +81,14 @@ Upstream-URLs oder Tokens ausgegeben.
 | `VALIDATION_FAILED`                                                       | 400    |
 | `UNSUPPORTED_LOCALE`                                                      | 400    |
 | `NEWS_ARTICLE_NOT_FOUND` / `CONTACT_AREA_NOT_FOUND` / `CANTEEN_NOT_FOUND` | 404    |
+| `TIMETABLE_GROUP_NOT_FOUND` / `PUBLIC_CALENDAR_NOT_FOUND`                 | 404    |
 | `UPSTREAM_UNAVAILABLE`                                                    | 503    |
 | `UPSTREAM_TIMEOUT`                                                        | 504    |
+| `INTERNAL_ERROR`                                                          | 500    |
+
+Die vollständige, maßgebliche Liste steht in
+[`apps/backend/src/common/errors/api-error.ts`](../apps/backend/src/common/errors/api-error.ts);
+jede Meldung liegt dort zweisprachig vor.
 
 ## 4. Technische Endpunkte
 
@@ -406,14 +412,7 @@ Verbindliche Regeln:
 - `dataStale` ist `true`, wenn `lastSuccessfulSyncAt` älter als `CANTEEN_STALE_AFTER_MINUTES` ist.
   `lastSuccessfulSyncAt: null` bedeutet: noch nie erfolgreich synchronisiert.
 
-## 8. Was der Client garantiert nicht braucht
-
-- keine Strapi-URL, kein Strapi-Token
-- keine `location_id`
-- keine hartcodierte Kanal-, Mensa- oder Bereichsliste
-- keine Kenntnis der Preisfeld-Nummerierung der Quelle
-
-## 9. Stundenplan
+## 8. Stundenplan
 
 Quelle ist die **öffentliche** WebUntis-Ansicht. Sie wird ausschließlich serverseitig abgerufen —
 siehe [data-sources.md](data-sources.md). Der Client sieht **niemals** eine WebUntis-URL, einen
@@ -548,3 +547,141 @@ Fehlerdetails der Quelle.
 | --------------------------- | ----------------------------------------------------- |
 | `TIMETABLE_GROUP_NOT_FOUND` | 404                                                   |
 | `VALIDATION_FAILED`         | 400 (ungültiges Datum, `to < from`, Spanne > 42 Tage) |
+
+## 9. Öffentliche Kalender
+
+Quelle sind **öffentliche** Google-Kalender, die die Redaktion in Strapi freigibt. Der Worker lädt
+deren **öffentlichen ICS-Feed** — siehe [public-calendars.md](public-calendars.md). Der Client
+sieht **niemals** die Google-Kalender-ID, die Feed-URL, einen ETag oder das interne Feld
+`ownerContact`.
+
+Das Feature ist über `PUBLIC_CALENDAR_ENABLED` schaltbar und steht **standardmäßig auf `false`**.
+Ausgeliefert werden ausschließlich Kalender, die aktiv **und** validiert sind **und** mindestens
+einmal erfolgreich synchronisiert wurden.
+
+### `GET /v1/calendars`
+
+Der Katalog. Keine Parameter außer `locale`.
+
+```jsonc
+{
+  "data": [
+    {
+      "id": "3d9a…", // Campus-UUID
+      "slug": "stura-termine", // stabiler Bezeichner, Auswahlschlüssel der App
+      "name": "StuRa-Termine",
+      "description": null,
+      "colorHex": "#5B3FD0",
+      "iconKey": "calendar",
+      "sortOrder": 10,
+      "defaultSubscribed": true,
+      "attribution": "Quelle: …", // oder null
+      "dataState": "ready", // "ready" | "stale"
+      "lastSuccessfulSyncAt": "2026-07-30T06:10:00.000Z",
+      "dataStale": false,
+      "googleOpenUrl": "https://calendar.google.com/…", // serverseitig konstruiert
+    },
+  ],
+  "meta": {
+    "requestedLocale": "de",
+    "resolvedLocale": "de",
+    "translationFallback": false,
+    "featureEnabled": true,
+  },
+}
+```
+
+`defaultSubscribed` wertet die App **genau einmal** pro Slug aus — beim erstmaligen Auftauchen.
+Ein Backend-Update überschreibt eine bewusste Abwahl nie. Dieselbe Regel wie bei News-Kanälen.
+
+### `GET /v1/calendars/events`
+
+Aggregierte Termine über **mehrere** ausgewählte Kalender.
+
+| Parameter  | Typ          | Regeln                                                             |
+| ---------- | ------------ | ------------------------------------------------------------------ |
+| `calendar` | Slug         | **mehrfach** angebbar, ein Slug je Kalender; dedupliziert; max. 50 |
+| `from`     | `YYYY-MM-DD` | optional, Standard heute                                           |
+| `to`       | `YYYY-MM-DD` | optional, `to >= from`, Spanne max. **120 Tage** ⇒ sonst `400`     |
+| `locale`   | `de` \| `en` |                                                                    |
+
+**Eine leere Auswahl liefert eine leere Liste — niemals „alle Kalender“.** Das ist bewusst so: Ein
+vergessener Parameter darf nicht stillschweigend alles ausliefern.
+
+```jsonc
+{
+  "data": [
+    {
+      "id": "…",
+      "calendarId": "3d9a…",
+      "calendarSlug": "stura-termine", // damit die App Farbe und Name zuordnen kann
+      "title": "Sitzung des Studierendenrats",
+      "description": null, // nur bei showDescription, immer Plain Text
+      "location": null, // nur bei showLocation, immer Plain Text
+      "start": "2026-08-04T16:00:00.000Z",
+      "end": "2026-08-04T18:00:00.000Z",
+      "allDay": false,
+      "status": "confirmed", // "confirmed" | "tentative" | "cancelled"
+    },
+  ],
+  "meta": {
+    "requestedLocale": "de",
+    "resolvedLocale": "de",
+    "translationFallback": false,
+    "from": "2026-07-30",
+    "to": "2026-11-27",
+  },
+}
+```
+
+Die Sortierung ist deterministisch. Wiederholungen sind bereits serverseitig zu einzelnen Terminen
+expandiert; der Client kennt **keine** `RRULE`.
+
+### `GET /v1/calendars/:slug/events`
+
+Termine **eines** Kalenders. Parameter `from`, `to`, `locale` wie oben. Unbekannter oder nicht
+auslieferbarer Slug ⇒ `404 PUBLIC_CALENDAR_NOT_FOUND`.
+
+Die Antwort trägt zusätzlich `lastSuccessfulSyncAt` und `dataStale` in `meta`, damit die App den
+Frischezustand genau dieses Kalenders anzeigen kann.
+
+### `GET /v1/calendars/google-view-url`
+
+| Parameter  | Typ  | Regeln                                                     |
+| ---------- | ---- | ---------------------------------------------------------- |
+| `calendar` | Slug | **erforderlich**, mehrfach angebbar, dedupliziert, max. 50 |
+
+```jsonc
+{
+  "data": { "url": "https://calendar.google.com/calendar/embed?src=…&ctz=…" },
+  "meta": { "requestedLocale": "de", "resolvedLocale": "de", "translationFallback": false },
+}
+```
+
+Die URL wird **serverseitig** konstruiert (ein `src` je Kalender). Sie ist eine reine
+**Ansicht** — es wird dabei nichts zum persönlichen Google-Konto der nutzenden Person hinzugefügt.
+Stundenplan und Moodle sind keine Google-Quellen und niemals Teil dieser kombinierten Ansicht.
+
+### Fehlercodes
+
+| Code                        | Status                                                             |
+| --------------------------- | ------------------------------------------------------------------ |
+| `PUBLIC_CALENDAR_NOT_FOUND` | 404                                                                |
+| `VALIDATION_FAILED`         | 400 (ungültiger Slug, ungültiges Datum, > 120 Tage, > 50 Kalender) |
+
+## 10. Was der Client garantiert nicht braucht
+
+- keine Strapi-URL, kein Strapi-Token
+- keine `location_id` und keine Kenntnis der Preisfeld-Nummerierung der Quelle
+- keine WebUntis-URL, keinen WebUntis-Header, keine Schuljahres-ID, keine externe Gruppen-ID
+- keine Google-Kalender-ID, keine ICS-Feed-URL, keinen ETag, kein `ownerContact`
+- keine hartcodierte Kanal-, Mensa-, Bereichs-, Gruppen- oder Kalenderliste
+- keine `RRULE`-Auswertung — Wiederholungen kommen bereits expandiert an
+
+## 11. Nicht Teil dieser API
+
+Die persönlichen Dienste **E-Mail**, **Noten** und **Moodle** laufen ausdrücklich **nicht** über
+die Campus API. Die App spricht dafür direkt mit dem jeweiligen offiziellen Anbieter, damit weder
+Campus API noch Strapi noch Worker Zugangsdaten oder persönliche Inhalte erhalten. Es gibt für sie
+weder eine Route noch ein DTO noch eine Tabelle — siehe [architecture.md](architecture.md) §3.5 und
+Grenzen G10–G12.

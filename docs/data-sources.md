@@ -6,14 +6,34 @@ Campus Köthen App · `AGPL-3.0-only`
 
 ## 1. Übersicht
 
-| Quelle                          | Art                            | Verbraucher   | Im MVP   |
-| ------------------------------- | ------------------------------ | ------------- | -------- |
-| Strapi 5 (eigene Instanz)       | REST, Read-only-Token          | Campus API    | ja       |
-| `meine-mensa.de/api/food_plans` | öffentliche REST-Schnittstelle | Campus Worker | ja       |
-| WebUntis                        | —                              | —             | **nein** |
+### 1.1 Serverseitige Quellen (Pfad 1)
 
-Der Flutter-Client greift auf **keine** dieser Quellen direkt zu (siehe
-[architecture.md](architecture.md), Grenze G1).
+Diese Quellen werden **ausschließlich** vom Backend abgerufen. Der Flutter-Client greift auf keine
+von ihnen direkt zu (siehe [architecture.md](architecture.md), Grenze G1).
+
+| Quelle                           | Art                                 | Verbraucher   | Status                                     |
+| -------------------------------- | ----------------------------------- | ------------- | ------------------------------------------ |
+| Strapi 5 (eigene Instanz)        | REST, Read-only-Token               | Campus API    | aktiv                                      |
+| `meine-mensa.de/api/food_plans`  | öffentliche REST-Schnittstelle      | Campus Worker | aktiv                                      |
+| `hsa.webuntis.com` (View-API)    | interne API der öffentlichen Web-UI | Campus Worker | umgesetzt, `WEBUNTIS_ENABLED=false`        |
+| `calendar.google.com` (ICS-Feed) | öffentlicher ICS-Feed (RFC 5545)    | Campus Worker | umgesetzt, `PUBLIC_CALENDAR_ENABLED=false` |
+
+Die beiden geflaggten Quellen sind **vollständig implementiert und getestet**, aber serverseitig
+abgeschaltet, bis die Nutzung organisatorisch entschieden ist. Details in §4 und §5.
+
+### 1.2 Geräteseitige Quellen (Pfad 2)
+
+Diese drei Dienste spricht die App **direkt** an — ausdrücklich beschlossene, eng begrenzte
+Ausnahmen von G1, damit weder Campus API noch Strapi noch Worker Zugangsdaten oder persönliche
+Inhalte erhalten (siehe [`../CLAUDE.md`](../CLAUDE.md) §2, Grenzen G10–G12).
+
+| Quelle                     | Art                            | Verbraucher | Status |
+| -------------------------- | ------------------------------ | ----------- | ------ |
+| `mail.hs-anhalt.de`        | IMAP/SMTP                      | Flutter     | aktiv  |
+| `service.ssc.hs-anhalt.de` | HIS-QIS, HTML (keine JSON-API) | Flutter     | aktiv  |
+| `moodle.hs-anhalt.de`      | Moodle-Webservice, nur lesend  | Flutter     | aktiv  |
+
+Details in §6. Für sie gilt umgekehrt: **kein** Backend darf sie jemals abrufen.
 
 ---
 
@@ -192,12 +212,14 @@ nirgends im Quellcode hinterlegt.
 | Regel           | Wert                                                                                  |
 | --------------- | ------------------------------------------------------------------------------------- |
 | Feature-Flag    | `WEBUNTIS_ENABLED`, **Default `false`**                                               |
-| Gruppenkatalog  | täglich (`WEBUNTIS_GROUP_SYNC_CRON`, Default `0 3,15 * * *`)                          |
-| Stundenplan     | alle 30 Minuten (`WEBUNTIS_ENTRY_SYNC_CRON`), **ein** Request pro Lauf                |
+| Gruppenkatalog  | zweimal täglich (`WEBUNTIS_GROUP_SYNC_CRON`, Default `0 3,15 * * *`)                  |
+| Stundenplan     | stündlich (`WEBUNTIS_ENTRY_SYNC_CRON`, Default `0 * * * *`), **ein** Request pro Lauf |
+| Abrufvolumen    | 24 Fremdabrufe pro Tag für **alle** Gruppen zusammen                                  |
 | Zeitfenster     | 7 Tage zurück, 28 Tage voraus (konfigurierbar)                                        |
 | API-Zeitraum    | maximal 42 Tage                                                                       |
 | Timeout / Retry | 20 s, 3 Versuche, Backoff mit Jitter, `Retry-After` wird beachtet                     |
 | Abstand         | 1,5 s zwischen Fremdrequests                                                          |
+| Größenschutz    | `WEBUNTIS_MAX_RESPONSE_BYTES`, Default 16 MB                                          |
 | Tests           | ausschließlich gegen redigierte Fixtures unter `apps/backend/test/fixtures/webuntis/` |
 
 Die App ruft WebUntis **nie** direkt auf. Kein Client-Request löst einen Fremdabruf aus.
@@ -221,8 +243,110 @@ Bis dahin bleibt `WEBUNTIS_ENABLED=false`.
 
 ---
 
-## 5. Nicht im MVP
+---
 
-Stundenpläne für **Lehrpersonen oder Räume**, Raumverfügbarkeit („freie Räume"), persönlicher
-WebUntis-Login, Noten, Abwesenheiten und Hausaufgaben. Die öffentliche Ansicht wird ausschließlich
-für **Gruppenstundenpläne** genutzt.
+## 5. calendar.google.com — öffentlicher ICS-Feed
+
+> ⚠️ **Kein Google-Konto, kein API Key, kein SDK.** Es gibt weder ein Google-Cloud-Projekt noch
+> OAuth noch eine Anbindung persönlicher Google-Konten. Der Worker lädt ausschließlich den
+> **öffentlichen** ICS-Feed eines vom Inhaber freigegebenen Kalenders.
+
+### 5.1 Von der Freigabe zur Feed-URL
+
+Redakteur:innen tragen in Strapi einen **öffentlichen Freigabelink** ein
+(`https://calendar.google.com/calendar/u/0?cid=<base64url>`). Das Backend extrahiert daraus die
+Kalender-ID und konstruiert die feste Feed-URL **selbst**:
+
+```text
+https://calendar.google.com/calendar/ical/{URL-kodierte-ID}/public/basic.ics
+```
+
+Die App ruft diesen Feed **nie** direkt ab. Kalender-ID und Feed-URL bleiben backendintern, sind
+nie ein DTO-Feld und werden nie geloggt.
+
+### 5.2 Validierung und SSRF-Schutz
+
+Der Freigabelink wird an **zwei** Stellen unabhängig validiert (beim Eintragen und erneut an der
+Backend-Vertrauensgrenze): HTTPS-only · Host exakt `calendar.google.com` · kein Userinfo, kein Port
+· Pfad-Allowlist · genau ein `cid` · Base64-Roundtrip · striktes UTF-8 · Längenlimits · keine
+Steuerzeichen. Abgelehnt werden unter anderem `http`, `webcal`,
+`calendar.google.com.attacker.example`, IPs sowie direkt eingefügte `basic.ics`- oder
+`private-…`-Links.
+
+Der ICS-Client konstruiert Scheme, Host und Pfad selbst, nimmt **keine** Basis-URL aus Strapi oder
+dem Environment entgegen und folgt **keinen** Redirects — ein `3xx` wird abgelehnt.
+
+### 5.3 Beobachtete Eigenheiten
+
+1. **Zeitzonen sind uneinheitlich.** Der Feed mischt `VTIMEZONE`, UTC, `TZID` und zonenlose
+   („floating“) Zeiten. Letztere werden mit einer kontrollierten Fallback-Zone interpretiert
+   (`PUBLIC_CALENDAR_FALLBACK_TIME_ZONE`, Default `Europe/Berlin`).
+2. **Ganztägige Termine haben ein exklusives `DTEND`.** Sie werden als lokales Kalenderdatum
+   behandelt, ohne UTC- oder Gerätezeitzonen-Verschiebung.
+3. **Wiederholungsregeln können unbegrenzt expandieren.** `FREQ=MINUTELY` ist gültiges RFC 5545 und
+   würde ohne Obergrenze Millionen Zeilen erzeugen. Expandiert wird deshalb nur im Zielfenster, mit
+   harten Grenzen pro Event und pro Lauf (`recurrenceLimitExceeded`).
+4. **Der Feed enthält personenbezogene Felder**, die bewusst **nie gelesen** werden: `ATTENDEE`,
+   `ORGANIZER`, `CONTACT`, `ATTACH`, Konferenzdaten, Alarme und `X-*`. So gelangt keine
+   E-Mail-Adresse in die Datenbank.
+5. `DESCRIPTION` und `LOCATION` werden nur bei entsprechendem Strapi-Flag übernommen, immer als
+   **Plain Text**, nie als HTML.
+
+### 5.4 Abrufregeln
+
+| Regel           | Wert                                                                                    |
+| --------------- | --------------------------------------------------------------------------------------- |
+| Feature-Flag    | `PUBLIC_CALENDAR_ENABLED`, **Default `false`**                                          |
+| Katalog         | alle 10 Minuten (`PUBLIC_CALENDAR_CATALOG_SYNC_CRON`)                                   |
+| Termine         | alle 10 Minuten (`PUBLIC_CALENDAR_EVENT_SYNC_CRON`)                                     |
+| Schonung        | `If-None-Match`/`If-Modified-Since` → 304, zusätzlich Kurzschluss über Inhalts-Hash     |
+| Zeitfenster     | 30 Tage zurück, 180 Tage voraus (konfigurierbar)                                        |
+| Timeout / Retry | 20 s, 2 Versuche, nur bei 5xx/429/Transportfehlern                                      |
+| Abstand         | 1 s zwischen Fremdrequests                                                              |
+| Größenschutz    | `Content-Length`-Vorabprüfung **und** Streaming-Byte-Limit, Default 8 MB                |
+| Parser          | `ical.js` (Mozilla, MPL-2.0) — Netzwerkfunktionen der Bibliothek werden nicht verwendet |
+
+### 5.5 Rechtliches
+
+Technisch öffentlich lesbar ist **nicht** dasselbe wie rechtlich frei weiterveröffentlichbar. Vor
+dem produktiven Eintrag eines Kalenders sind zu klären: Zustimmung des Inhabers, zulässiger
+Quellenhinweis, ob Beschreibung und Ort gezeigt werden dürfen, Ansprechpartner und das Verhalten
+bei Entzug der Freigabe. Teilnehmer- und Organizer-Adressen werden nie übernommen.
+
+Vollständige Beschreibung inklusive Redaktionshandbuch: [public-calendars.md](public-calendars.md).
+
+---
+
+## 6. Geräteseitige Direktquellen
+
+Diese Quellen erreicht **ausschließlich die App**. Ein Backend darf sie nie abrufen; es gibt für
+sie keine API-Route, keine Strapi-Collection, keinen Worker-Job und keine Datenbanktabelle.
+
+| Quelle                     | Zweck                                                  | Besonderheit                                                      | Doku                               |
+| -------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------- | ---------------------------------- |
+| `mail.hs-anhalt.de`        | Studentisches Postfach                                 | IMAPS 993, SMTP 587 mit **Pflicht**-STARTTLS, kein Klartext       | [student-mail.md](student-mail.md) |
+| `service.ssc.hs-anhalt.de` | HIS-QIS-Notenspiegel                                   | **keine** offizielle API — HTML-Parsing über Spaltenüberschriften | [grades.md](grades.md)             |
+| `moodle.hs-anhalt.de`      | Kurse, Materialien, Aufgaben, Ankündigungen, Deadlines | feste, rein **lesende** Whitelist von `wsfunction`s               | [moodle.md](moodle.md)             |
+
+Gemeinsame Regeln: feste Host-Allowlist vor jedem Request · Redirects auf fremde Hosts oder auf
+Klartext werden abgebrochen · Zertifikatsprüfung nie deaktiviert · Zugangsdaten und Token nur im
+Keychain/Keystore · Inhalte nur verschlüsselt lokal · nichts davon in Logs oder Fehlermeldungen.
+
+**Bekannte Fragilität:** HIS-QIS bietet keine JSON-API. Ändert die Hochschule das Portal, greift
+`portalStructureChanged` — mit lokalisierter Meldung, **ohne** den Cache zu überschreiben und
+**ohne** die Antwort zu loggen. Wie bei WebUntis gilt: eine Parseränderung ist zuerst als Änderung
+der Quelle zu behandeln, nicht als eigener Bug.
+
+---
+
+## 7. Nicht genutzt
+
+Stundenpläne für **Lehrpersonen oder Räume**, Raumverfügbarkeit („freie Räume“), persönlicher
+WebUntis-Login sowie Abwesenheiten und Hausaufgaben. Die öffentliche WebUntis-Ansicht wird
+ausschließlich für **Gruppenstundenpläne** genutzt.
+
+Noten stammen **nicht** aus WebUntis, sondern ausschließlich aus dem HIS-QIS-Prüfungsportal und
+werden direkt vom Gerät abgerufen (§6).
+
+Ebenfalls dauerhaft ausgeschlossen: Google API Key, Google-OAuth, Google-SDK, die Anbindung
+persönlicher Google-Konten sowie jeder Schreibzugriff auf Moodle.

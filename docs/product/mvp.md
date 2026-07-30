@@ -1,6 +1,6 @@
 # Campus Köthen — MVP-Definition
 
-Stand: 22.07.2026 · Status: **in Entwicklung, nicht veröffentlicht**
+Stand: 30.07.2026 · Status: **in Entwicklung, nicht veröffentlicht**
 
 ---
 
@@ -41,33 +41,79 @@ Platzhalterseiten der App.
 Studierende am Campus Köthen erhalten in einer App:
 
 1. **News** aus mehreren, frei wählbaren redaktionellen Kanälen.
-2. **Mensapläne** beider Köthener Mensen mit allen Preisgruppen.
-3. **Kontakte** zu Anlaufstellen, funktional statt personenzentriert.
+2. **Kalender**, der Stundenplan, öffentliche Campus-Kalender und Moodle-Deadlines in einer
+   Ansicht zusammenführt — die Zusammenführung geschieht ausschließlich auf dem Gerät.
+3. **Mensapläne** beider Köthener Mensen mit allen Preisgruppen.
+4. **Kontakte** zu Anlaufstellen, funktional statt personenzentriert.
+5. **Persönliche Dienste** — Studentenpostfach, Notenspiegel und Moodle — jeweils direkt vom Gerät
+   zum offiziellen Anbieter, ohne dass ein Server dieses Projekts beteiligt ist.
 
-Die App funktioniert **ohne Nutzerkonto**. Alle Präferenzen bleiben auf dem Gerät.
+Die App funktioniert **ohne Nutzerkonto bei diesem Projekt**. Alle Präferenzen bleiben auf dem
+Gerät. Für die persönlichen Dienste meldet man sich beim jeweiligen Hochschulsystem an; diese
+Zugangsdaten verlassen das Gerät nur in Richtung des offiziellen Anbieters.
 
 ## 3. Umfang
 
 ### 3.1 Enthalten
 
+**Öffentliche Inhalte über die Campus API**
+
 - News-Liste, News-Detail, dynamische News-Kanal-Auswahl
 - Mensa-Auswahl und Speiseplan mit Tagesnavigation
+- Kontaktbereiche und Kontaktdetail
 - **Gruppenstundenplan** aus der öffentlichen WebUntis-Ansicht — vollständig umgesetzt, aber
   serverseitig über `WEBUNTIS_ENABLED` **standardmäßig deaktiviert**, bis die Nutzung
   organisatorisch freigegeben ist (siehe Release-Gates)
-- Kontaktbereiche und Kontaktdetail
-- Lokale Einstellungen: Sprache, Theme, Kanal-Abos, bevorzugte Mensa, gewählte Stundenplangruppe
+- **Öffentliche Google-Kalender** über deren öffentlichen ICS-Feed, redaktionell in Strapi
+  gepflegt — vollständig umgesetzt, aber über `PUBLIC_CALENDAR_ENABLED` **standardmäßig
+  deaktiviert**; ohne Google API Key, ohne OAuth, ohne Anbindung persönlicher Google-Konten
+
+**Quellenübergreifender Kalender**
+
+- Eigener Tab mit expliziter Umschaltung **Monatsraster ↔ Liste**
+- Quellen: Stundenplan (Campus API), öffentliche Kalender (Campus API), Moodle-Deadlines (direkt)
+- Zusammenführung **ausschließlich lokal auf dem Gerät**; Quellen sind isoliert — ein Fehler einer
+  Quelle blendet die anderen nicht aus, sondern erscheint als eigenes Banner
+- „Kalender verwalten": lokale Auswahl der öffentlichen Kalender
+
+**Persönliche Dienste, direkt vom Gerät**
+
+- **Studenten-E-Mail** (`mail.hs-anhalt.de`): Posteingang mit Offline-Cache, alle Server-Ordner,
+  serverseitige Suche über IMAP SEARCH, Anhänge anzeigen und in der App öffnen, Verfassen,
+  Antworten und Allen antworten — reiner Text
+- **Notenspiegel** (HIS-QIS): Notenübersicht mit Detailansicht, verschlüsselter lokaler Cache,
+  24-Stunden-Regel mit manueller Übersteuerung
+- **Moodle**: Kurse, Materialien, Aufgaben mit Abgabestatus, Ankündigungen und Deadlines —
+  **ausschließlich lesend**, verschlüsselter lokaler Cache, 24-Stunden-Regel
+
+**Lokales und Rahmen**
+
+- Lokale Aufgabenliste unter „Mehr → Aufgaben" — rein auf dem Gerät, ohne jede Netzbeteiligung
+- Lokale Einstellungen: Sprache, Theme, Kanal-Abos, bevorzugte Mensa, gewählte Stundenplangruppe,
+  Kalenderauswahl, Anhänge-Download für E-Mail
 - Offline-/Cache-Verhalten mit klarer Stale-Kennzeichnung
 - About, Impressums-Platzhalter, Datenschutz-Platzhalter
 - Deutsch und Englisch in App, CMS und API
 
 ### 3.2 Nicht enthalten
 
-Nutzerkonten · Push-Nachrichten · persönlicher WebUntis-Login · Noten/Abwesenheiten/Hausaufgaben ·
-Stundenpläne für Lehrpersonen oder Räume · Raumverfügbarkeit („freie Räume") ·
-Zusammenführen mehrerer Gruppen in einen Plan · Gebäudepläne · Raumbelegung ·
-Indoor-Navigation · Analytics/Tracking · Sentry oder externes Crash-Reporting · Redis · SMTP ·
-automatisches Deployment · globale Volltextsuche
+**Produktseitig:** Nutzerkonten für die App selbst · Push-Nachrichten · globale Volltextsuche ·
+Gebäudepläne · Raumbelegung · Indoor-Navigation · mehrere Mail- oder Moodle-Konten ·
+serverseitige Synchronisierung der lokalen Aufgabenliste
+
+**Stundenplan:** persönlicher WebUntis-Login · Stundenpläne für Lehrpersonen oder Räume ·
+Raumverfügbarkeit („freie Räume") · Zusammenführen mehrerer Gruppen in einen Plan ·
+Abwesenheiten und Hausaufgaben
+
+**Moodle:** jeder Schreibzugriff — keine Abgaben, keine Forenbeiträge, keine generische
+„beliebige Funktion aufrufen"-Schnittstelle
+
+**Kalender:** Google API Key · Google-OAuth · Google-SDK · Anbindung persönlicher Google-Konten ·
+automatisches Hinzufügen von Terminen zum persönlichen Google-Konto
+
+**Technisch:** Analytics/Tracking · Sentry oder externes Crash-Reporting · Redis · SMTP ·
+automatisches Deployment · Hintergrund-Sync bei vollständig geschlossener App · IMAP IDLE ·
+Backend-Proxy für E-Mail, Noten oder Moodle
 
 Die Architektur muss diese Erweiterungen ermöglichen, es wird dafür aber **kein ungenutzter Code**
 gebaut.
@@ -117,7 +163,60 @@ gebaut.
 - **Keine erfundenen Personen, Telefonnummern, E-Mail-Adressen oder offiziellen Aussagen.**
   Startdaten sind als Demo gekennzeichnet.
 
-### 4.4 Sprachen
+### 4.4 Kalender
+
+- Der Kalender ist ein eigener Tab und führt **drei** Quellen zusammen: Stundenplan und öffentliche
+  Kalender über die Campus API, Moodle-Deadlines direkt vom Gerät.
+- Die Zusammenführung geschieht **ausschließlich lokal**. Kein Server sieht die kombinierte Ansicht.
+- **Quellen sind isoliert.** Ein Moodle-Fehler beeinträchtigt den Stundenplan nicht; ein
+  Campus-API-Fehler entfernt die lokal gecachten Moodle-Deadlines nicht. Jeder Fehler erscheint als
+  eigenes Banner pro Quelle.
+- Explizite Umschaltung zwischen **Monatsraster** und **Liste**.
+- Öffentliche Termine tragen einen Farbpunkt **plus** Kalendername und Icon — Farbe ist nie das
+  alleinige Unterscheidungsmerkmal.
+- Eine neue Quelle bedeutet: ein Wert in `CalendarSource`, ein Mapper und eine Verdrahtung im
+  Aggregator. Mehr nicht.
+- **Kalenderauswahl:** `defaultSubscribed` wird pro Slug **genau einmal** ausgewertet — beim
+  erstmaligen Auftauchen. Bewusst deaktivierte Kalender bleiben deaktiviert; ein Backend-Update
+  überschreibt die Auswahl nie; keine Auswahl bedeutet keine öffentlichen Termine, niemals „alle".
+- Ein neuer öffentlicher Kalender erscheint **ohne App- und ohne Backend-Änderung**, sobald er in
+  Strapi veröffentlicht und einmal erfolgreich synchronisiert wurde.
+
+### 4.5 Persönliche Dienste (direkt vom Gerät)
+
+Gemeinsame, nicht verhandelbare Regeln für E-Mail, Noten und Moodle:
+
+- Die App spricht **direkt** mit dem offiziellen Anbieter. Campus API, Strapi und Worker sind
+  **nie** beteiligt und erhalten **weder Zugangsdaten noch persönliche Inhalte**.
+- Feste Host-Allowlist, vor jedem Request geprüft. Redirects auf einen anderen Host oder auf
+  Klartext werden abgebrochen. Zertifikatsprüfung ist nie deaktiviert.
+- Zugangsdaten und Token liegen **ausschließlich** im Keychain/Keystore. Gibt es keinen sicheren
+  Speicher, wird **nicht** gespeichert und ein klarer Fehler gezeigt — kein unsicherer Fallback.
+- Persönliche Inhalte liegen nur **verschlüsselt** lokal (Noten, Moodle) beziehungsweise in einer
+  app-privaten Box (E-Mail); das Passwort liegt **nie** im Cache.
+- Nichts davon erscheint in Logs, Exceptions, `toString()` oder Fehlermeldungen.
+- Eine leere, ungültige oder fehlgeschlagene Antwort **überschreibt den letzten guten Stand nie**.
+- „Account entfernen" beziehungsweise „Verbindung und lokale Daten löschen" entfernt Zugangsdaten,
+  Token, Cache, Cache-Schlüssel, Zeitstempel und State **vollständig**.
+
+Dienstspezifisch:
+
+| Dienst | Anmeldung                        | Sync                                                       | Umfang                                                                   |
+| ------ | -------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------ |
+| E-Mail | Adresse + Passwort, sonst nichts | App-Start, Anmeldung, alle 10 Minuten, manuell             | lesen, suchen (IMAP SEARCH), Ordner wechseln, Anhänge, antworten, senden |
+| Noten  | Benutzername + Passwort          | lazy beim Öffnen, höchstens 1× pro rollenden 24 h, manuell | Notenspiegel mit Detailansicht                                           |
+| Moodle | Benutzername + Passwort → Token  | lazy beim Öffnen, höchstens 1× pro rollenden 24 h, manuell | Kurse, Materialien, Aufgaben, Ankündigungen, Deadlines — **nur lesend**  |
+
+Kein Hintergrund-Polling, kein Timer, kein Backend-Cron. Beim Moodle-Login wird das Passwort sofort
+nach dem Tokenerwerb verworfen und nie gespeichert. HTML-Mails werden zu **reinem Text** reduziert;
+es gibt kein WebView, kein JavaScript und keine automatische Nachladung entfernter Bilder.
+
+### 4.6 Lokale Aufgabenliste
+
+- Vollständig **auf dem Gerät**. Kein Netzaufruf, keine API, keine Synchronisierung, kein Konto.
+- Erreichbar unter „Mehr → Aufgaben".
+
+### 4.7 Sprachen
 
 - Standard- und Fallback-Locale ist `de`.
 - Die App folgt der Systemsprache und erlaubt eine manuelle Auswahl Deutsch/Englisch.
@@ -126,22 +225,26 @@ gebaut.
   bleibt der Quelltext erhalten und wird als Fallback markiert (`translationFallback`).
   API-eigene Labels (Mensanamen, Preisgruppen, Marker, Fehlertexte) sind zweisprachig.
 
-### 4.5 Offline und Cache
+### 4.8 Offline und Cache
 
 Lokal gespeichert werden:
 
-| Daten                                        | Speicher                             |
-| -------------------------------------------- | ------------------------------------ |
-| Kanal-Abos, bevorzugte Mensa, Sprache, Theme | `SharedPreferences` (kleine Skalare) |
-| Letzte News-Seite                            | `hive_ce`                            |
-| Kanäle vollständig                           | `hive_ce`                            |
-| Kontakte vollständig                         | `hive_ce`                            |
-| Mensadaten aktuelle + kommende Woche         | `hive_ce`                            |
+| Daten                                                         | Speicher                                     |
+| ------------------------------------------------------------- | -------------------------------------------- |
+| Kanal-Abos, Kalenderauswahl, bevorzugte Mensa, Sprache, Theme | `SharedPreferences` (kleine Skalare)         |
+| Gewählte Stundenplangruppe, Anhänge-Download                  | `SharedPreferences`                          |
+| Letzte News-Seite · Kanäle · Kontakte vollständig             | `hive_ce`                                    |
+| Mensadaten aktuelle + kommende Woche                          | `hive_ce`                                    |
+| Aufgabenliste                                                 | `hive_ce`, rein lokal                        |
+| E-Mail-Kopfzeilen, -Inhalte, optional Anhänge                 | app-private `hive_ce`-Box                    |
+| Noten, Moodle-Inhalte                                         | **verschlüsselte** `hive_ce`-Box             |
+| Zugangsdaten, Token, Schlüssel der verschlüsselten Boxen      | `flutter_secure_storage` (Keychain/Keystore) |
 
 Gecachte Daten werden klar als offline bzw. veraltet gekennzeichnet. **Ein Cachefehler darf nie zum
-App-Crash führen** — er degradiert auf einen Netzwerkabruf.
+App-Crash führen** — er degradiert auf einen Netzwerkabruf. Umgekehrt darf eine leere oder
+fehlgeschlagene Antwort den letzten guten Stand nie löschen.
 
-### 4.6 Barrierefreiheit
+### 4.9 Barrierefreiheit
 
 Ausreichende Kontraste in Light und Dark · dynamische Schriftgrößen · Screenreader-Semantics ·
 Touch-Ziele >= 48dp · keine reine Farbcodierung · Light/Dark/System-Theme.
@@ -170,6 +273,17 @@ Touch-Ziele >= 48dp · keine reine Farbcodierung · Light/Dark/System-Theme.
 | A18 | Keine Secrets im Repository oder in den Images.                                                        |
 | A19 | Zwei getrennte Datenbanken mit getrennten Rollen.                                                      |
 | A20 | Backend-, Strapi- und Flutter-Gates lokal grün.                                                        |
+| A21 | Ein neuer öffentlicher Kalender erscheint ohne App- und ohne Backend-Änderung.                         |
+| A22 | Keine Kalenderauswahl ⇒ keine öffentlichen Termine, niemals „alle".                                    |
+| A23 | Google-Kalender-ID, Feed-URL, ETag und `ownerContact` erscheinen in keiner API-Antwort.                |
+| A24 | Ein Fehler einer Kalenderquelle blendet die übrigen Quellen nicht aus.                                 |
+| A25 | Kein Backend-Endpunkt, keine Tabelle und kein Log berührt E-Mail-, Noten- oder Moodle-Daten.           |
+| A26 | Zugangsdaten und Token liegen nur im Keychain/Keystore; Noten und Moodle-Inhalte nur verschlüsselt.    |
+| A27 | Ein Redirect auf einen fremden Host oder auf Klartext bricht den Aufruf ab, ohne Token weiterzugeben.  |
+| A28 | Eine leere oder fehlgeschlagene Antwort überschreibt bei keiner Quelle den letzten guten Stand.        |
+| A29 | „Account entfernen" bzw. „Verbindung und lokale Daten löschen" hinterlässt keine Reste.                |
+| A30 | Moodle wird ausschließlich lesend angesprochen; es existiert keine generische Aufruf-Schnittstelle.    |
+| A31 | Die Aufgabenliste funktioniert vollständig ohne Netzverbindung.                                        |
 
 ## 6. Offene Release-Gates
 
@@ -178,7 +292,9 @@ werden:
 
 1. **Betreiberbestätigung** — Studierendenrat der Hochschule Anhalt organisatorisch bestätigen.
 2. **Impressum** — aktuell bilinguale Platzhalterseite ohne Adressdaten.
-3. **Datenschutzerklärung** — aktuell bilinguale Platzhalterseite.
+3. **Datenschutzerklärung** — aktuell bilinguale Platzhalterseite. Sie muss die drei
+   Direktverbindungen (E-Mail, HIS-QIS, Moodle) und die gerätelokale Speicherung ausdrücklich
+   beschreiben.
 4. **Support-Kontakt** — noch nicht festgelegt.
 5. **Finales App-Icon** — aktuell neutraler eigener Platzhalter.
 6. **SMTP** — für Strapi-Einladungen und Passwort-Reset.
@@ -190,3 +306,11 @@ werden:
     der internen View-API, akzeptable Abrufrate, Stabilitätszusage beziehungsweise offizielle API,
     gewünschte Quellenangabe sowie zulässige Speicherung und Aufbewahrung von Lehrpersonennamen.
     Bis dahin bleibt `WEBUNTIS_ENABLED=false`.
+12. **Abstimmung über das HIS-QIS-Prüfungsportal** — automatisierte Nutzung des Portals mit der
+    Hochschule Anhalt klären.
+13. **Veröffentlichungsrechte je öffentlichem Kalender** — Zustimmung des Inhabers, zulässiger
+    Quellenhinweis, ob Beschreibung und Ort gezeigt werden dürfen, Ansprechpartner und Verhalten
+    bei Entzug der Freigabe. Bis Kalender gepflegt sind, bleibt `PUBLIC_CALENDAR_ENABLED=false`.
+14. **App-Switcher-Vorschau des Notenbildschirms** — bewusst offene Datenschutzentscheidung; eine
+    saubere, plattformübergreifende Lösung ohne globale Nebenwirkungen liegt nicht vor. Siehe
+    [`../grades.md`](../grades.md).
