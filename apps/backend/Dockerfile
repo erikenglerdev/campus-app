@@ -83,6 +83,12 @@ COPY --from=build --chown=node:node /opt/deploy/package.json ./package.json
 COPY --from=build --chown=node:node /opt/deploy/prisma ./prisma
 COPY --from=build --chown=node:node /opt/deploy/prisma.config.ts ./prisma.config.ts
 
+# A deployment image that carries migrations but cannot execute them is not a
+# deployable artefact. Keep this assertion in the image build itself so the
+# Images workflow fails before publishing a broken migration contract.
+RUN test -x /opt/app/node_modules/.bin/prisma \
+ && test -d /opt/app/prisma/migrations
+
 USER node
 
 EXPOSE 3000
