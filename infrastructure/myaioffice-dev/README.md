@@ -6,15 +6,15 @@ server and never deploys them.
 
 ## Topology
 
-| Item | Value |
-| --- | --- |
-| Host | `myaioffice.de`, Linux `amd64` |
-| Server directory | `/home/nexa/docker/campus-koethen-dev` |
-| CMS proxy | `cms-dev.myaioffice.de` → `127.0.0.1:3020` |
-| API proxy | `api-dev.myaioffice.de` → `127.0.0.1:3021` |
-| PostgreSQL | private Compose service, no published host port |
-| CMS database/role | `campus_cms_dev` / `campus_cms` |
-| App database/role | `campus_app_dev` / `campus_app` |
+| Item              | Value                                           |
+| ----------------- | ----------------------------------------------- |
+| Host              | `myaioffice.de`, Linux `amd64`                  |
+| Server directory  | `/home/nexa/docker/campus-koethen-dev`          |
+| CMS proxy         | `cms-dev.myaioffice.de` → `127.0.0.1:3020`      |
+| API proxy         | `api-dev.myaioffice.de` → `127.0.0.1:3021`      |
+| PostgreSQL        | private Compose service, no published host port |
+| CMS database/role | `campus_cms_dev` / `campus_cms`                 |
+| App database/role | `campus_app_dev` / `campus_app`                 |
 
 CMS, API and worker run as the unprivileged `node` user. CMS and API bind to
 host loopback only; PostgreSQL stays on the private Compose network. The worker

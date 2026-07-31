@@ -4,6 +4,9 @@ build
 coverage
 apps/cms/.strapi
 apps/cms/types/generated
+# Written by the Strapi CLI on every local run; ignored by git, so Prettier
+# must ignore it too or a local `format:check` fails for no reason.
+apps/cms/.strapi-updater.json
 apps/mobile
 pnpm-lock.yaml
 LICENSE
