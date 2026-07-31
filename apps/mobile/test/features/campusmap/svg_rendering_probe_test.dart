@@ -15,38 +15,53 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// Renders [asset] and returns everything the renderer logged while doing so.
+Future<List<String>> renderLog(WidgetTester tester, String asset) async {
+  final List<String> messages = <String>[];
+  final DebugPrintCallback original = debugPrint;
+  debugPrint = (String? message, {int? wrapWidth}) {
+    if (message != null) messages.add(message);
+  };
+
+  try {
+    await tester.pumpWidget(MaterialApp(home: SvgPicture.asset(asset)));
+    await tester.pumpAndSettle();
+  } finally {
+    debugPrint = original;
+  }
+  return messages;
+}
+
+void expectNoUnhandled(WidgetTester tester, List<String> messages) {
+  expect(tester.takeException(), isNull);
+  final Iterable<String> unhandled = messages.where(
+    (String message) => message.contains('unhandled element'),
+  );
+  expect(
+    unhandled,
+    isEmpty,
+    reason:
+        'the generated asset must not contain constructs the renderer drops: '
+        '${unhandled.join(', ')}',
+  );
+}
+
 void main() {
   testWidgets('the bundled plan renders without unsupported constructs', (
     WidgetTester tester,
   ) async {
-    final List<String> messages = <String>[];
-    final DebugPrintCallback original = debugPrint;
-    debugPrint = (String? message, {int? wrapWidth}) {
-      if (message != null) messages.add(message);
-    };
-
-    try {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: SvgPicture.asset('assets/maps/demo-north/level2.svg'),
-        ),
-      );
-      await tester.pumpAndSettle();
-    } finally {
-      debugPrint = original;
-    }
-
-    expect(tester.takeException(), isNull);
-
-    final Iterable<String> unhandled = messages.where(
-      (String message) => message.contains('unhandled element'),
+    expectNoUnhandled(
+      tester,
+      await renderLog(tester, 'assets/maps/demo-north/level2.svg'),
     );
-    expect(
-      unhandled,
-      isEmpty,
-      reason:
-          'the generated asset must not contain constructs the renderer drops: '
-          '${unhandled.join(', ')}',
+  });
+
+  testWidgets('the campus overview renders without unsupported constructs', (
+    WidgetTester tester,
+  ) async {
+    expectNoUnhandled(
+      tester,
+      await renderLog(tester, 'assets/maps/campus/koethen-overview.svg'),
     );
   });
 }

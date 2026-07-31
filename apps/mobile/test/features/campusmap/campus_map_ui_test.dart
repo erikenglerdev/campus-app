@@ -15,6 +15,7 @@ import 'package:campus_koethen/features/campusmap/application/campus_map_provide
 import 'package:campus_koethen/features/campusmap/domain/map_catalog.dart';
 import 'package:campus_koethen/features/campusmap/data/map_asset_loader.dart';
 import 'package:campus_koethen/features/campusmap/presentation/campus_map_screen.dart';
+import 'package:campus_koethen/features/campusmap/presentation/floor_map_view.dart';
 import 'package:campus_koethen/features/campusmap/presentation/room_link_tile.dart';
 import 'package:campus_koethen/features/contacts/data/contact_models.dart';
 import 'package:campus_koethen/features/more/presentation/more_screen.dart';
@@ -32,7 +33,7 @@ import '../../support/pump_app.dart';
 Map<String, dynamic> roomJson(
   String suffix, {
   String? displayName,
-  String mapVersion = 'demo-north-2026-07-31',
+  String? mapVersion,
   String roomType = 'office',
   int sortOrder = 0,
 }) => <String, dynamic>{
@@ -46,7 +47,9 @@ Map<String, dynamic> roomJson(
   'roomType': roomType,
   'displayName': displayName,
   'description': null,
-  'mapVersion': mapVersion,
+  // Taken from the bundled catalogue so a regenerated map cannot silently
+  // turn every map assertion into a version-mismatch banner.
+  'mapVersion': mapVersion ?? testCatalog.mapVersion,
   'sortOrder': sortOrder,
 };
 
@@ -304,7 +307,15 @@ void main() {
 
     await tester.tap(find.text('Fictional demo plan'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('fictional'), findsOneWidget);
+    // Scoped to the dialog: the building picker also carries the word
+    // "fictional" in its English name.
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.textContaining('fictional'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('the map exposes a screen reader label', (
@@ -363,6 +374,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
+
+  group('building and floor selection', _selectionTests);
 
   group('contact room rows', () {
     const RoomReference known = RoomReference(
@@ -473,5 +486,216 @@ void main() {
       );
       expect(find.textContaining('nicht enthalten'), findsOneWidget);
     });
+  });
+}
+
+/// Building and floor selection.
+///
+/// The demo floor plan and the campus overview are two buildings in the same
+/// bundled catalogue, so switching between them has to keep the plan, the floor
+/// and any room selection describing the same place.
+void _selectionTests() {
+  String buildingName(String key, {String locale = 'de'}) =>
+      testCatalog.building(key)!.name.resolve(locale);
+  String floorName(String key, {String locale = 'de'}) =>
+      testCatalog.floor(key)!.name.resolve(locale);
+
+  const String demo = 'demo-north';
+  const String overview = 'koethen-campus-overview';
+  const String demoFloor = 'demo-north-level2';
+  const String overviewFloor = 'koethen-campus-overview-level';
+
+  Future<void> switchTo(WidgetTester tester, String label) async {
+    await tester.tap(find.text(label).hitTestable().first);
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('the building picker offers both buildings', (
+    WidgetTester tester,
+  ) async {
+    await pumpMap(tester);
+
+    // The current building is on the chip…
+    expect(find.text(buildingName(demo)), findsOneWidget);
+    await tester.tap(find.text(buildingName(demo)));
+    await tester.pumpAndSettle();
+    // …and the menu offers the other one too.
+    expect(find.text(buildingName(overview)), findsOneWidget);
+  });
+
+  testWidgets('switching to the overview shows its own plan', (
+    WidgetTester tester,
+  ) async {
+    await pumpMap(tester);
+    expect(
+      tester.widget<FloorMapView>(find.byType(FloorMapView)).floor.svgAsset,
+      'assets/maps/demo-north/level2.svg',
+    );
+
+    await tester.tap(find.text(buildingName(demo)));
+    await tester.pumpAndSettle();
+    await switchTo(tester, buildingName(overview));
+
+    final FloorMapView view = tester.widget<FloorMapView>(
+      find.byType(FloorMapView),
+    );
+    expect(view.floor.floorKey, overviewFloor);
+    expect(view.floor.svgAsset, 'assets/maps/campus/koethen-overview.svg');
+    // A building without rooms is a normal state: no selection, no error.
+    expect(view.selected, isNull);
+    expect(find.textContaining('Ausgewählt:'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the floor picker is limited to the active building', (
+    WidgetTester tester,
+  ) async {
+    await pumpMap(tester);
+    expect(find.text(floorName(demoFloor)), findsOneWidget);
+    expect(find.text(floorName(overviewFloor)), findsNothing);
+
+    await tester.tap(find.text(buildingName(demo)));
+    await tester.pumpAndSettle();
+    await switchTo(tester, buildingName(overview));
+
+    expect(find.text(floorName(overviewFloor)), findsOneWidget);
+    expect(find.text(floorName(demoFloor)), findsNothing);
+  });
+
+  testWidgets('switching back shows the 30-room plan again', (
+    WidgetTester tester,
+  ) async {
+    await pumpMap(tester);
+    await tester.tap(find.text(buildingName(demo)));
+    await tester.pumpAndSettle();
+    await switchTo(tester, buildingName(overview));
+    await tester.tap(find.text(buildingName(overview)));
+    await tester.pumpAndSettle();
+    await switchTo(tester, buildingName(demo));
+
+    expect(
+      tester.widget<FloorMapView>(find.byType(FloorMapView)).floor.floorKey,
+      demoFloor,
+    );
+    expect(find.text(floorName(demoFloor)), findsOneWidget);
+  });
+
+  testWidgets('picking a search result switches building and floor', (
+    WidgetTester tester,
+  ) async {
+    await pumpMap(tester);
+    // Start on the campus overview, which has no rooms at all.
+    await tester.tap(find.text(buildingName(demo)));
+    await tester.pumpAndSettle();
+    await switchTo(tester, buildingName(overview));
+    expect(
+      tester.widget<FloorMapView>(find.byType(FloorMapView)).floor.floorKey,
+      overviewFloor,
+    );
+
+    // Search stays global, so the room is still findable from here.
+    await tester.enterText(find.byType(TextField), 'B.201');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Großer Hörsaal').last);
+    await tester.pumpAndSettle();
+
+    final FloorMapView view = tester.widget<FloorMapView>(
+      find.byType(FloorMapView),
+    );
+    expect(view.floor.floorKey, demoFloor);
+    expect(view.selected?.roomKey, 'demo-north-level2-b201');
+    expect(find.text(buildingName(demo)), findsOneWidget);
+  });
+
+  testWidgets('a deep link sets building and floor', (
+    WidgetTester tester,
+  ) async {
+    await pumpMap(tester, initialRoomKey: 'demo-north-level2-b210');
+
+    final FloorMapView view = tester.widget<FloorMapView>(
+      find.byType(FloorMapView),
+    );
+    expect(view.floor.floorKey, demoFloor);
+    expect(view.selected?.roomKey, 'demo-north-level2-b210');
+    expect(find.text(buildingName(demo)), findsOneWidget);
+  });
+
+  testWidgets('the plan notice follows the building', (
+    WidgetTester tester,
+  ) async {
+    await pumpMap(tester);
+    // The invented floor plan says so.
+    expect(find.text('Fiktiver Demoplan'), findsOneWidget);
+
+    await tester.tap(find.text(buildingName(demo)));
+    await tester.pumpAndSettle();
+    await switchTo(tester, buildingName(overview));
+
+    // The campus overview is not fictional, and claiming it were would be a
+    // false statement about a real place.
+    expect(find.text('Fiktiver Demoplan'), findsNothing);
+    expect(find.text('Schematische Übersicht'), findsOneWidget);
+  });
+
+  testWidgets('both selectors carry a screen reader label', (
+    WidgetTester tester,
+  ) async {
+    await pumpMap(tester);
+
+    expect(
+      find.bySemanticsLabel('Gebäude auswählen, aktuell ${buildingName(demo)}'),
+      findsOneWidget,
+    );
+    // One level: stated, not offered as a choice.
+    expect(
+      find.bySemanticsLabel('Einzige Ebene: ${floorName(demoFloor)}'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('the selectors render in English', (WidgetTester tester) async {
+    await pumpMap(tester, locale: AppLocales.english);
+
+    expect(find.text(buildingName(demo, locale: 'en')), findsOneWidget);
+    expect(find.text(floorName(demoFloor, locale: 'en')), findsOneWidget);
+  });
+
+  testWidgets('long names do not overflow a narrow screen', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await pumpScreen(
+      tester,
+      const CampusMapScreen(),
+      overrides: mapOverrides(roomsFixture),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the selectors survive a wide screen too', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1600, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await pumpScreen(
+      tester,
+      const CampusMapScreen(),
+      overrides: mapOverrides(roomsFixture),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(FloorMapView), findsOneWidget);
   });
 }

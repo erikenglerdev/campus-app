@@ -2,25 +2,41 @@
 
 # Lageplan, Raumkatalog und CMS-Raumsync
 
-Ein **vollständig fiktiver** Demo-Etagenplan mit Raumsuche unter „Mehr → Lageplan“. Die Geometrie
+Lageplan mit Gebäude- und Etagenauswahl sowie Raumsuche unter „Mehr → Lageplan“. Die Geometrie
 ist ein selbst erstelltes, versioniertes Asset im Repository; Raumbezeichnungen und redaktionelle
 Texte kommen über die Campus API und werden offline gecacht.
 
-> ⚠️ **Alles daran ist erfunden.** Gebäude, Etage und alle 30 Räume (B.201–B.230) sind
-> Demonstrationsdaten. Es wird **kein** realer Grundriss, **kein** reales Gebäude und **kein**
-> realer Raum einer Einrichtung dargestellt. Reale Gebäudepläne dürfen erst nach geklärter
-> Herkunft und Freigabe aufgenommen werden — siehe [§8](#8-release-gate-reale-gebäudepläne).
+Zwei Kartengebäude, bewusst unterschiedlicher Natur:
+
+| Gebäude                       | `buildingKey`             | Ebene                           | Räume |
+| ----------------------------- | ------------------------- | ------------------------------- | ----- |
+| Demogebäude Nord (fiktiv)     | `demo-north`              | `demo-north-level2`             | 30    |
+| Campus Köthen – Übersicht     | `koethen-campus-overview` | `koethen-campus-overview-level` | 0     |
+
+> ⚠️ **Das Demogebäude ist vollständig erfunden.** Etage und alle 30 Räume (B.201–B.230) sind
+> Demonstrationsdaten; es wird kein realer Grundriss und kein realer Raum dargestellt.
+>
+> ⚠️ **Die Campusübersicht ist schematisch.** Sie ist vereinfacht, nicht maßstabsgetreu und
+> **kein** Flucht-, Rettungs- oder amtlicher Lageplan. Sie enthält **keine** Räume und **keine**
+> Innengeometrie. Vor einer Veröffentlichung sind Herkunft und Rechte an der zugrunde liegenden
+> Vorlage zu klären — siehe [§8](#8-release-gate-reale-gebäudepläne).
+
+Welche Aussage die App trifft, steht als `planKind` (`fictional` | `schematic`) **im Katalog**,
+nicht im Widget: Das Badge über der Karte folgt dem Gebäude, damit ein neues Gebäude niemals
+stillschweigend die falsche Behauptung erbt.
 
 ## 1. Datenfluss
 
 ```
 packages/campus-map/                    ── kanonische Quellen (im Repository)
-  buildings/demo-north/level2.svg          Geometrie
+  buildings/demo-north/level2.svg          Geometrie (Etagenplan)
+  campus/koethen-overview.svg              Geometrie (Campusübersicht)
   catalog/campus-map.catalog.json          strukturierte technische Wahrheit
         │
         │  validate + generate (deterministisch, dependency-frei)
         ├────────────────────────────▶ apps/mobile/assets/maps/    (gebündelt in der App)
         │                                map_catalog.json · demo-north/level2.svg
+        │                                campus/koethen-overview.svg
         │
         └── rooms:sync ──▶ Strapi (room)  ──▶ Campus API /v1/rooms ──▶ Flutter
                             technische Felder      nur catalogActive
@@ -39,10 +55,11 @@ Schreibweg aus der App ins CMS.
 
 ## 2. Kanonische Quellen
 
-| Datei                             | Rolle                                                     |
-| --------------------------------- | --------------------------------------------------------- |
-| `buildings/demo-north/level2.svg` | Geometriequelle: Wände, Flure, Türen, 30 Raumrechtecke    |
-| `catalog/campus-map.catalog.json` | strukturierte Quelle: Schlüssel, Typen, Fokus, Sortierung |
+| Datei                             | Rolle                                                          |
+| --------------------------------- | -------------------------------------------------------------- |
+| `buildings/demo-north/level2.svg` | Geometriequelle: Wände, Flure, Türen, 30 Raumrechtecke         |
+| `campus/koethen-overview.svg`     | Geometriequelle: 21 Gebäudegruppen, Wege, Grün, Symbole        |
+| `catalog/campus-map.catalog.json` | strukturierte Quelle: Schlüssel, Typen, Fokus, Sortierung      |
 
 Der Katalog enthält `schemaVersion`, `mapVersion`, Gebäude (lokalisierte Namen DE/EN), Etagen
 (`level`, `viewBox`, `svgPath`, `expectedRoomCount`) und Räume (`roomKey`, `roomNumber`,
@@ -61,7 +78,7 @@ nie einen untranslatierten deutschen Begriff in die App tragen.
 pnpm --filter @campus/map validate   # nur prüfen
 pnpm --filter @campus/map generate   # App-Assets neu schreiben
 pnpm --filter @campus/map check      # prüfen UND Drift melden (das CI-Gate)
-pnpm --filter @campus/map test       # 47 Tests
+pnpm --filter @campus/map test       # 52 Tests
 ```
 
 Geprüft wird unter anderem: gültiges XML · genau `expectedRoomCount` eindeutige `roomKey`s ·
@@ -82,17 +99,32 @@ vollständigem Erfolg. Eine ungültige Eingabe hinterlässt daher **keine** halb
 
 Zwei Gründe, beide durch Tests abgesichert:
 
-1. **Sprache.** Die kanonische Zeichnung enthält deutsche Überschriften, eine deutsche Legende und
-   deutsche Beschriftungen („Hörsaal“, „Treppe West“, „Aufzug“). Sie würden die DE/EN-Regel
-   unterlaufen. Im generierten Asset überleben nur sprachneutrale **Raumnummern**; Überschriften,
-   Legende und Raumarten rendert Flutter aus der l10n. Die Auswahl erfolgt über eine **Allowlist**
-   von Textklassen — ein Denylist-Ansatz hatte beim ersten unbekannten Klassennamen prompt
-   deutschen Text durchgelassen.
+1. **Sprache.** Die kanonischen Zeichnungen enthalten deutsche Überschriften, eine deutsche Legende
+   und deutsche Beschriftungen („Hörsaal“, „Treppe West“, „Aufzug“, „Mensa“, „KITA“,
+   „Richtung City“). Sie würden die DE/EN-Regel unterlaufen. Im generierten Asset überleben nur
+   sprachneutrale Beschriftungen; alles andere rendert Flutter aus der l10n. Die Auswahl erfolgt
+   über eine **Allowlist** von Textklassen — ein Denylist-Ansatz hatte beim ersten unbekannten
+   Klassennamen prompt deutschen Text durchgelassen:
+
+   | Klasse        | überlebt                                                            |
+   | ------------- | ------------------------------------------------------------------- |
+   | `room-number` | Raumnummern des Etagenplans (`B.201`)                               |
+   | `map-label`   | Gebäudecodes (`01`, `W VII`, `TZK`), Straßennamen, Maßstabsangaben   |
+
+   Die Campusübersicht verliert dadurch bewusst die Beschriftungen „Mensa“, „KITA“ und
+   „Richtung City“: Es sind Gattungsbegriffe mit englischer Entsprechung, keine sprachneutralen
+   Codes. `data-building-number` trägt sie weiterhin als **Metadaten**, die nichts zeichnen.
 2. **Renderer.** `flutter_svg` unterstützt **keine** `<style>`-Blöcke (`unhandled element <style/>`)
    und verwirft die gesamte Stylesheet — jeder Raum wäre ungestylt. Der Generator löst die
    CSS-Klassenregeln deshalb in Präsentationsattribute auf. `<marker>` und `marker-*` werden
-   ebenfalls entfernt, weil der Renderer sie ignoriert. Ein Widget-Test rendert das gebündelte
-   Asset und schlägt fehl, sobald wieder eine nicht unterstützte Konstruktion auftaucht.
+   ebenfalls entfernt, weil der Renderer sie ignoriert. Ein Widget-Test rendert die gebündelten
+   Assets und schlägt fehl, sobald wieder eine nicht unterstützte Konstruktion auftaucht.
+
+   `<defs>` mit lokalen `<use xlink:href="#id">`-Fragmenten bleiben dagegen **erhalten**: Die
+   Campusübersicht zeichnet Bäume, Parkplätze und Sammelpunkte darüber. Dass der Renderer sie
+   wirklich malt, prüft ein Test, der das Ergebnis **rastert** und mit derselben Zeichnung ohne
+   `<use>` vergleicht — ein ignoriertes `<use>` würde weder eine Warnung noch eine Exception
+   erzeugen, die Karte wäre nur leer. Der Reader lässt Fragment-`href`s zu, externe nicht.
 
 ## 4. Strapi: `room`
 
@@ -211,8 +243,21 @@ Inhalt, kein Vorschaubild zwischen Formularfeldern.
 - **Hervorhebung nie nur über Farbe**: kräftige Kontur **plus** Marker über dem
   Raum **plus** textliche Aussage „Ausgewählt: …" im Sheet; in der Liste
   zusätzlich ein eigenes Icon.
-- **Etagenauswahl** als schwebender Umschalter auf der Karte, eingeblendet
-  sobald es mehr als eine Etage gibt. Der Demo-Plan hat eine.
+- **Gebäude- und Etagenauswahl** als kompakte schwebende Chips oben rechts,
+  Gebäude über Etage — die weitere Wahl zuerst, die engere danach. Die
+  Gebäudeauswahl erscheint, sobald es mehr als ein Gebäude gibt; die
+  Etagenauswahl ist **immer** sichtbar und wird bei nur einer Ebene zu einer
+  reinen Aussage ohne Menü (kein Pfeil, `readOnly`-Semantics). Beschriftungen
+  kommen aus dem gebündelten Katalog (`nameDe`/`nameEn`), nicht aus einem
+  `buildingKey`-Schalter im Code.
+- **Konsistenz ist Aufgabe der Controller, nicht der Screens.** Ein
+  Gebäudewechsel wählt die erste Etage dieses Gebäudes und löscht eine
+  Raumauswahl, die nicht dorthin gehört; die Auswahl eines Raums (Suche,
+  Kontakt-Deep-Link, Liste) schaltet Gebäude **und** Etage mit. Der Screen
+  leitet beides zusätzlich defensiv ab, damit eine Etage eines anderen
+  Gebäudes selbst dann nicht gezeichnet wird, wenn der Zustand es behauptet.
+- **Ein Gebäude ohne Räume ist ein normaler Zustand** — keine Fehlermeldung,
+  keine leere Raumdetailansicht. Die Suche bleibt global über alle Räume.
 - Deep-Link `/more/campus-map?room=<roomKey>` aus Kontaktdetails.
 - **Unbekannter `roomKey`**: Text anzeigen, Kartenaktion deaktivieren, nicht
   abstürzen.
@@ -255,7 +300,9 @@ sichtbar und in DE/EN formuliert.
 
 Ein neuer Raum braucht **keine** Flutter-Änderung. Ein weiteres Gebäude oder eine weitere Etage
 ebenfalls nicht: Die Gebäude- und Etagenauswahl blendet sich erst ein, wenn es etwas zu wählen gibt,
-ist aber weder im Datenmodell noch in der UI auf einen Eintrag verdrahtet.
+ist aber weder im Datenmodell noch in der UI auf einen Eintrag verdrahtet. Ein neues Gebäude braucht
+allerdings ein bewusstes `planKind` — der Validator lehnt jeden anderen Wert ab, damit die sichtbare
+Aussage über die Karte nie geraten wird.
 
 ## 10. Grenzen (bewusst)
 

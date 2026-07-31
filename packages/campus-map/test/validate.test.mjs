@@ -12,7 +12,9 @@ function fixture() {
     schemaVersion: 1,
     mapVersion: 'test-1',
     notice: 'fictional',
-    buildings: [{ buildingKey: 'b', nameDe: 'B', nameEn: 'B', sortOrder: 10 }],
+    buildings: [
+      { buildingKey: 'b', nameDe: 'B', nameEn: 'B', planKind: 'fictional', sortOrder: 10 },
+    ],
     floors: [
       {
         floorKey: 'b-l1',
@@ -161,4 +163,38 @@ test('the committed demo catalogue and SVG are consistent, with exactly 30 rooms
   assert.equal(catalog.rooms.length, 30);
   assert.equal(new Set(catalog.rooms.map((r) => r.roomKey)).size, 30);
   assert.equal(catalog.floors[0].expectedRoomCount, 30);
+});
+
+test('a building needs a supported planKind', () => {
+  const { catalog, readSvg } = loadCanonical();
+  const broken = structuredClone(catalog);
+  broken.buildings[0].planKind = 'photograph';
+  const { problems } = validate(broken, readSvg);
+  assert.ok(
+    problems.some((p) => p.includes('unsupported planKind')),
+    'an unknown planKind must be rejected',
+  );
+});
+
+test('a floor without rooms is valid', () => {
+  const { catalog, readSvg } = loadCanonical();
+  const overview = catalog.floors.find((f) => f.floorKey === 'koethen-campus-overview-level');
+  assert.ok(overview, 'the campus overview floor must exist');
+  assert.equal(overview.expectedRoomCount, 0);
+  assert.equal(catalog.rooms.filter((r) => r.floorKey === overview.floorKey).length, 0);
+
+  const { problems } = validate(catalog, readSvg);
+  assert.deepEqual(problems, [], 'a room-less floor must not be an error');
+});
+
+test('a room-less floor still rejects stray room elements', () => {
+  const { catalog, readSvg } = loadCanonical();
+  const patched = structuredClone(catalog);
+  const overview = patched.floors.find((f) => f.floorKey === 'koethen-campus-overview-level');
+  overview.expectedRoomCount = 1;
+  const { problems } = validate(patched, readSvg);
+  assert.ok(
+    problems.some((p) => p.includes('expected 1 rooms, found 0')),
+    'the expected count must still be enforced at zero',
+  );
 });

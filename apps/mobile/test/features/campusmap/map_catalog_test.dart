@@ -9,13 +9,86 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('the bundled catalogue', () {
-    test('loads the generated demo map', () async {
+    test('loads both generated buildings', () async {
       final MapCatalog catalog = await const MapAssetLoader().load();
 
       expect(catalog.mapVersion, isNotEmpty);
       expect(catalog.rooms, hasLength(30));
-      expect(catalog.floors, hasLength(1));
-      expect(catalog.buildings, hasLength(1));
+      expect(catalog.floors, hasLength(2));
+      expect(catalog.buildings, hasLength(2));
+      expect(catalog.buildings.map((MapBuilding b) => b.buildingKey), <String>[
+        'demo-north',
+        'koethen-campus-overview',
+      ]);
+      expect(catalog.hasSeveralBuildings, isTrue);
+    });
+
+    test('carries building and floor names in both languages', () async {
+      final MapCatalog catalog = await const MapAssetLoader().load();
+
+      final MapBuilding overview = catalog.building('koethen-campus-overview')!;
+      expect(overview.name.resolve('de'), 'Campus Köthen – Übersicht');
+      expect(overview.name.resolve('en'), 'Campus Köthen – Overview');
+
+      final MapFloor floor = catalog.floor('koethen-campus-overview-level')!;
+      expect(floor.name.resolve('de'), 'Campusübersicht');
+      expect(floor.name.resolve('en'), 'Campus overview');
+
+      final MapBuilding demo = catalog.building('demo-north')!;
+      expect(demo.name.resolve('de'), 'Demogebäude Nord (fiktiv)');
+      expect(demo.name.resolve('en'), 'Demo building north (fictional)');
+      expect(
+        catalog.floor('demo-north-level2')!.name.resolve('en'),
+        'Second floor',
+      );
+
+      // An unsupported locale falls back to German rather than to a key.
+      expect(overview.name.resolve('fr'), 'Campus Köthen – Übersicht');
+    });
+
+    test('states what kind of drawing each building is', () async {
+      final MapCatalog catalog = await const MapAssetLoader().load();
+
+      expect(catalog.building('demo-north')!.planKind, PlanKind.fictional);
+      expect(
+        catalog.building('koethen-campus-overview')!.planKind,
+        PlanKind.schematic,
+      );
+      // An unknown value must not silently become a promise about a real place.
+      expect(PlanKind.fromName('something-new'), PlanKind.fictional);
+      expect(PlanKind.fromName(null), PlanKind.fictional);
+    });
+
+    test('a building without rooms is a normal state, not an error', () async {
+      final MapCatalog catalog = await const MapAssetLoader().load();
+
+      final List<MapFloor> floors = catalog.floorsOf('koethen-campus-overview');
+      expect(floors, hasLength(1));
+      expect(floors.single.floorKey, 'koethen-campus-overview-level');
+      expect(floors.single.svgAsset, 'assets/maps/campus/koethen-overview.svg');
+      expect(
+        catalog.rooms.where(
+          (MapRoomGeometry r) => r.buildingKey == 'koethen-campus-overview',
+        ),
+        isEmpty,
+      );
+    });
+
+    test('floors are scoped to their building', () async {
+      final MapCatalog catalog = await const MapAssetLoader().load();
+
+      expect(
+        catalog.floorsOf('demo-north').map((MapFloor f) => f.floorKey),
+        <String>['demo-north-level2'],
+      );
+      expect(catalog.floorsOf('does-not-exist'), isEmpty);
+      expect(catalog.buildingOfFloor('demo-north-level2'), 'demo-north');
+      expect(
+        catalog.buildingOfFloor('koethen-campus-overview-level'),
+        'koethen-campus-overview',
+      );
+      expect(catalog.buildingOfFloor('nope'), isNull);
+      expect(catalog.building('nope'), isNull);
     });
 
     test('resolves geometry for a known room', () async {

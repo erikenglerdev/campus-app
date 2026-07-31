@@ -763,6 +763,35 @@
     "description": "Immer sichtbarer Kurzhinweis auf der Karte; der vollständige Text erscheint beim Antippen."
   },
   "campusMapShowAllRooms": "Show all",
+  "campusMapSchematicBadge": "Schematic overview",
+  "campusMapSchematicNotice": "Simplified campus overview, not to scale. It is not a fire, escape or official site plan. Independent, unofficial project.",
+  "campusMapBuildingSelectorSemantic": "Select building, currently {building}",
+  "@campusMapBuildingSelectorSemantic": {
+    "placeholders": {
+      "building": {
+        "type": "String",
+        "example": "Name of the building currently shown"
+      }
+    }
+  },
+  "campusMapFloorSelectorSemantic": "Select floor, currently {floor}",
+  "@campusMapFloorSelectorSemantic": {
+    "placeholders": {
+      "floor": {
+        "type": "String",
+        "example": "Name of the floor currently shown"
+      }
+    }
+  },
+  "campusMapSingleFloorSemantic": "Only level: {floor}",
+  "@campusMapSingleFloorSemantic": {
+    "placeholders": {
+      "floor": {
+        "type": "String",
+        "example": "Name of the only available level"
+      }
+    }
+  },
   "@campusMapShowAllRooms": {
     "description": "Aktion in der unteren Leiste, die die vollständige Raumliste öffnet."
   }

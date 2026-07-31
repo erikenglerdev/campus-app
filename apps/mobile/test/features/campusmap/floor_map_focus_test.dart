@@ -20,6 +20,7 @@ const MapFloor _floor = MapFloor(
   floorKey: 'demo-north-level2',
   buildingKey: 'demo-north',
   level: 2,
+  name: LocalisedName(de: '2. Obergeschoss', en: 'Second floor'),
   svgAsset: 'assets/maps/demo-north/level2.svg',
   viewBox: Rect.fromLTWH(0, 0, 1900, 1080),
   sortOrder: 10,
