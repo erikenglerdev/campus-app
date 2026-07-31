@@ -22,6 +22,9 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/backend/package.json apps/backend/
 COPY apps/cms/package.json apps/cms/
 COPY packages/openapi/package.json packages/openapi/
+# Not a backend dependency, but apps/cms links to it — pnpm resolves the whole
+# workspace, so the manifest has to exist or the install fails.
+COPY packages/campus-map/package.json packages/campus-map/
 
 RUN pnpm install --frozen-lockfile --filter @campus/backend...
 

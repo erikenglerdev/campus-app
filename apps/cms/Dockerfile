@@ -23,6 +23,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/cms/package.json apps/cms/
 COPY apps/backend/package.json apps/backend/
 COPY packages/openapi/package.json packages/openapi/
+COPY packages/campus-map/package.json packages/campus-map/
 
 RUN pnpm install --frozen-lockfile --filter @campus/cms...
 
@@ -32,6 +33,10 @@ RUN pnpm install --frozen-lockfile --filter @campus/cms...
 FROM deps AS build
 
 COPY apps/cms apps/cms
+# The room sync imports @campus/map, and `strapi build` type-checks scripts/ —
+# so the package content (not just its manifest) has to be present. It is a
+# devDependency, so `pnpm deploy --prod` below keeps it out of the runtime image.
+COPY packages/campus-map packages/campus-map
 
 # `strapi build` compiles the admin UI. It reads configuration but needs no
 # database and no real secret.
