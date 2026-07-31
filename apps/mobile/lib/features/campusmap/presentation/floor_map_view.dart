@@ -53,6 +53,31 @@ class FloorMapViewState extends State<FloorMapView> {
     super.dispose();
   }
 
+  /// Scale from plan units to laid-out pixels. Exposed for the focus test.
+  @visibleForTesting
+  double get planScale => _planScale;
+
+  /// The transform currently applied to the plan. Exposed for the focus test.
+  @visibleForTesting
+  Matrix4 get currentTransform => _controller.value;
+
+  /// Where the plan's top-left corner sits inside the viewport.
+  ///
+  /// The plan is laid out inside a [Center], so whenever it does not fill the
+  /// viewport it is offset — and focusing in plain plan coordinates would then
+  /// land next to the intended room instead of on it.
+  Offset get _planOrigin {
+    final Rect viewBox = widget.floor.viewBox;
+    final Size planSize = Size(
+      viewBox.width * _planScale,
+      viewBox.height * _planScale,
+    );
+    return Offset(
+      math.max(0, (_viewport.width - planSize.width) / 2),
+      math.max(0, (_viewport.height - planSize.height) / 2),
+    );
+  }
+
   /// Brings the selected room into a comfortable part of the viewport.
   void _focusSelection() {
     if (!mounted || _viewport.isEmpty) return;
@@ -71,10 +96,11 @@ class FloorMapViewState extends State<FloorMapView> {
     );
     final double scale = fit.clamp(1.0, 6.0);
 
-    final Offset centre = Offset(
-      room.focus.dx * _planScale,
-      room.focus.dy * _planScale,
-    );
+    // The room's focus point expressed in the InteractiveViewer's CHILD
+    // coordinates, i.e. including the centring offset.
+    final Offset centre =
+        _planOrigin +
+        Offset(room.focus.dx * _planScale, room.focus.dy * _planScale);
 
     setState(() {
       _controller.value = Matrix4.identity()

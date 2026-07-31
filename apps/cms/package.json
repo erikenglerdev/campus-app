@@ -2,7 +2,7 @@
   "name": "@campus/cms",
   "version": "0.1.0",
   "private": true,
-  "description": "Campus K\u00f6then editorial CMS (Strapi 5 Community)",
+  "description": "Campus Köthen editorial CMS (Strapi 5 Community)",
   "license": "AGPL-3.0-only",
   "author": "Erik Engler and Jona Loreen Sommer",
   "scripts": {
@@ -22,6 +22,7 @@
     "token:create-readonly": "strapi ts:generate-types --silent && node -r ts-node/register scripts/create-readonly-token.ts"
   },
   "dependencies": {
+    "@campus/map": "workspace:*",
     "@strapi/plugin-users-permissions": "5.50.2",
     "@strapi/strapi": "5.50.2",
     "pg": "8.20.0",
@@ -32,7 +33,6 @@
     "styled-components": "^6.1.19"
   },
   "devDependencies": {
-    "@campus/map": "workspace:*",
     "@types/node": "^22.19.0",
     "@types/prismjs": "^1.26.5",
     "@types/react": "^18.3.27",

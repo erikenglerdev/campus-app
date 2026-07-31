@@ -107,6 +107,7 @@ jobs:
           output: trivy-${{ matrix.image }}.sarif
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+          trivyignores: .trivyignore
 
       - name: Upload the scan report
         if: always()
@@ -126,6 +127,9 @@ jobs:
           format: table
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+          # Assessed exceptions, each justified in the file itself. Passing it
+          # explicitly keeps the blocking step and the report step in step.
+          trivyignores: .trivyignore
           exit-code: '1'
 
   summary:

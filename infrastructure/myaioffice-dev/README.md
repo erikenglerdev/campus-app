@@ -104,13 +104,23 @@ The CMS room catalogue is an explicit, idempotent editorial-data sync. Run its
 dry-run first and only apply after reviewing the plan:
 
 ```bash
-docker compose exec cms node scripts/rooms-sync.js --dry-run
-docker compose exec cms node scripts/rooms-sync.js
+docker compose exec cms node dist/scripts/rooms-sync.js --dry-run
+docker compose exec cms node dist/scripts/rooms-sync.js
 ```
 
-If the final CMS runtime image exposes a different compiled script path, keep
-the versioned deployment command and image contract aligned; never install
-tooling interactively in the running container.
+The path is `dist/scripts/`, not `scripts/`: the image ships the COMPILED
+script, and `scripts/rooms-sync.ts` would need TypeScript tooling that a
+production image deliberately does not carry.
+
+The dry run prints a `create / update / unchanged / deactivate` plan and writes
+nothing. A first run reports 30 creates; every later run reports 30 unchanged.
+Editorial fields, room visibility and contact relations are never touched, and a
+room that disappeared from the catalogue is deactivated rather than deleted.
+
+The image build asserts this contract — `dist/scripts/rooms-sync.js` exists,
+`@campus/map` resolves at runtime, and the canonical catalogue loads with its 30
+demo rooms — so a published image that cannot run the sync fails the build
+instead. Never install tooling interactively in the running container.
 
 ## Verification
 

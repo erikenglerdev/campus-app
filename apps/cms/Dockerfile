@@ -103,7 +103,30 @@ COPY --from=build --chown=node:node /repo/apps/cms/.strapi ./.strapi
 
 # Uploads live on a persistent volume; the directory must exist and be owned by
 # the runtime user before the volume is mounted over it.
-RUN mkdir -p /opt/app/public/uploads && chown -R node:node /opt/app/public
+#
+# `.tmp` is created for the same reason: /opt/app itself stays root-owned so the
+# application cannot rewrite its own code, but Strapi needs a scratch directory
+# when it boots programmatically — which is exactly how `rooms-sync` starts it.
+# Without this the documented production command dies with EACCES.
+RUN mkdir -p /opt/app/public/uploads /opt/app/.tmp \
+ && chown -R node:node /opt/app/public /opt/app/.tmp
+
+# Room-sync runtime contract.
+#
+# `node dist/scripts/rooms-sync.js --dry-run` is the documented production
+# command, so the image has to be able to run it. Two things went wrong before
+# and are therefore asserted here rather than trusted:
+#
+#  1. @campus/map sat in devDependencies, so `pnpm deploy --prod` dropped it and
+#     the sync would have died with MODULE_NOT_FOUND on the target host.
+#  2. The compiled script reaches the package through require(), which also
+#     needs the catalogue and the SVG to be part of the deployed files — a
+#     manifest-only copy resolves but cannot load.
+#
+# Asserting it in the image build means a broken runtime contract fails here,
+# before publishing, instead of on the server.
+RUN test -f dist/scripts/rooms-sync.js \
+ && node -e "const m=require('@campus/map');const{catalog,problems}=m.loadCanonical();if(problems.length)throw new Error('catalogue invalid: '+problems.join('; '));if(catalog.rooms.length!==30)throw new Error('expected 30 demo rooms, found '+catalog.rooms.length);console.log('rooms-sync runtime contract ok: '+catalog.rooms.length+' rooms, mapVersion '+catalog.mapVersion)"
 
 USER node
 
