@@ -1,8 +1,6 @@
 {
   "@@locale": "en",
-
   "appTitle": "Campus Köthen",
-
   "navNews": "News",
   "navTimetable": "Timetable",
   "navCanteen": "Canteen",
@@ -10,17 +8,14 @@
   "navSettings": "Settings",
   "navMore": "More",
   "navigationSemanticLabel": "Main navigation",
-
   "actionRetry": "Try again",
   "actionRefresh": "Refresh",
   "actionClose": "Close",
   "actionBack": "Back",
   "actionOpenExternally": "Open externally",
   "actionSelect": "Select",
-
   "commonLoading": "Loading …",
   "commonLoadingSemanticLabel": "Content is loading",
-
   "errorGenericTitle": "Something went wrong",
   "errorGenericMessage": "The content could not be loaded. Please try again.",
   "errorNetworkMessage": "No connection to the server. Please check your internet connection.",
@@ -29,7 +24,6 @@
   "errorServerMessage": "The service is currently unavailable. Please try again later.",
   "errorLinkNotOpened": "The link could not be opened.",
   "errorLinkBlocked": "This link was not opened for security reasons.",
-
   "offlineCachedTitle": "Offline content",
   "offlineCachedAt": "Last loaded: {timestamp}",
   "@offlineCachedAt": {
@@ -40,7 +34,6 @@
     }
   },
   "offlineCachedUnknownTime": "Last loaded: unknown",
-
   "newsTitle": "News",
   "newsEmptyTitle": "No articles",
   "newsEmptyMessage": "There are currently no articles in the selected channels.",
@@ -112,7 +105,6 @@
     }
   },
   "newsTranslationFallbackHint": "No English version of this content is available yet. The original German text is shown.",
-
   "canteenTitle": "Canteen",
   "canteenPickerTitle": "Choose canteen",
   "canteenPickerTooltip": "Switch canteen",
@@ -179,7 +171,6 @@
       }
     }
   },
-
   "timetableTitle": "Timetable",
   "timetableGroupPickerTitle": "Choose course",
   "timetableGroupPickerTooltip": "Change course",
@@ -286,7 +277,6 @@
     }
   },
   "timetableSourceLanguageHint": "Subject, room and person names come unchanged from the source and are not translated.",
-
   "contactsTitle": "Contacts",
   "contactsEmptyTitle": "No contact areas",
   "contactsEmptyMessage": "No points of contact are listed at the moment.",
@@ -317,7 +307,6 @@
       }
     }
   },
-
   "settingsTitle": "Settings",
   "settingsSectionAppearance": "Appearance",
   "settingsSectionContent": "Content",
@@ -342,7 +331,6 @@
   "settingsAbout": "About this app",
   "settingsImprint": "Legal notice",
   "settingsPrivacy": "Privacy",
-
   "aboutTitle": "About this app",
   "aboutVersion": "Version {version} ({build})",
   "@aboutVersion": {
@@ -362,7 +350,6 @@
   "aboutIndependenceNotice": "Campus Köthen is an independent, unofficial campus app. It is neither developed nor operated by Hochschule Anhalt, nor is it officially endorsed by the university. The university and its institutions are named solely for the factual attribution of publicly available information.",
   "aboutOpenSourceLicenses": "Open source licenses",
   "aboutFontNotice": "Typeface Manrope, licensed under the SIL Open Font License 1.1.",
-
   "imprintTitle": "Legal notice",
   "privacyTitle": "Privacy",
   "legalPlaceholderBadge": "Placeholder",
@@ -375,14 +362,12 @@
   "privacyGradesBody": "When you use the grades feature, the app connects directly and encrypted to Hochschule Anhalt's HIS-QIS exam portal (service.ssc.hs-anhalt.de). There is no intermediary server: neither this app's servers nor third parties receive your credentials or your grades. Your username and password are stored only in your device's secure keystore; grades are cached locally, encrypted with a device-held key. An automatic fetch happens at most once every 24 hours, plus manually on request. Using \"Delete credentials and local grades\" removes your credentials, grades and the encryption key from the device completely.",
   "legalOperatorNotConfirmed": "The operator of the app has not been confirmed yet. Until that is settled, no responsible entity is named here.",
   "legalNotPublishedHint": "The app is under development and has not been published.",
-
   "moreTitle": "More",
   "moreMail": "Student email",
   "moreMailSubtitle": "Hochschule Anhalt mailbox",
   "moreGrades": "Grades",
   "moreGradesSubtitle": "Your transcript from the exam portal",
   "moreSettings": "Settings",
-
   "mailTitle": "Student email",
   "mailSetupHeadline": "Connect to your university mailbox",
   "mailSetupIntro": "The app connects directly and encrypted to the Hochschule Anhalt mail server (mail.hs-anhalt.de). There is no intermediary server.",
@@ -396,7 +381,6 @@
   "mailSetupWebmailLink": "Open webmail in browser",
   "mailSetupInvalidEmail": "Please enter a valid email address.",
   "mailSetupPasswordRequired": "Please enter your password.",
-
   "mailInboxTitle": "Inbox",
   "mailInboxEmpty": "No messages in this folder.",
   "mailFoldersTitle": "Folders",
@@ -432,13 +416,11 @@
   "mailAccountRemoveConfirmBody": "Your email address and password will be deleted from this device completely. Your emails on the server stay untouched.",
   "mailAccountRemoveConfirm": "Remove",
   "mailCancel": "Cancel",
-
   "mailReply": "Reply",
   "mailReplyAll": "Reply all",
   "mailReplyAttribution": "On {date}, {sender} wrote:",
   "mailMessageAttachmentsUnsupported": "This message has attachments. Attachments are not shown in this app.",
   "mailMessageRemoteImagesBlocked": "Images from the internet are not loaded automatically to protect your privacy.",
-
   "mailComposeTitle": "New message",
   "mailComposeFrom": "From {email}",
   "mailComposeTo": "To",
@@ -450,7 +432,6 @@
   "mailComposeInvalidRecipient": "Please enter a valid recipient address.",
   "mailComposeSent": "Message sent.",
   "mailComposeSentNoCopy": "Message sent. A copy could not be saved to the Sent folder.",
-
   "mailErrorInvalidCredentials": "Sign-in failed. Please check your email address and password.",
   "mailErrorNetwork": "No connection to the mail server. Please check your internet connection.",
   "mailErrorTimeout": "The connection to the mail server timed out.",
@@ -459,7 +440,6 @@
   "mailErrorProtocol": "Unexpected response from the mail server.",
   "mailErrorSecureStorage": "Secure storage is not available on this device. Your credentials cannot be saved.",
   "mailErrorGeneric": "Something went wrong. Please try again later.",
-
   "gradesTitle": "Grades",
   "gradeSetupHeadline": "Connect to the exam portal",
   "gradeSetupIntro": "The app connects directly and encrypted to Hochschule Anhalt's HIS-QIS exam portal (service.ssc.hs-anhalt.de). There is no intermediary server.",
@@ -472,7 +452,6 @@
   "gradeSetupPasswordRequired": "Please enter your password.",
   "gradeSetupSubmit": "Sign in and load grades",
   "gradeSetupPortalLink": "Open in the exam portal",
-
   "gradesLastUpdated": "Last updated: {when}",
   "@gradesLastUpdated": {
     "placeholders": {
@@ -493,13 +472,11 @@
   "gradesDeleteConfirmBody": "Your username, password and the locally stored grades will be removed from this device completely.",
   "gradesDeleteConfirm": "Delete",
   "gradesCancel": "Cancel",
-
   "gradeNoGrade": "No grade",
   "gradePassedUngraded": "Passed (ungraded)",
   "gradeStatusPassed": "Passed",
   "gradeStatusFailed": "Failed",
   "gradeStatusPresent": "Exam registered",
-
   "gradeDetailTitle": "Exam details",
   "gradeFieldExamNumber": "Exam number",
   "gradeFieldGrade": "Grade",
@@ -509,7 +486,6 @@
   "gradeFieldExaminer": "Examiner",
   "gradeFieldBonus": "Bonus",
   "gradeFieldPoints": "Points",
-
   "gradeErrorInvalidCredentials": "Sign-in failed. Please check your username and password.",
   "gradeErrorNetwork": "No connection to the exam portal. Please check your internet connection.",
   "gradeErrorTimeout": "The connection to the exam portal timed out.",
@@ -520,12 +496,9 @@
   "gradeErrorCache": "The locally stored grades could not be loaded.",
   "gradeErrorSessionExpired": "The session expired. Please try again.",
   "gradeErrorGeneric": "Something went wrong. Please try again later.",
-
   "navCalendar": "Calendar",
-
   "moreMoodle": "Moodle",
   "moreMoodleSubtitle": "Courses, materials and deadlines straight from Moodle",
-
   "moodleTitle": "Moodle",
   "moodleSetupHeadline": "Connect to Moodle",
   "moodleSetupIntro": "Sign in with your Hochschule Anhalt Moodle credentials. The connection goes directly to moodle.hs-anhalt.de; your Moodle data is never sent to this app's servers.",
@@ -536,7 +509,6 @@
   "moodleUsernameRequired": "Please enter your username.",
   "moodlePasswordRequired": "Please enter your password.",
   "moodlePrivacyNote": "Your credentials are used only to sign in to Moodle directly. Only a session token is stored securely on this device; your password is not stored.",
-
   "moodleCoursesTitle": "My courses",
   "moodleNoCoursesTitle": "No courses",
   "moodleNoCoursesMessage": "Moodle currently shows no courses for you.",
@@ -545,14 +517,12 @@
   "moodleNeverUpdated": "Not synced yet",
   "moodleRefresh": "Refresh",
   "moodleOfflineHint": "Offline view of the most recently loaded data.",
-
   "moodleConnectedAs": "Connected as {name}",
   "moodleDisconnect": "Delete Moodle connection and local data",
   "moodleDisconnectConfirmTitle": "Disconnect?",
   "moodleDisconnectConfirmMessage": "The token, local Moodle data and downloaded files will be deleted from this device.",
   "moodleDisconnectConfirm": "Delete",
   "moodleCancel": "Cancel",
-
   "moodleTabContents": "Contents",
   "moodleTabAssignments": "Assignments",
   "moodleTabAnnouncements": "Announcements",
@@ -573,7 +543,6 @@
   "moodleFileDownloading": "Downloading file …",
   "moodleExternalLinkNotice": "This link leaves Moodle and is opened without any credentials.",
   "moodleOpenLinkFailed": "The link could not be opened.",
-
   "moodleErrorInvalidCredentials": "Sign-in failed. Please check your username and password.",
   "moodleErrorTokenRejected": "The Moodle sign-in was rejected. Please connect again.",
   "moodleErrorTokenExpired": "The Moodle session has expired. Please connect again.",
@@ -589,7 +558,6 @@
   "moodleErrorFileTooLarge": "The file is too large to preview. You can share or save it instead.",
   "moodleErrorDownloadFailed": "The file could not be downloaded.",
   "moodleErrorGeneric": "Something went wrong. Please try again later.",
-
   "calendarTitle": "Calendar",
   "calendarViewMonth": "Calendar",
   "calendarViewList": "List",
@@ -604,7 +572,6 @@
   "calendarTimetableUnavailable": "The timetable could not be loaded.",
   "calendarConnectMoodleHint": "Connect Moodle under \"More\" to see your deadlines here.",
   "calendarSelectGroupHint": "Pick a group in the timetable to see events.",
-
   "calendarManageTitle": "Manage calendars",
   "calendarManageTooltip": "Manage calendars",
   "calendarSectionPublic": "Public calendars",
@@ -620,15 +587,175 @@
   "calendarGoogleCombinedNote": "Only public Google calendars can be opened together. The timetable and Moodle are not included.",
   "calendarSelectedCountLabel": "{count, plural, =0{No calendars selected} =1{1 calendar selected} other{{count} calendars selected}}",
   "calendarGoogleLinkFailed": "The Google link could not be opened.",
-
   "moreTodos": "Tasks",
   "moreTodosSubtitle": "Local to-do list, on this device only",
-
   "todosTitle": "Tasks",
   "todoAddHint": "New task …",
   "todoAdd": "Add",
   "todoDelete": "Delete",
   "todoClearCompleted": "Clear completed",
   "todoEmptyTitle": "No tasks",
-  "todoEmptyMessage": "Add your first task above. The list stays local to this device only."
+  "todoEmptyMessage": "Add your first task above. The list stays local to this device only.",
+  "moreCampusMap": "Campus map",
+  "@moreCampusMap": {
+    "description": "Eintrag „Lageplan\" im Mehr-Bereich."
+  },
+  "moreCampusMapSubtitle": "Fictional demo floor plan with room search",
+  "@moreCampusMapSubtitle": {
+    "description": "Untertitel des Lageplan-Eintrags im Mehr-Bereich."
+  },
+  "campusMapTitle": "Campus map",
+  "@campusMapTitle": {
+    "description": "Titel des Lageplan-Bildschirms."
+  },
+  "campusMapDemoNotice": "Demonstration plan: the building, the floor and all 30 rooms are fictional. No real building or room is depicted.",
+  "@campusMapDemoNotice": {
+    "description": "Gut sichtbarer Hinweis, dass der Plan fiktiv ist."
+  },
+  "campusMapSearchLabel": "Search rooms",
+  "@campusMapSearchLabel": {
+    "description": "Label des Suchfelds."
+  },
+  "campusMapSearchHint": "e.g. B.201 or B201",
+  "@campusMapSearchHint": {
+    "description": "Hilfetext im Suchfeld."
+  },
+  "campusMapSearchClear": "Clear search",
+  "@campusMapSearchClear": {
+    "description": "Tooltip zum Leeren des Suchfelds."
+  },
+  "campusMapNoResults": "No room found",
+  "@campusMapNoResults": {
+    "description": "Leerzustand der Suche."
+  },
+  "campusMapNoResultsHint": "Check the spelling. Room numbers work with and without a dot.",
+  "@campusMapNoResultsHint": {
+    "description": "Hilfetext im Leerzustand der Suche."
+  },
+  "campusMapRoomCount": "{count, plural, =0{No rooms} =1{1 room} other{{count} rooms}}",
+  "@campusMapRoomCount": {
+    "description": "Anzahl der gefundenen Räume.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "campusMapBuildingLabel": "Building",
+  "@campusMapBuildingLabel": {
+    "description": "Feldbeschriftung Gebäude."
+  },
+  "campusMapFloorLabel": "Floor",
+  "@campusMapFloorLabel": {
+    "description": "Feldbeschriftung Etage."
+  },
+  "campusMapRoomLabel": "Room",
+  "@campusMapRoomLabel": {
+    "description": "Feldbeschriftung Raum."
+  },
+  "campusMapRoomTypeLabel": "Room type",
+  "@campusMapRoomTypeLabel": {
+    "description": "Feldbeschriftung Raumart."
+  },
+  "campusMapRoomTypeLecture": "Lecture hall",
+  "@campusMapRoomTypeLecture": {
+    "description": "Raumart lecture."
+  },
+  "campusMapRoomTypeSeminar": "Seminar room",
+  "@campusMapRoomTypeSeminar": {
+    "description": "Raumart seminar."
+  },
+  "campusMapRoomTypeOffice": "Office",
+  "@campusMapRoomTypeOffice": {
+    "description": "Raumart office."
+  },
+  "campusMapRoomTypeLab": "Laboratory",
+  "@campusMapRoomTypeLab": {
+    "description": "Raumart lab."
+  },
+  "campusMapRoomTypeMeeting": "Meeting room",
+  "@campusMapRoomTypeMeeting": {
+    "description": "Raumart meeting."
+  },
+  "campusMapRoomTypeService": "Service and utilities",
+  "@campusMapRoomTypeService": {
+    "description": "Raumart service."
+  },
+  "campusMapRoomTypeUnknown": "Other room",
+  "@campusMapRoomTypeUnknown": {
+    "description": "Raumart, die diese App-Version noch nicht kennt."
+  },
+  "campusMapLegendTitle": "Legend",
+  "@campusMapLegendTitle": {
+    "description": "Überschrift der Kartenlegende."
+  },
+  "campusMapSelectedRoom": "Selected: {room}",
+  "@campusMapSelectedRoom": {
+    "description": "Textliche Kennzeichnung des ausgewählten Raums, zusätzlich zur farblichen Hervorhebung.",
+    "placeholders": {
+      "room": {
+        "type": "String"
+      }
+    }
+  },
+  "campusMapShowWholeFloor": "Show the whole floor",
+  "@campusMapShowWholeFloor": {
+    "description": "Aktion, um die Auswahl aufzuheben und die Etage komplett zu zeigen."
+  },
+  "campusMapResetZoom": "Reset the view",
+  "@campusMapResetZoom": {
+    "description": "Tooltip zum Zurücksetzen von Zoom und Verschiebung."
+  },
+  "campusMapRoomNotOnMap": "This room is not part of the bundled plan.",
+  "@campusMapRoomNotOnMap": {
+    "description": "Hinweis bei einem roomKey ohne Geometrie im lokalen Kartenasset."
+  },
+  "campusMapVersionMismatch": "The bundled plan does not match the current room list. Rooms are shown as a list; an app update will bring the matching plan.",
+  "@campusMapVersionMismatch": {
+    "description": "Hinweis bei abweichender mapVersion zwischen API und lokalem Asset."
+  },
+  "campusMapUnavailable": "The campus map could not be loaded.",
+  "@campusMapUnavailable": {
+    "description": "Fehlerzustand des Kartenassets."
+  },
+  "campusMapEmpty": "No rooms have been published yet.",
+  "@campusMapEmpty": {
+    "description": "Leerzustand, wenn die API keine Räume liefert."
+  },
+  "campusMapSemanticMap": "Floor plan, zoomable and pannable",
+  "@campusMapSemanticMap": {
+    "description": "Screenreader-Beschreibung der Karte."
+  },
+  "campusMapSemanticSelectedRoom": "Room {room} is selected and highlighted on the plan",
+  "@campusMapSemanticSelectedRoom": {
+    "description": "Screenreader-Ansage für den ausgewählten Raum.",
+    "placeholders": {
+      "room": {
+        "type": "String"
+      }
+    }
+  },
+  "campusMapOpenRoom": "Show on the campus map",
+  "@campusMapOpenRoom": {
+    "description": "Aktion in Kontaktdetails, die den Lageplan mit dem Raum öffnet."
+  },
+  "contactRoomsLabel": "Rooms",
+  "@contactRoomsLabel": {
+    "description": "Überschrift der Raumzeilen in Kontaktdetails."
+  },
+  "contactRoomSummary": "{building}, {floor}, room {room}",
+  "@contactRoomSummary": {
+    "description": "Verständliche Textdarstellung einer Raumreferenz.",
+    "placeholders": {
+      "building": {
+        "type": "String"
+      },
+      "floor": {
+        "type": "String"
+      },
+      "room": {
+        "type": "String"
+      }
+    }
+  }
 }

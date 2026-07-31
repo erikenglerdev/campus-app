@@ -76,3 +76,13 @@ der Hinweis auf den **unveränderten** Quellcode in [`../../NOTICE.md`](../../NO
 Version steht in `apps/backend/pnpm-lock.yaml`).
 
 **Ergebnis:** Das Lizenz-Gate für die öffentliche-Kalender-Integration ist erfüllt.
+
+## Lageplan
+
+| Paket         | Version   | Lizenz | Bewertung                                                                                                                                               |
+| ------------- | --------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `flutter_svg` | `^2.0.10` | MIT    | Permissiv, mit AGPL-3.0-only vereinbar. Wird ausschließlich mit lokalen, im Repository validierten Assets verwendet — nie mit SVG aus einer Netzquelle. |
+
+`packages/campus-map` selbst ist **dependency-frei**: Validator, SVG-Reader und Generator kommen
+ohne Laufzeitabhängigkeit aus, damit die Kette von der kanonischen Zeichnung bis zum gebündelten
+App-Asset vollständig überprüfbar bleibt.

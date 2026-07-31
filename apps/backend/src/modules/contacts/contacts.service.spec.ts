@@ -204,4 +204,93 @@ describe('ContactsService', () => {
       expect(result.droppedBlockTypes).toEqual(['future-thing']);
     });
   });
+
+  describe('room references', () => {
+    const demoRoom = (over: Record<string, unknown> = {}) => ({
+      roomKey: 'demo-north-level2-b201',
+      roomNumber: 'B.201',
+      buildingKey: 'demo-north',
+      buildingNameDe: 'Demogebäude Nord (fiktiv)',
+      buildingNameEn: 'Demo building north (fictional)',
+      floorKey: 'demo-north-level2',
+      floorLevel: 2,
+      floorNameDe: '2. Obergeschoss',
+      floorNameEn: 'Second floor',
+      catalogActive: true,
+      isVisible: true,
+      ...over,
+    });
+
+    it('serves an empty room list for an area without rooms', async () => {
+      const client = makeClient(() => ({ data: [area('ssc')] }));
+      const result = await new ContactsService(client).getArea(de, 'ssc');
+      expect(result.data.rooms).toEqual([]);
+    });
+
+    it('serves an empty room list for a person without rooms', async () => {
+      const client = makeClient(() => ({
+        data: [area('x', { persons: [{ name: 'A', isActive: true }] })],
+      }));
+      const result = await new ContactsService(client).getArea(de, 'x');
+      expect(result.data.persons[0]!.rooms).toEqual([]);
+    });
+
+    it('maps the rooms of an area', async () => {
+      const client = makeClient(() => ({ data: [area('x', { rooms: [demoRoom()] })] }));
+      const result = await new ContactsService(client).getArea(de, 'x');
+
+      expect(result.data.rooms).toHaveLength(1);
+      expect(result.data.rooms[0]).toMatchObject({
+        roomKey: 'demo-north-level2-b201',
+        roomNumber: 'B.201',
+        buildingName: 'Demogebäude Nord (fiktiv)',
+        floorName: '2. Obergeschoss',
+        floorLevel: 2,
+      });
+    });
+
+    it('maps the rooms of a person', async () => {
+      const client = makeClient(() => ({
+        data: [area('x', { persons: [{ name: 'A', isActive: true, rooms: [demoRoom()] }] })],
+      }));
+      const result = await new ContactsService(client).getArea(de, 'x');
+      expect(result.data.persons[0]!.rooms[0]!.roomKey).toBe('demo-north-level2-b201');
+    });
+
+    it('localises room names for en', async () => {
+      const client = makeClient(() => ({ data: [area('x', { rooms: [demoRoom()] })] }));
+      const result = await new ContactsService(client).getArea(en, 'x');
+
+      expect(result.data.rooms[0]!.buildingName).toBe('Demo building north (fictional)');
+      expect(result.data.rooms[0]!.floorName).toBe('Second floor');
+    });
+
+    it('hides a deactivated or invisible room even through a relation', async () => {
+      const client = makeClient(() => ({
+        data: [
+          area('x', {
+            rooms: [
+              demoRoom({ roomKey: 'gone', catalogActive: false }),
+              demoRoom({ roomKey: 'hidden', isVisible: false }),
+              demoRoom({ roomKey: 'shown' }),
+            ],
+          }),
+        ],
+      }));
+
+      const result = await new ContactsService(client).getArea(de, 'x');
+      expect(result.data.rooms.map((r) => r.roomKey)).toEqual(['shown']);
+    });
+
+    it('never exposes a Strapi id through a room reference', async () => {
+      const client = makeClient(() => ({
+        data: [area('x', { rooms: [{ ...demoRoom(), id: 42, documentId: 'doc-42' }] })],
+      }));
+
+      const result = await new ContactsService(client).getArea(de, 'x');
+      const serialised = JSON.stringify(result.data.rooms);
+      expect(serialised).not.toContain('documentId');
+      expect(serialised).not.toContain('doc-42');
+    });
+  });
 });

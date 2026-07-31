@@ -25,6 +25,8 @@ const REQUIRED_PATHS = [
   '/v1/contact-areas/{slug}',
   '/v1/canteens',
   '/v1/canteens/{slug}/menu',
+  '/v1/rooms',
+  '/v1/rooms/{roomKey}',
 ];
 
 /**

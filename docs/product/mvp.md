@@ -86,6 +86,17 @@ Zugangsdaten verlassen das Gerät nur in Richtung des offiziellen Anbieters.
 - **Moodle**: Kurse, Materialien, Aufgaben mit Abgabestatus, Ankündigungen und Deadlines —
   **ausschließlich lesend**, verschlüsselter lokaler Cache, 24-Stunden-Regel
 
+**Lageplan (fiktive Demonstration)**
+
+- Zoombarer Demo-Etagenplan unter „Mehr → Lageplan" mit **30 fiktiven Räumen** (B.201–B.230)
+- Raumsuche über Raumnummer, normalisierte Raumnummer (`B.201` = `B201`), Anzeigename sowie
+  Gebäude- und Etagenbezeichnung
+- Ein Treffer öffnet die Etage, rückt den Raum in den Blick und hebt ihn hervor —
+  **nie** allein über Farbe
+- Räume sind mit Kontaktpersonen und Kontaktbereichen verknüpfbar; ein Tippen öffnet den Plan
+- Geometrie ist ein selbst erstelltes, gebündeltes Asset; Bezeichnungen kommen über die Campus API
+- Der Democharakter ist in der App sichtbar und in DE/EN formuliert
+
 **Lokales und Rahmen**
 
 - Lokale Aufgabenliste unter „Mehr → Aufgaben" — rein auf dem Gerät, ohne jede Netzbeteiligung
@@ -98,8 +109,11 @@ Zugangsdaten verlassen das Gerät nur in Richtung des offiziellen Anbieters.
 ### 3.2 Nicht enthalten
 
 **Produktseitig:** Nutzerkonten für die App selbst · Push-Nachrichten · globale Volltextsuche ·
-Gebäudepläne · Raumbelegung · Indoor-Navigation · mehrere Mail- oder Moodle-Konten ·
-serverseitige Synchronisierung der lokalen Aufgabenliste
+mehrere Mail- oder Moodle-Konten · serverseitige Synchronisierung der lokalen Aufgabenliste
+
+**Lageplan:** Indoor-Navigation und Wegberechnung · Live-Position · Raumbelegung und Buchung ·
+**reale** Gebäude, Räume und Grundrisse · SVG-Upload nach oder -Abruf aus Strapi ·
+CMS-Schreibzugang in der App · Auswahl von Räumen durch Tippen auf beliebige SVG-Pfade
 
 **Stundenplan:** persönlicher WebUntis-Login · Stundenpläne für Lehrpersonen oder Räume ·
 Raumverfügbarkeit („freie Räume") · Zusammenführen mehrerer Gruppen in einen Plan ·
@@ -211,12 +225,29 @@ Kein Hintergrund-Polling, kein Timer, kein Backend-Cron. Beim Moodle-Login wird 
 nach dem Tokenerwerb verworfen und nie gespeichert. HTML-Mails werden zu **reinem Text** reduziert;
 es gibt kein WebView, kein JavaScript und keine automatische Nachladung entfernter Bilder.
 
-### 4.6 Lokale Aufgabenliste
+### 4.6 Lageplan
+
+- Der Plan ist **vollständig fiktiv**. Es wird kein realer Grundriss dargestellt, und der
+  Democharakter ist in der App sichtbar.
+- Geometrie und die roomKey→Geometrie-Zuordnung sind **gebündelte, generierte Assets**; sie werden
+  zur Laufzeit nie geladen und nie aus Strapi bezogen.
+- Raumbezeichnungen und redaktionelle Texte kommen über `/v1/rooms` und werden offline gecacht.
+- Technische Raumfelder sind katalogverwaltet und in Strapi serverseitig geschützt; redaktionelle
+  Felder, Sichtbarkeit und Kontaktrelationen bleiben bearbeitbar.
+- Ein Raum ohne Geometrie im gebündelten Plan wird als Text gezeigt, die Kartenaktion ist
+  deaktiviert — nie ein Absturz.
+- Weicht die `mapVersion` ab, erklärt die App das und bleibt als Liste nutzbar.
+- Ein weiterer Raum, eine weitere Etage oder ein weiteres Gebäude erfordert **keine**
+  Flutter-Änderung.
+
+Details: [`../campus-map.md`](../campus-map.md).
+
+### 4.7 Lokale Aufgabenliste
 
 - Vollständig **auf dem Gerät**. Kein Netzaufruf, keine API, keine Synchronisierung, kein Konto.
 - Erreichbar unter „Mehr → Aufgaben".
 
-### 4.7 Sprachen
+### 4.8 Sprachen
 
 - Standard- und Fallback-Locale ist `de`.
 - Die App folgt der Systemsprache und erlaubt eine manuelle Auswahl Deutsch/Englisch.
@@ -225,7 +256,7 @@ es gibt kein WebView, kein JavaScript und keine automatische Nachladung entfernt
   bleibt der Quelltext erhalten und wird als Fallback markiert (`translationFallback`).
   API-eigene Labels (Mensanamen, Preisgruppen, Marker, Fehlertexte) sind zweisprachig.
 
-### 4.8 Offline und Cache
+### 4.9 Offline und Cache
 
 Lokal gespeichert werden:
 
@@ -244,46 +275,53 @@ Gecachte Daten werden klar als offline bzw. veraltet gekennzeichnet. **Ein Cache
 App-Crash führen** — er degradiert auf einen Netzwerkabruf. Umgekehrt darf eine leere oder
 fehlgeschlagene Antwort den letzten guten Stand nie löschen.
 
-### 4.9 Barrierefreiheit
+### 4.10 Barrierefreiheit
 
 Ausreichende Kontraste in Light und Dark · dynamische Schriftgrößen · Screenreader-Semantics ·
 Touch-Ziele >= 48dp · keine reine Farbcodierung · Light/Dark/System-Theme.
 
 ## 5. Akzeptanzkriterien
 
-| #   | Kriterium                                                                                              |
-| --- | ------------------------------------------------------------------------------------------------------ |
-| A1  | Ein neuer Strapi-Kanal erscheint ohne Flutter-Codeänderung.                                            |
-| A2  | Campus News und FB5 News sind unabhängig aktivierbar; beide standardmäßig abonniert.                   |
-| A3  | Auswahl bleibt nach App-Neustart erhalten; neue Default-Kanäle überschreiben keine Nutzerentscheidung. |
-| A4  | News in mehreren abonnierten Kanälen erscheint genau einmal.                                           |
-| A5  | Entwürfe sind nicht öffentlich sichtbar.                                                               |
-| A6  | Inaktiver Kanal verschwindet ohne App-Fehler.                                                          |
-| A7  | Alle Kanäle deaktiviert ⇒ Empty State, kein Request für alle Kanäle.                                   |
-| A8  | Beide Startmensen erscheinen über Backend-Daten; Flutter kennt keine Location-IDs.                     |
-| A9  | Alle Preisgruppen werden angezeigt; keine Mensabilder.                                                 |
-| A10 | Leere/ungültige Quellantwort löscht bestehende Mensadaten nicht.                                       |
-| A11 | Wiederholter Import erzeugt keine Duplikate.                                                           |
-| A12 | Neuer Kontaktbereich erscheint ohne Codeänderung; Bereich ohne Person funktioniert.                    |
-| A13 | Inaktive Bereiche/Personen werden nicht ausgeliefert.                                                  |
-| A14 | API leakt keine Strapi-Internas (`data`/`attributes`/`documentId`/`populate`).                         |
-| A15 | Flutter spricht nur mit `/v1` der Campus API.                                                          |
-| A16 | de/en sind in Flutter, Strapi und API real getestet.                                                   |
-| A17 | Kein offizieller HSA-Eindruck, keine Hochschulassets; Unabhängigkeitshinweis sichtbar.                 |
-| A18 | Keine Secrets im Repository oder in den Images.                                                        |
-| A19 | Zwei getrennte Datenbanken mit getrennten Rollen.                                                      |
-| A20 | Backend-, Strapi- und Flutter-Gates lokal grün.                                                        |
-| A21 | Ein neuer öffentlicher Kalender erscheint ohne App- und ohne Backend-Änderung.                         |
-| A22 | Keine Kalenderauswahl ⇒ keine öffentlichen Termine, niemals „alle".                                    |
-| A23 | Google-Kalender-ID, Feed-URL, ETag und `ownerContact` erscheinen in keiner API-Antwort.                |
-| A24 | Ein Fehler einer Kalenderquelle blendet die übrigen Quellen nicht aus.                                 |
-| A25 | Kein Backend-Endpunkt, keine Tabelle und kein Log berührt E-Mail-, Noten- oder Moodle-Daten.           |
-| A26 | Zugangsdaten und Token liegen nur im Keychain/Keystore; Noten und Moodle-Inhalte nur verschlüsselt.    |
-| A27 | Ein Redirect auf einen fremden Host oder auf Klartext bricht den Aufruf ab, ohne Token weiterzugeben.  |
-| A28 | Eine leere oder fehlgeschlagene Antwort überschreibt bei keiner Quelle den letzten guten Stand.        |
-| A29 | „Account entfernen" bzw. „Verbindung und lokale Daten löschen" hinterlässt keine Reste.                |
-| A30 | Moodle wird ausschließlich lesend angesprochen; es existiert keine generische Aufruf-Schnittstelle.    |
-| A31 | Die Aufgabenliste funktioniert vollständig ohne Netzverbindung.                                        |
+| #   | Kriterium                                                                                               |
+| --- | ------------------------------------------------------------------------------------------------------- |
+| A1  | Ein neuer Strapi-Kanal erscheint ohne Flutter-Codeänderung.                                             |
+| A2  | Campus News und FB5 News sind unabhängig aktivierbar; beide standardmäßig abonniert.                    |
+| A3  | Auswahl bleibt nach App-Neustart erhalten; neue Default-Kanäle überschreiben keine Nutzerentscheidung.  |
+| A4  | News in mehreren abonnierten Kanälen erscheint genau einmal.                                            |
+| A5  | Entwürfe sind nicht öffentlich sichtbar.                                                                |
+| A6  | Inaktiver Kanal verschwindet ohne App-Fehler.                                                           |
+| A7  | Alle Kanäle deaktiviert ⇒ Empty State, kein Request für alle Kanäle.                                    |
+| A8  | Beide Startmensen erscheinen über Backend-Daten; Flutter kennt keine Location-IDs.                      |
+| A9  | Alle Preisgruppen werden angezeigt; keine Mensabilder.                                                  |
+| A10 | Leere/ungültige Quellantwort löscht bestehende Mensadaten nicht.                                        |
+| A11 | Wiederholter Import erzeugt keine Duplikate.                                                            |
+| A12 | Neuer Kontaktbereich erscheint ohne Codeänderung; Bereich ohne Person funktioniert.                     |
+| A13 | Inaktive Bereiche/Personen werden nicht ausgeliefert.                                                   |
+| A14 | API leakt keine Strapi-Internas (`data`/`attributes`/`documentId`/`populate`).                          |
+| A15 | Flutter spricht nur mit `/v1` der Campus API.                                                           |
+| A16 | de/en sind in Flutter, Strapi und API real getestet.                                                    |
+| A17 | Kein offizieller HSA-Eindruck, keine Hochschulassets; Unabhängigkeitshinweis sichtbar.                  |
+| A18 | Keine Secrets im Repository oder in den Images.                                                         |
+| A19 | Zwei getrennte Datenbanken mit getrennten Rollen.                                                       |
+| A20 | Backend-, Strapi- und Flutter-Gates lokal grün.                                                         |
+| A21 | Ein neuer öffentlicher Kalender erscheint ohne App- und ohne Backend-Änderung.                          |
+| A22 | Keine Kalenderauswahl ⇒ keine öffentlichen Termine, niemals „alle".                                     |
+| A23 | Google-Kalender-ID, Feed-URL, ETag und `ownerContact` erscheinen in keiner API-Antwort.                 |
+| A24 | Ein Fehler einer Kalenderquelle blendet die übrigen Quellen nicht aus.                                  |
+| A25 | Kein Backend-Endpunkt, keine Tabelle und kein Log berührt E-Mail-, Noten- oder Moodle-Daten.            |
+| A26 | Zugangsdaten und Token liegen nur im Keychain/Keystore; Noten und Moodle-Inhalte nur verschlüsselt.     |
+| A27 | Ein Redirect auf einen fremden Host oder auf Klartext bricht den Aufruf ab, ohne Token weiterzugeben.   |
+| A28 | Eine leere oder fehlgeschlagene Antwort überschreibt bei keiner Quelle den letzten guten Stand.         |
+| A29 | „Account entfernen" bzw. „Verbindung und lokale Daten löschen" hinterlässt keine Reste.                 |
+| A30 | Moodle wird ausschließlich lesend angesprochen; es existiert keine generische Aufruf-Schnittstelle.     |
+| A31 | Die Aufgabenliste funktioniert vollständig ohne Netzverbindung.                                         |
+| A32 | Der Katalog enthält exakt die 30 vorhandenen roomKeys; generierte App-Assets sind driftgesichert.       |
+| A33 | „Mehr → Lageplan" öffnet den fiktiven Demo-Plan mit sichtbarem Demo-Hinweis in DE/EN.                   |
+| A34 | `B.201` und `B201` finden denselben Raum; die Auswahl fokussiert und markiert ihn.                      |
+| A35 | Raumdaten funktionieren nach einem erfolgreichen Abruf offline aus dem Cache.                           |
+| A36 | Der CMS-Sync legt exakt 30 Demo-Räume an und ist idempotent; `--dry-run` schreibt nichts.               |
+| A37 | Technische Raumfelder sind über normale CMS-Wege nicht änderbar; redaktionelle Felder bleiben erhalten. |
+| A38 | Kontakte ohne Raum funktionieren unverändert und zeigen keine leere Zeile.                              |
 
 ## 6. Offene Release-Gates
 
@@ -311,6 +349,9 @@ werden:
 13. **Veröffentlichungsrechte je öffentlichem Kalender** — Zustimmung des Inhabers, zulässiger
     Quellenhinweis, ob Beschreibung und Ort gezeigt werden dürfen, Ansprechpartner und Verhalten
     bei Entzug der Freigabe. Bis Kalender gepflegt sind, bleibt `PUBLIC_CALENDAR_ENABLED=false`.
-14. **App-Switcher-Vorschau des Notenbildschirms** — bewusst offene Datenschutzentscheidung; eine
+14. **Reale Gebäudepläne** — Herkunft, Bearbeitungs- und Veröffentlichungsrecht, Ausschluss
+    sicherheitsrelevanter Pläne (Flucht-, Rettungs- und Schließpläne), Personenbezug bei Büros und
+    ein Pflegeprozess für Umbauten. Bis dahin bleibt es beim fiktiven Demo-Plan.
+15. **App-Switcher-Vorschau des Notenbildschirms** — bewusst offene Datenschutzentscheidung; eine
     saubere, plattformübergreifende Lösung ohne globale Nebenwirkungen liegt nicht vor. Siehe
     [`../grades.md`](../grades.md).

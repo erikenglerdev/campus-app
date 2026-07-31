@@ -5,6 +5,45 @@ import '../../../core/content/content_block.dart';
 import '../../../core/links/safe_link_launcher.dart';
 import '../../../core/network/json.dart';
 
+/// A compact reference to a room of the campus map.
+///
+/// Carries everything needed to render a readable line and to deep-link into
+/// the map. An empty room list is a normal state — most contacts have none.
+class RoomReference {
+  const RoomReference({
+    required this.roomKey,
+    required this.roomNumber,
+    required this.buildingName,
+    required this.floorName,
+    this.displayName,
+  });
+
+  final String roomKey;
+  final String roomNumber;
+  final String buildingName;
+  final String floorName;
+  final String? displayName;
+
+  static RoomReference? fromJson(Object? json) {
+    final Map<String, dynamic>? map = asJsonMap(json);
+    if (map == null) return null;
+    final String? roomKey = asString(map['roomKey']);
+    if (roomKey == null) return null;
+    return RoomReference(
+      roomKey: roomKey,
+      roomNumber: asString(map['roomNumber']) ?? roomKey,
+      buildingName: asString(map['buildingName']) ?? '',
+      floorName: asString(map['floorName']) ?? '',
+      displayName: asString(map['displayName']),
+    );
+  }
+
+  static List<RoomReference> listFromJson(Object? json) => asList(json)
+      .map(RoomReference.fromJson)
+      .whereType<RoomReference>()
+      .toList(growable: false);
+}
+
 /// A contact person inside an area.
 ///
 /// Every field except [name] is optional. Missing fields are **hidden** by the
@@ -18,6 +57,7 @@ class ContactPerson {
     this.phone,
     this.website,
     this.profileImageUrl,
+    this.rooms = const <RoomReference>[],
   });
 
   final String name;
@@ -27,6 +67,7 @@ class ContactPerson {
   final String? phone;
   final String? website;
   final String? profileImageUrl;
+  final List<RoomReference> rooms;
 
   static ContactPerson? fromJson(Object? json) {
     final Map<String, dynamic>? map = asJsonMap(json);
@@ -44,6 +85,7 @@ class ContactPerson {
       phone: asString(map['phone']),
       website: SafeLinkLauncher.isAllowed(website) ? website : null,
       profileImageUrl: SafeLinkLauncher.isAllowed(imageUrl) ? imageUrl : null,
+      rooms: RoomReference.listFromJson(map['rooms']),
     );
   }
 }
@@ -67,6 +109,7 @@ class ContactArea {
     this.isDemoContent = false,
     this.description = const <ContentBlock>[],
     this.persons = const <ContactPerson>[],
+    this.rooms = const <RoomReference>[],
   });
 
   final String slug;
@@ -90,6 +133,9 @@ class ContactArea {
 
   final List<ContentBlock> description;
   final List<ContactPerson> persons;
+
+  /// Rooms of the campus map. Empty is normal and renders nothing at all.
+  final List<RoomReference> rooms;
 
   /// Whether any general contact channel is maintained at all.
   bool get hasContactDetails =>
@@ -129,6 +175,7 @@ class ContactArea {
       isDemoContent: asBool(map['isDemoContent']) ?? false,
       description: ContentBlock.parse(map['description']),
       persons: persons,
+      rooms: RoomReference.listFromJson(map['rooms']),
     );
   }
 

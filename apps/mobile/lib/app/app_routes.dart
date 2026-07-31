@@ -44,6 +44,20 @@ abstract final class AppRoutes {
   static const String todosPath = 'todos';
   static const String todos = '/more/todos';
 
+  // Campus map (fictional demo plan), nested under More.
+  static const String campusMapPath = 'campus-map';
+  static const String campusMap = '/more/campus-map';
+
+  /// Query parameter carrying the room a deep link should focus.
+  static const String campusMapRoomParam = 'room';
+
+  /// In-app deep link used by contact details to open the map on one room.
+  ///
+  /// A query parameter rather than a path segment: the roomKey is optional,
+  /// and the map is a perfectly valid destination without one.
+  static String campusMapForRoom(String roomKey) =>
+      '$campusMap?$campusMapRoomParam=${Uri.encodeQueryComponent(roomKey)}';
+
   // Settings is a sub-page of More.
   static const String settings = '/more/settings';
   static const String about = '/more/settings/about';

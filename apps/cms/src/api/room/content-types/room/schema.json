@@ -1,0 +1,143 @@
+{
+  "kind": "collectionType",
+  "collectionName": "rooms",
+  "info": {
+    "singularName": "room",
+    "pluralName": "rooms",
+    "displayName": "Room",
+    "description": "A room of the fictional demo campus map. Technical reference data: every field in the CATALOGUE group is owned by packages/campus-map and is overwritten by 'pnpm --filter @campus/cms rooms:sync'. Editorial fields, visibility and contact relations are yours to maintain and are never touched by the sync."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": false
+    }
+  },
+  "attributes": {
+    "roomKey": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "maxLength": 120,
+      "regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "CATALOGUE — stable technical identifier. Never edit; the map catalogue owns it."
+    },
+    "editorLabel": {
+      "type": "string",
+      "required": true,
+      "maxLength": 200,
+      "description": "CATALOGUE — human readable label used in relation pickers."
+    },
+    "roomNumber": {
+      "type": "string",
+      "required": true,
+      "maxLength": 40,
+      "description": "CATALOGUE — language neutral room number, e.g. B.201."
+    },
+    "buildingKey": {
+      "type": "string",
+      "required": true,
+      "maxLength": 120,
+      "description": "CATALOGUE — stable building identifier."
+    },
+    "buildingNameDe": {
+      "type": "string",
+      "required": true,
+      "maxLength": 200,
+      "description": "CATALOGUE — German building name."
+    },
+    "buildingNameEn": {
+      "type": "string",
+      "required": true,
+      "maxLength": 200,
+      "description": "CATALOGUE — English building name."
+    },
+    "floorKey": {
+      "type": "string",
+      "required": true,
+      "maxLength": 120,
+      "description": "CATALOGUE — stable floor identifier."
+    },
+    "floorLevel": {
+      "type": "integer",
+      "required": true,
+      "description": "CATALOGUE — numeric floor level."
+    },
+    "floorNameDe": {
+      "type": "string",
+      "required": true,
+      "maxLength": 200,
+      "description": "CATALOGUE — German floor name."
+    },
+    "floorNameEn": {
+      "type": "string",
+      "required": true,
+      "maxLength": 200,
+      "description": "CATALOGUE — English floor name."
+    },
+    "roomType": {
+      "type": "enumeration",
+      "enum": ["lecture", "seminar", "office", "lab", "meeting", "service"],
+      "required": true,
+      "description": "CATALOGUE — stable technical enum. Localised labels live in the Flutter app."
+    },
+    "mapVersion": {
+      "type": "string",
+      "required": true,
+      "maxLength": 120,
+      "description": "CATALOGUE — version of the map catalogue this row was synced from."
+    },
+    "sortOrder": {
+      "type": "integer",
+      "required": true,
+      "default": 0,
+      "description": "CATALOGUE — deterministic ordering."
+    },
+    "catalogActive": {
+      "type": "boolean",
+      "required": true,
+      "default": true,
+      "description": "CATALOGUE — false once the room disappeared from the catalogue. The sync deactivates rather than deletes, so editorial work is never lost."
+    },
+    "displayNameDe": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "EDITORIAL — optional German display name shown instead of the bare room number."
+    },
+    "displayNameEn": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "EDITORIAL — optional English display name."
+    },
+    "descriptionDe": {
+      "type": "text",
+      "maxLength": 600,
+      "description": "EDITORIAL — optional short German description."
+    },
+    "descriptionEn": {
+      "type": "text",
+      "maxLength": 600,
+      "description": "EDITORIAL — optional short English description."
+    },
+    "isVisible": {
+      "type": "boolean",
+      "required": true,
+      "default": true,
+      "description": "EDITORIAL — hide a room from the public API without touching the catalogue."
+    },
+    "contactPersons": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::contact-person.contact-person",
+      "mappedBy": "rooms"
+    },
+    "contactAreas": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::contact-area.contact-area",
+      "mappedBy": "rooms"
+    }
+  }
+}

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/about/presentation/about_screen.dart';
+import '../features/campusmap/presentation/campus_map_screen.dart';
 import '../features/canteen/presentation/canteen_screen.dart';
 import '../features/contacts/presentation/contact_area_screen.dart';
 import '../features/contacts/presentation/contacts_list_screen.dart';
@@ -173,6 +174,15 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.news}) {
                     path: AppRoutes.todosPath,
                     builder: (BuildContext _, GoRouterState _) =>
                         const TodosScreen(),
+                  ),
+                  GoRoute(
+                    path: AppRoutes.campusMapPath,
+                    builder: (BuildContext _, GoRouterState state) =>
+                        CampusMapScreen(
+                          initialRoomKey: state
+                              .uri
+                              .queryParameters[AppRoutes.campusMapRoomParam],
+                        ),
                   ),
                   GoRoute(
                     path: 'settings',

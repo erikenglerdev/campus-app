@@ -137,7 +137,33 @@ Eine Person kann **mehreren Bereichen** zugeordnet sein und wird trotzdem nur
 einmal gepflegt. `isActive: false` blendet sie überall aus, ohne Daten zu
 löschen.
 
-## 6. Häufige Fehler
+## 6. Räume (Lageplan)
+
+Räume sind **technische Referenzdaten** und werden nicht von Hand angelegt. Der Lageplan ist ein
+**fiktiver Demonstrationsplan**; es werden keine realen Gebäude oder Räume dargestellt.
+
+**Was du bearbeiten kannst:**
+
+| Feld                              | Bedeutung                                                                   |
+| --------------------------------- | --------------------------------------------------------------------------- |
+| `displayNameDe` / `displayNameEn` | optionaler sprechender Name statt der reinen Nummer, z. B. „Großer Hörsaal" |
+| `descriptionDe` / `descriptionEn` | optionale kurze Beschreibung                                                |
+| `isVisible`                       | Raum aus der App ausblenden, ohne den Katalog anzufassen                    |
+| `contactPersons` / `contactAreas` | Räume mit Ansprechpartnern und Bereichen verknüpfen                         |
+
+**Was du nicht ändern kannst — und warum:** `roomKey`, `roomNumber`, Gebäude, Etage, `roomType`,
+`mapVersion`, `sortOrder` und `catalogActive` gehören zum Kartenkatalog. Sie müssen exakt zur
+gezeichneten Geometrie passen, sonst würde die App den falschen Raum markieren. Der Server lehnt
+Änderungen daran ab und ignoriert sie beim Speichern — das ist kein Fehler, sondern Absicht.
+Räume anlegen oder löschen ist aus demselben Grund gesperrt.
+
+Verschwindet ein Raum aus dem Katalog, wird er **deaktiviert, nicht gelöscht**: deine Texte und
+Verknüpfungen bleiben erhalten und leben wieder auf, falls der Raum zurückkehrt.
+
+Braucht ihr einen neuen Raum, eine Etage oder ein Gebäude, wendet euch an die Entwicklung — das ist
+eine Änderung an der Karte, kein CMS-Vorgang.
+
+## 7. Häufige Fehler
 
 | Fehler                                 | Folge                                      |
 | -------------------------------------- | ------------------------------------------ |
@@ -150,7 +176,7 @@ löschen.
 | Zusammenfassung ohne `sourceUrl`       | Quelle nicht nachvollziehbar               |
 | Entwurf „veröffentlicht“ geglaubt      | nichts sichtbar — `Publish` fehlt          |
 
-## 7. Mensadaten
+## 8. Mensadaten
 
 Mensapläne kommen **automatisch** von `meine-mensa.de` und werden alle zwei
 Stunden synchronisiert. Sie sind **nicht** redaktionell und im Admin nicht

@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ResponseMetaDto } from '../../common/dto/meta.dto';
 import { ContentBlock } from '../../common/content/content-blocks';
+import { RoomReferenceDto } from '../rooms/rooms.types';
 
 /**
  * Public shapes for /v1/contact-areas*.
@@ -18,6 +19,12 @@ export class ContactPersonDto {
   @ApiProperty({ type: String, nullable: true }) website!: string | null;
   @ApiProperty({ type: String, nullable: true }) profileImage!: string | null;
   @ApiProperty() sortOrder!: number;
+
+  @ApiProperty({
+    type: [RoomReferenceDto],
+    description: 'Rooms of the demo campus map. An empty list is normal — a contact needs no room.',
+  })
+  rooms!: RoomReferenceDto[];
 }
 
 export class ContactAreaListItemDto {
@@ -67,6 +74,12 @@ export class ContactAreaDetailDto {
 
   @ApiProperty({ type: [ContactPersonDto], description: 'Active persons only; may be empty.' })
   persons!: ContactPersonDto[];
+
+  @ApiProperty({
+    type: [RoomReferenceDto],
+    description: 'Rooms of the demo campus map. An empty list is normal — an area needs no room.',
+  })
+  rooms!: RoomReferenceDto[];
 }
 
 export class ContactAreasResponseDto {

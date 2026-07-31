@@ -52,6 +52,20 @@ int? asInt(Object? value) {
   return null;
 }
 
+/// Returns a finite double, or `null`.
+///
+/// JSON makes no difference between `4` and `4.0`, so an integer is accepted
+/// too. Infinity and NaN are rejected: they would silently poison geometry.
+double? asDouble(Object? value) {
+  if (value is double) return value.isFinite ? value : null;
+  if (value is int) return value.toDouble();
+  if (value is String) {
+    final double? parsed = double.tryParse(value.trim());
+    return parsed != null && parsed.isFinite ? parsed : null;
+  }
+  return null;
+}
+
 bool? asBool(Object? value) {
   if (value is bool) return value;
   if (value is String) {

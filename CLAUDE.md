@@ -54,6 +54,16 @@ Diese Datei ist für automatisierte und menschliche Beiträge gleichermaßen ver
    Moodle-Deadlines (direkt) geschieht weiterhin **ausschließlich lokal** in Flutter. Details:
    [`docs/public-calendars.md`](docs/public-calendars.md).
 
+   **Selbst erstellte, versionierte Assets** sind von dieser Regel nicht berührt: Kartengeometrie
+   und der daraus generierte Raumkatalog (`packages/campus-map` → `apps/mobile/assets/maps`) liegen
+   als geprüfte Dateien **im Repository** und werden mit der App gebündelt. Sie werden zur Laufzeit
+   **nie** über das Netz geladen, nie aus Strapi bezogen und nie aus einer fremden Quelle
+   nachgeladen. Das ist **keine** Erlaubnis, öffentliche Drittanbieterdaten direkt in die App zu
+   holen — solche Daten laufen weiterhin ausnahmslos über die Campus API. Raumbezeichnungen und
+   redaktionelle Raumtexte sind genau solche Daten und kommen daher über `/v1/rooms`.
+   Reale Gebäudepläne dürfen erst nach geklärter Herkunft, Bearbeitungs- und
+   Veröffentlichungsberechtigung aufgenommen werden. Details: [`docs/campus-map.md`](docs/campus-map.md).
+
 2. Das Backend liest Strapi **ausschließlich** über dessen REST-API mit einem serverseitigen
    Read-only-Token. Kein direkter Zugriff auf Strapi-Tabellen, keine gemeinsame Prisma-Verbindung.
 3. Redaktionelle Inhalte leben in Strapi. Importierte Mensadaten und Sync-Zustände leben in der

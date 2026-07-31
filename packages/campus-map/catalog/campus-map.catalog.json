@@ -1,0 +1,603 @@
+{
+  "schemaVersion": 1,
+  "mapVersion": "demo-north-2026-07-31",
+  "notice": "Fully fictional demonstration data. No real building, floor plan or room of any institution is depicted.",
+  "buildings": [
+    {
+      "buildingKey": "demo-north",
+      "nameDe": "Demogebäude Nord (fiktiv)",
+      "nameEn": "Demo building north (fictional)",
+      "sortOrder": 10
+    }
+  ],
+  "floors": [
+    {
+      "floorKey": "demo-north-level2",
+      "buildingKey": "demo-north",
+      "level": 2,
+      "nameDe": "2. Obergeschoss",
+      "nameEn": "Second floor",
+      "svgPath": "buildings/demo-north/level2.svg",
+      "viewBox": {
+        "minX": 0,
+        "minY": 0,
+        "width": 1900,
+        "height": 1080
+      },
+      "expectedRoomCount": 30,
+      "sortOrder": 10
+    }
+  ],
+  "rooms": [
+    {
+      "roomKey": "demo-north-level2-b201",
+      "roomNumber": "B.201",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "lecture",
+      "svgElementId": "room-demo-north-level2-b201",
+      "focus": {
+        "x": 195,
+        "y": 310
+      },
+      "bounds": {
+        "x": 90,
+        "y": 170,
+        "width": 210,
+        "height": 280
+      },
+      "sortOrder": 10
+    },
+    {
+      "roomKey": "demo-north-level2-b202",
+      "roomNumber": "B.202",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "seminar",
+      "svgElementId": "room-demo-north-level2-b202",
+      "focus": {
+        "x": 375,
+        "y": 310
+      },
+      "bounds": {
+        "x": 300,
+        "y": 170,
+        "width": 150,
+        "height": 280
+      },
+      "sortOrder": 20
+    },
+    {
+      "roomKey": "demo-north-level2-b203",
+      "roomNumber": "B.203",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "office",
+      "svgElementId": "room-demo-north-level2-b203",
+      "focus": {
+        "x": 500,
+        "y": 310
+      },
+      "bounds": {
+        "x": 450,
+        "y": 170,
+        "width": 100,
+        "height": 280
+      },
+      "sortOrder": 30
+    },
+    {
+      "roomKey": "demo-north-level2-b204",
+      "roomNumber": "B.204",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "office",
+      "svgElementId": "room-demo-north-level2-b204",
+      "focus": {
+        "x": 600,
+        "y": 310
+      },
+      "bounds": {
+        "x": 550,
+        "y": 170,
+        "width": 100,
+        "height": 280
+      },
+      "sortOrder": 40
+    },
+    {
+      "roomKey": "demo-north-level2-b205",
+      "roomNumber": "B.205",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "office",
+      "svgElementId": "room-demo-north-level2-b205",
+      "focus": {
+        "x": 700,
+        "y": 310
+      },
+      "bounds": {
+        "x": 650,
+        "y": 170,
+        "width": 100,
+        "height": 280
+      },
+      "sortOrder": 50
+    },
+    {
+      "roomKey": "demo-north-level2-b206",
+      "roomNumber": "B.206",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "office",
+      "svgElementId": "room-demo-north-level2-b206",
+      "focus": {
+        "x": 800,
+        "y": 310
+      },
+      "bounds": {
+        "x": 750,
+        "y": 170,
+        "width": 100,
+        "height": 280
+      },
+      "sortOrder": 60
+    },
+    {
+      "roomKey": "demo-north-level2-b207",
+      "roomNumber": "B.207",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "meeting",
+      "svgElementId": "room-demo-north-level2-b207",
+      "focus": {
+        "x": 910,
+        "y": 310
+      },
+      "bounds": {
+        "x": 850,
+        "y": 170,
+        "width": 120,
+        "height": 280
+      },
+      "sortOrder": 70
+    },
+    {
+      "roomKey": "demo-north-level2-b208",
+      "roomNumber": "B.208",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "seminar",
+      "svgElementId": "room-demo-north-level2-b208",
+      "focus": {
+        "x": 1030,
+        "y": 310
+      },
+      "bounds": {
+        "x": 970,
+        "y": 170,
+        "width": 120,
+        "height": 280
+      },
+      "sortOrder": 80
+    },
+    {
+      "roomKey": "demo-north-level2-b209",
+      "roomNumber": "B.209",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "office",
+      "svgElementId": "room-demo-north-level2-b209",
+      "focus": {
+        "x": 1140,
+        "y": 310
+      },
+      "bounds": {
+        "x": 1090,
+        "y": 170,
+        "width": 100,
+        "height": 280
+      },
+      "sortOrder": 90
+    },
+    {
+      "roomKey": "demo-north-level2-b210",
+      "roomNumber": "B.210",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "office",
+      "svgElementId": "room-demo-north-level2-b210",
+      "focus": {
+        "x": 1240,
+        "y": 310
+      },
+      "bounds": {
+        "x": 1190,
+        "y": 170,
+        "width": 100,
+        "height": 280
+      },
+      "sortOrder": 100
+    },
+    {
+      "roomKey": "demo-north-level2-b211",
+      "roomNumber": "B.211",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "office",
+      "svgElementId": "room-demo-north-level2-b211",
+      "focus": {
+        "x": 1340,
+        "y": 310
+      },
+      "bounds": {
+        "x": 1290,
+        "y": 170,
+        "width": 100,
+        "height": 280
+      },
+      "sortOrder": 110
+    },
+    {
+      "roomKey": "demo-north-level2-b212",
+      "roomNumber": "B.212",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "office",
+      "svgElementId": "room-demo-north-level2-b212",
+      "focus": {
+        "x": 1440,
+        "y": 310
+      },
+      "bounds": {
+        "x": 1390,
+        "y": 170,
+        "width": 100,
+        "height": 280
+      },
+      "sortOrder": 120
+    },
+    {
+      "roomKey": "demo-north-level2-b213",
+      "roomNumber": "B.213",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "office",
+      "svgElementId": "room-demo-north-level2-b213",
+      "focus": {
+        "x": 1540,
+        "y": 310
+      },
+      "bounds": {
+        "x": 1490,
+        "y": 170,
+        "width": 100,
+        "height": 280
+      },
+      "sortOrder": 130
+    },
+    {
+      "roomKey": "demo-north-level2-b214",
+      "roomNumber": "B.214",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "meeting",
+      "svgElementId": "room-demo-north-level2-b214",
+      "focus": {
+        "x": 1640,
+        "y": 310
+      },
+      "bounds": {
+        "x": 1590,
+        "y": 170,
+        "width": 100,
+        "height": 280
+      },
+      "sortOrder": 140
+    },
+    {
+      "roomKey": "demo-north-level2-b215",
+      "roomNumber": "B.215",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "service",
+      "svgElementId": "room-demo-north-level2-b215",
+      "focus": {
+        "x": 1750,
+        "y": 310
+      },
+      "bounds": {
+        "x": 1690,
+        "y": 170,
+        "width": 120,
+        "height": 280
+      },
+      "sortOrder": 150
+    },
+    {
+      "roomKey": "demo-north-level2-b216",
+      "roomNumber": "B.216",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "lab",
+      "svgElementId": "room-demo-north-level2-b216",
+      "focus": {
+        "x": 155,
+        "y": 785
+      },
+      "bounds": {
+        "x": 90,
+        "y": 650,
+        "width": 130,
+        "height": 270
+      },
+      "sortOrder": 160
+    },
+    {
+      "roomKey": "demo-north-level2-b217",
+      "roomNumber": "B.217",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "lab",
+      "svgElementId": "room-demo-north-level2-b217",
+      "focus": {
+        "x": 290,
+        "y": 785
+      },
+      "bounds": {
+        "x": 220,
+        "y": 650,
+        "width": 140,
+        "height": 270
+      },
+      "sortOrder": 170
+    },
+    {
+      "roomKey": "demo-north-level2-b218",
+      "roomNumber": "B.218",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "lab",
+      "svgElementId": "room-demo-north-level2-b218",
+      "focus": {
+        "x": 430,
+        "y": 785
+      },
+      "bounds": {
+        "x": 360,
+        "y": 650,
+        "width": 140,
+        "height": 270
+      },
+      "sortOrder": 180
+    },
+    {
+      "roomKey": "demo-north-level2-b219",
+      "roomNumber": "B.219",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "office",
+      "svgElementId": "room-demo-north-level2-b219",
+      "focus": {
+        "x": 555,
+        "y": 785
+      },
+      "bounds": {
+        "x": 500,
+        "y": 650,
+        "width": 110,
+        "height": 270
+      },
+      "sortOrder": 190
+    },
+    {
+      "roomKey": "demo-north-level2-b220",
+      "roomNumber": "B.220",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "office",
+      "svgElementId": "room-demo-north-level2-b220",
+      "focus": {
+        "x": 665,
+        "y": 785
+      },
+      "bounds": {
+        "x": 610,
+        "y": 650,
+        "width": 110,
+        "height": 270
+      },
+      "sortOrder": 200
+    },
+    {
+      "roomKey": "demo-north-level2-b221",
+      "roomNumber": "B.221",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "office",
+      "svgElementId": "room-demo-north-level2-b221",
+      "focus": {
+        "x": 775,
+        "y": 785
+      },
+      "bounds": {
+        "x": 720,
+        "y": 650,
+        "width": 110,
+        "height": 270
+      },
+      "sortOrder": 210
+    },
+    {
+      "roomKey": "demo-north-level2-b222",
+      "roomNumber": "B.222",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "meeting",
+      "svgElementId": "room-demo-north-level2-b222",
+      "focus": {
+        "x": 885,
+        "y": 785
+      },
+      "bounds": {
+        "x": 830,
+        "y": 650,
+        "width": 110,
+        "height": 270
+      },
+      "sortOrder": 220
+    },
+    {
+      "roomKey": "demo-north-level2-b223",
+      "roomNumber": "B.223",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "seminar",
+      "svgElementId": "room-demo-north-level2-b223",
+      "focus": {
+        "x": 995,
+        "y": 785
+      },
+      "bounds": {
+        "x": 940,
+        "y": 650,
+        "width": 110,
+        "height": 270
+      },
+      "sortOrder": 230
+    },
+    {
+      "roomKey": "demo-north-level2-b224",
+      "roomNumber": "B.224",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "seminar",
+      "svgElementId": "room-demo-north-level2-b224",
+      "focus": {
+        "x": 1105,
+        "y": 785
+      },
+      "bounds": {
+        "x": 1050,
+        "y": 650,
+        "width": 110,
+        "height": 270
+      },
+      "sortOrder": 240
+    },
+    {
+      "roomKey": "demo-north-level2-b225",
+      "roomNumber": "B.225",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "office",
+      "svgElementId": "room-demo-north-level2-b225",
+      "focus": {
+        "x": 1215,
+        "y": 785
+      },
+      "bounds": {
+        "x": 1160,
+        "y": 650,
+        "width": 110,
+        "height": 270
+      },
+      "sortOrder": 250
+    },
+    {
+      "roomKey": "demo-north-level2-b226",
+      "roomNumber": "B.226",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "office",
+      "svgElementId": "room-demo-north-level2-b226",
+      "focus": {
+        "x": 1325,
+        "y": 785
+      },
+      "bounds": {
+        "x": 1270,
+        "y": 650,
+        "width": 110,
+        "height": 270
+      },
+      "sortOrder": 260
+    },
+    {
+      "roomKey": "demo-north-level2-b227",
+      "roomNumber": "B.227",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "office",
+      "svgElementId": "room-demo-north-level2-b227",
+      "focus": {
+        "x": 1435,
+        "y": 785
+      },
+      "bounds": {
+        "x": 1380,
+        "y": 650,
+        "width": 110,
+        "height": 270
+      },
+      "sortOrder": 270
+    },
+    {
+      "roomKey": "demo-north-level2-b228",
+      "roomNumber": "B.228",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "office",
+      "svgElementId": "room-demo-north-level2-b228",
+      "focus": {
+        "x": 1545,
+        "y": 785
+      },
+      "bounds": {
+        "x": 1490,
+        "y": 650,
+        "width": 110,
+        "height": 270
+      },
+      "sortOrder": 280
+    },
+    {
+      "roomKey": "demo-north-level2-b229",
+      "roomNumber": "B.229",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "meeting",
+      "svgElementId": "room-demo-north-level2-b229",
+      "focus": {
+        "x": 1655,
+        "y": 785
+      },
+      "bounds": {
+        "x": 1600,
+        "y": 650,
+        "width": 110,
+        "height": 270
+      },
+      "sortOrder": 290
+    },
+    {
+      "roomKey": "demo-north-level2-b230",
+      "roomNumber": "B.230",
+      "buildingKey": "demo-north",
+      "floorKey": "demo-north-level2",
+      "roomType": "service",
+      "svgElementId": "room-demo-north-level2-b230",
+      "focus": {
+        "x": 1760,
+        "y": 785
+      },
+      "bounds": {
+        "x": 1710,
+        "y": 650,
+        "width": 100,
+        "height": 270
+      },
+      "sortOrder": 300
+    }
+  ]
+}

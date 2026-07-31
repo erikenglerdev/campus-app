@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "tsc --noEmit -p tsconfig.json",
     "seed": "echo \"Seeding runs in the bootstrap hook. Set SEED_DEMO_CONTENT=true and start the CMS.\" && exit 0",
-    "test": "echo \"CMS is verified by the build plus the repo-level smoke test (scripts/smoke-test.sh).\" && exit 0",
+    "test": "node --require ts-node/register --test test/*.test.ts",
+    "rooms:sync": "node --require ts-node/register scripts/rooms-sync.ts",
     "upgrade": "npx @strapi/upgrade latest",
     "upgrade:dry": "npx @strapi/upgrade latest --dry",
     "token:create-readonly": "strapi ts:generate-types --silent && node -r ts-node/register scripts/create-readonly-token.ts"
@@ -31,6 +32,7 @@
     "styled-components": "^6.1.19"
   },
   "devDependencies": {
+    "@campus/map": "workspace:*",
     "@types/node": "^22.19.0",
     "@types/prismjs": "^1.26.5",
     "@types/react": "^18.3.27",

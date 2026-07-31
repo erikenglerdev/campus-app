@@ -69,6 +69,23 @@ visuelle Logoimitation. Das finale App-Icon ist ein offenes Release-Gate.
 
 ---
 
+### 2.3 Demo-Lageplan (Kartenassets)
+
+|                    |                                                                      |
+| ------------------ | -------------------------------------------------------------------- |
+| Pfad im Repository | `packages/campus-map/buildings/` · `apps/mobile/assets/maps/`        |
+| Urheberschaft      | vollständig selbst erstellt für dieses Projekt                       |
+| Lizenz             | `AGPL-3.0-only`, wie das übrige Projekt                              |
+| Inhalt             | **frei erfundenes** Demogebäude mit 30 fiktiven Räumen (B.201–B.230) |
+
+Der Plan bildet **keinen** realen Grundriss ab. Es wurden keine fremden Gebäudepläne, Flucht- oder
+Rettungspläne, Logos oder Markenassets verwendet oder nachgezeichnet. Die Assets werden mit der App
+gebündelt und zur Laufzeit nie nachgeladen.
+
+Reale Gebäudepläne dürfen erst nach geklärter Herkunft sowie Bearbeitungs- und
+Veröffentlichungsberechtigung aufgenommen werden — siehe
+[`docs/campus-map.md`](docs/campus-map.md).
+
 ## 3. Datenquellen
 
 ### 3.1 meine-mensa.de
@@ -100,6 +117,15 @@ nachweislich freigegebene Bilder veröffentlicht.
 Dieses Projekt verwendet Open-Source-Abhängigkeiten aus den Ökosystemen npm (Strapi, NestJS,
 Prisma) und pub.dev (Flutter, Riverpod, go_router, dio, hive_ce), die jeweils unter ihren eigenen
 Lizenzen stehen — überwiegend MIT, Apache-2.0 und BSD-3-Clause.
+
+Der Lageplan nutzt zusätzlich:
+
+| Paket (pub.dev) | Zweck                                            | Lizenz |
+| --------------- | ------------------------------------------------ | ------ |
+| `flutter_svg`   | Rendern des gebündelten, generierten Etagenplans | `MIT`  |
+
+Es wird ausschließlich mit lokalen, validierten Assets verwendet; niemals mit SVG aus einer
+Netzquelle.
 
 Der Client für die studentische E-Mail nutzt zusätzlich:
 

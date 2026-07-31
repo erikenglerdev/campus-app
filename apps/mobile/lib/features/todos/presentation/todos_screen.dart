@@ -46,8 +46,7 @@ class _TodosScreenState extends ConsumerState<TodosScreen> {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
     final AsyncValue<List<Todo>> todos = ref.watch(todosControllerProvider);
-    final bool hasCompleted =
-        todos.value?.any((Todo t) => t.done) ?? false;
+    final bool hasCompleted = todos.value?.any((Todo t) => t.done) ?? false;
 
     return Scaffold(
       appBar: AppBar(

@@ -89,7 +89,11 @@ Verstöße gegen diese Regeln sind Blocker, keine Stilfragen.
 
 - TypeScript, Draft & Publish für News, offizielle i18n-Plugin-Funktionen für `de`/`en`.
 - Content-Types: `news-channel`, `news-article`, `author`, `contact-area`, `contact-person`,
-  `public-calendar`.
+  `public-calendar`, `room`.
+- `room` ist technische Referenzdatenhaltung: katalogverwaltete Felder gehören
+  `packages/campus-map` und sind serverseitig gegen normale Bearbeitungswege geschützt,
+  redaktionelle Felder und Kontaktrelationen bleiben editierbar
+  ([campus-map.md](campus-map.md)).
 - Slugs sind **nicht** lokalisiert und unique — das ist ein eigenes CI-Gate, damit der stabile
   Bezeichner nicht pro Locale auseinanderläuft.
 - Uploads im persistenten Volume unter `/opt/app/public/uploads`.
@@ -122,6 +126,7 @@ src/
     timetable/       /v1/timetable/*, Sync-Service, WebUntis-Client + Zod-Schema
     public-calendar/ /v1/calendars/*, Katalog- und Event-Sync, ICS-Client + RFC-5545-Parser,
                      Google-Freigabelink-Validierung
+    rooms/           /v1/rooms/*, Raumkatalog aus Strapi, RoomReference für Kontakte
   cli/               administrative Kommandos: OpenAPI erzeugen, Mensen seeden,
                      Mensa- und Stundenplan-Sync manuell auslösen
   main.ts            API-Bootstrap
@@ -150,6 +155,7 @@ lib/
   features/
     news/  canteen/  contacts/  settings/  about/  legal/    Pfad 1, über die Campus API
     timetable/                                               Pfad 1, serverseitig schaltbar
+    campusmap/                                               Pfad 1 (Namen) + lokales Asset (Geometrie)
     calendar/                                                lokale Zusammenführung + öffentliche Kalender
     mail/  grades/  moodle/                                  Pfad 2, direkt vom Gerät
     todos/                                                   rein lokal, ohne Netz
@@ -166,12 +172,19 @@ Die Direktdienste sind jeweils hinter einem Port gekapselt (`MailGateway`, `Grad
 oder HTML-Typen — das hält die Fremdbibliothek austauschbar und die Tests frei von echten
 Netzaufrufen.
 
-### 3.4 `packages/openapi`
+### 3.4 `packages/campus-map`
+
+Kanonischer Kartenkatalog, SVG-Validator und Generator der gebündelten Flutter-Kartenassets.
+Dependency-frei wie `packages/openapi`. Die Ausgabe ist deterministisch und wird committet; ein
+CI-Gate erkennt Drift zwischen Quelle und generiertem Asset. Details:
+[campus-map.md](campus-map.md).
+
+### 3.5 `packages/openapi`
 
 Der aus den NestJS-DTOs erzeugte, versionierte OpenAPI-Vertrag. Er ist das gemeinsame Artefakt
 zwischen Backend und Flutter und wird in CI gegen den Code geprüft.
 
-### 3.5 Direktintegrationen (Pfad 2)
+### 3.6 Direktintegrationen (Pfad 2)
 
 Drei geräteseitige Integrationen ohne jede Backend-Beteiligung. Jede hat ein eigenes Dokument mit
 Bedrohungsmodell, Sicherheitszusagen und manueller Testcheckliste.

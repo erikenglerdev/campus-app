@@ -102,7 +102,37 @@ pnpm --filter @campus/backend sync:canteens -- --fixture
 
 Es gibt bewusst **keinen öffentlichen, ungeschützten Sync-Endpunkt**.
 
-### 2.6 Flutter
+### 2.6 Lageplan: Kartenassets und Raumsync
+
+Die Kartenassets sind committet — für einen normalen Start ist **nichts** zu tun. Nach einer
+Änderung an der kanonischen Karte:
+
+```bash
+# Katalog gegen das kanonische SVG prüfen
+pnpm --filter @campus/map validate
+
+# Flutter-Assets neu erzeugen (schreibt nur bei vollständigem Erfolg)
+pnpm --filter @campus/map generate
+
+# Prüfen, ob die committeten Assets noch zur Quelle passen — das CI-Gate
+pnpm --filter @campus/map check
+```
+
+Räume ins CMS übernehmen (Strapi muss lauffähig konfiguriert sein, läuft aber nicht parallel):
+
+```bash
+# Zeigt create/update/unchanged/deactivate und schreibt nichts
+pnpm --filter @campus/cms rooms:sync -- --dry-run
+
+# Führt den Plan aus; beim ersten Lauf entstehen 30 Demo-Räume
+pnpm --filter @campus/cms rooms:sync
+```
+
+Der Sync ist idempotent: ein zweiter Lauf meldet 30-mal „unchanged" und schreibt nichts.
+Redaktionelle Felder und Kontaktrelationen werden dabei nie überschrieben. Details:
+[campus-map.md](campus-map.md).
+
+### 2.7 Flutter
 
 ```bash
 cd apps/mobile

@@ -15,6 +15,7 @@ import '../../../core/widgets/remote_image.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/status_banner.dart';
 import '../../../l10n/l10n.dart';
+import '../../campusmap/presentation/room_link_tile.dart';
 import '../application/contacts_providers.dart';
 import '../data/contact_models.dart';
 
@@ -172,6 +173,8 @@ class _ContactDetails extends StatelessWidget {
             label: l10n.contactOpeningHoursLabel,
             value: area.openingHours!,
           ),
+        // Renders nothing when the area has no room.
+        RoomLinkSection(rooms: area.rooms),
       ],
     );
   }
@@ -296,6 +299,8 @@ class _PersonDetailsSheet extends StatelessWidget {
                 uri: Uri.tryParse(person.website!),
               ),
           ],
+          // Renders nothing when the person has no room.
+          RoomLinkSection(rooms: person.rooms),
         ],
       ),
     );

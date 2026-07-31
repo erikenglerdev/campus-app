@@ -76,15 +76,15 @@ Preisgruppen-Labels, Fehlermeldungen) sind zweisprachig.
 `message` ist in der aufgelösten Locale. Es werden **nie** interne Details, Stacktraces,
 Upstream-URLs oder Tokens ausgegeben.
 
-| Code                                                                      | Status |
-| ------------------------------------------------------------------------- | ------ |
-| `VALIDATION_FAILED`                                                       | 400    |
-| `UNSUPPORTED_LOCALE`                                                      | 400    |
-| `NEWS_ARTICLE_NOT_FOUND` / `CONTACT_AREA_NOT_FOUND` / `CANTEEN_NOT_FOUND` | 404    |
-| `TIMETABLE_GROUP_NOT_FOUND` / `PUBLIC_CALENDAR_NOT_FOUND`                 | 404    |
-| `UPSTREAM_UNAVAILABLE`                                                    | 503    |
-| `UPSTREAM_TIMEOUT`                                                        | 504    |
-| `INTERNAL_ERROR`                                                          | 500    |
+| Code                                                                         | Status |
+| ---------------------------------------------------------------------------- | ------ |
+| `VALIDATION_FAILED`                                                          | 400    |
+| `UNSUPPORTED_LOCALE`                                                         | 400    |
+| `NEWS_ARTICLE_NOT_FOUND` / `CONTACT_AREA_NOT_FOUND` / `CANTEEN_NOT_FOUND`    | 404    |
+| `TIMETABLE_GROUP_NOT_FOUND` / `PUBLIC_CALENDAR_NOT_FOUND` / `ROOM_NOT_FOUND` | 404    |
+| `UPSTREAM_UNAVAILABLE`                                                       | 503    |
+| `UPSTREAM_TIMEOUT`                                                           | 504    |
+| `INTERNAL_ERROR`                                                             | 500    |
 
 Die vollständige, maßgebliche Liste steht in
 [`apps/backend/src/common/errors/api-error.ts`](../apps/backend/src/common/errors/api-error.ts);
@@ -669,7 +669,86 @@ Stundenplan und Moodle sind keine Google-Quellen und niemals Teil dieser kombini
 | `PUBLIC_CALENDAR_NOT_FOUND` | 404                                                                |
 | `VALIDATION_FAILED`         | 400 (ungültiger Slug, ungültiges Datum, > 120 Tage, > 50 Kalender) |
 
-## 10. Was der Client garantiert nicht braucht
+## 10. Räume (Lageplan)
+
+Der öffentliche Raumkatalog des **fiktiven** Demo-Lageplans. Die Kartengeometrie ist **nicht** Teil
+dieser API — sie ist ein gebündeltes App-Asset (siehe [campus-map.md](campus-map.md)). Hier kommen
+nur Bezeichnungen und redaktionelle Texte.
+
+Ausgeliefert werden ausschließlich Räume mit `catalogActive=true` **und** `isVisible=true`.
+
+### `GET /v1/rooms`
+
+| Parameter     | Typ          | Regeln                   |
+| ------------- | ------------ | ------------------------ |
+| `buildingKey` | Slug         | optional, exakter Filter |
+| `floorKey`    | Slug         | optional, exakter Filter |
+| `locale`      | `de` \| `en` | wie überall              |
+
+Der Katalog ist klein und wird vollständig ausgeliefert: Der Client cacht ihn und sucht **lokal**.
+Es gibt bewusst **keine** serverseitige Volltextsuche.
+
+```jsonc
+{
+  "data": [
+    {
+      "roomKey": "demo-north-level2-b201", // stabiler Bezeichner, auch der Deep-Link-Schlüssel
+      "roomNumber": "B.201",
+      "buildingKey": "demo-north",
+      "buildingName": "Demogebäude Nord (fiktiv)", // lokalisiert
+      "floorKey": "demo-north-level2",
+      "floorLevel": 2,
+      "floorName": "2. Obergeschoss", // lokalisiert
+      "roomType": "lecture", // stabiler technischer Schlüssel, Label kommt aus der App
+      "displayName": null, // optional, redaktionell, lokalisiert
+      "description": null, // optional, redaktionell, lokalisiert
+      "mapVersion": "demo-north-2026-07-31",
+      "sortOrder": 10,
+    },
+  ],
+  "meta": { "requestedLocale": "de", "resolvedLocale": "de", "translationFallback": false },
+}
+```
+
+`roomType` ist eines von `lecture`, `seminar`, `office`, `lab`, `meeting`, `service`. Ein der App
+unbekannter Wert wird dort auf eine neutrale Bezeichnung abgebildet und bricht nichts.
+
+### `GET /v1/rooms/:roomKey`
+
+Ein Raum. Unbekannter, unsichtbarer oder deaktivierter Schlüssel ⇒ `404 ROOM_NOT_FOUND`.
+
+### Raumreferenzen in Kontakten
+
+`GET /v1/contact-areas/:slug` liefert für den Bereich **und** für jede Person zusätzlich `rooms`:
+
+```jsonc
+{
+  "rooms": [
+    {
+      "roomKey": "demo-north-level2-b201",
+      "roomNumber": "B.201",
+      "buildingKey": "demo-north",
+      "buildingName": "Demogebäude Nord (fiktiv)",
+      "floorKey": "demo-north-level2",
+      "floorLevel": 2,
+      "floorName": "2. Obergeschoss",
+      "displayName": null,
+    },
+  ],
+}
+```
+
+**Eine leere Liste ist der Normalfall** — ein Kontakt braucht keinen Raum, und die App rendert
+dann gar nichts. Eine Raumreferenz enthält nie eine Strapi-ID.
+
+### Fehlercodes
+
+| Code                | Status                                    |
+| ------------------- | ----------------------------------------- |
+| `ROOM_NOT_FOUND`    | 404                                       |
+| `VALIDATION_FAILED` | 400 (ungültiger `buildingKey`/`floorKey`) |
+
+## 11. Was der Client garantiert nicht braucht
 
 - keine Strapi-URL, kein Strapi-Token
 - keine `location_id` und keine Kenntnis der Preisfeld-Nummerierung der Quelle
@@ -677,11 +756,12 @@ Stundenplan und Moodle sind keine Google-Quellen und niemals Teil dieser kombini
 - keine Google-Kalender-ID, keine ICS-Feed-URL, keinen ETag, kein `ownerContact`
 - keine hartcodierte Kanal-, Mensa-, Bereichs-, Gruppen- oder Kalenderliste
 - keine `RRULE`-Auswertung — Wiederholungen kommen bereits expandiert an
+- keine Kartengeometrie: das SVG und die roomKey→Geometrie-Zuordnung sind gebündelte App-Assets
 
-## 11. Nicht Teil dieser API
+## 12. Nicht Teil dieser API
 
 Die persönlichen Dienste **E-Mail**, **Noten** und **Moodle** laufen ausdrücklich **nicht** über
 die Campus API. Die App spricht dafür direkt mit dem jeweiligen offiziellen Anbieter, damit weder
 Campus API noch Strapi noch Worker Zugangsdaten oder persönliche Inhalte erhalten. Es gibt für sie
-weder eine Route noch ein DTO noch eine Tabelle — siehe [architecture.md](architecture.md) §3.5 und
+weder eine Route noch ein DTO noch eine Tabelle — siehe [architecture.md](architecture.md) §3.6 und
 Grenzen G10–G12.

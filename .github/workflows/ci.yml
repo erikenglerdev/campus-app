@@ -91,8 +91,36 @@ jobs:
             exit 1
           fi
 
+  map:
+    name: Campus map — validate catalogue and generated assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validator and generator tests
+        run: pnpm --filter @campus/map test
+
+      - name: Catalogue matches the canonical SVG
+        run: pnpm --filter @campus/map validate
+
+      - name: Generated Flutter assets are up to date
+        # `check` never writes: a branch that edits the canonical catalogue or
+        # the SVG without regenerating fails here instead of shipping a map
+        # whose geometry no longer matches the room keys.
+        run: pnpm --filter @campus/map check
+
   cms:
-    name: CMS — typecheck and build
+    name: CMS — typecheck, tests and build
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -109,6 +137,10 @@ jobs:
 
       - name: Typecheck
         run: pnpm --filter @campus/cms typecheck
+
+      - name: Tests
+        # Room field protection and the sync planner, both without a database.
+        run: pnpm --filter @campus/cms test
 
       - name: Build the admin panel
         # Needs no database and no real secret — these placeholders exist only

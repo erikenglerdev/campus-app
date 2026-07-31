@@ -6,6 +6,7 @@ import { ContactsModule } from './modules/contacts/contacts.module';
 import { HealthModule } from './modules/health/health.module';
 import { NewsModule } from './modules/news/news.module';
 import { PublicCalendarModule } from './modules/public-calendar/public-calendar.module';
+import { RoomsModule } from './modules/rooms/rooms.module';
 import { StrapiModule } from './modules/strapi/strapi.module';
 import { TimetableModule } from './modules/timetable/timetable.module';
 
@@ -27,6 +28,7 @@ import { TimetableModule } from './modules/timetable/timetable.module';
     CanteenModule,
     TimetableModule,
     PublicCalendarModule,
+    RoomsModule,
   ],
 })
 export class AppModule {}

@@ -1,12 +1,23 @@
 import type { Core } from '@strapi/strapi';
 import { ensureLocales } from './bootstrap/locales';
 import { seedDemoContent } from './bootstrap/seed';
+import { createRoomGuard } from './catalog/room-guard';
 
 export default {
   /**
    * Runs before the application is initialised.
+   *
+   * Installs the room guard into the document-service middleware chain so that
+   * catalogue-managed technical fields cannot be changed through any normal
+   * editing path — admin panel or content API alike. Only the explicit
+   * `rooms:sync` write path may touch them.
    */
-  register(/* { strapi }: { strapi: Core.Strapi } */) {},
+  register({ strapi }: { strapi: Core.Strapi }) {
+    const guard = createRoomGuard({
+      warn: (message: string) => strapi.log.warn(`[rooms] ${message}`),
+    });
+    strapi.documents.use((context, next) => guard(context as never, next as never));
+  },
 
   /**
    * Runs before the application starts serving.

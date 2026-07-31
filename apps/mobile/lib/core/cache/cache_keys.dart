@@ -50,6 +50,12 @@ abstract final class CacheKeys {
     required String to,
   }) => 'timetable.entries.$locale.$groupId.$from.$to';
 
+  /// Full room catalogue of the campus map.
+  ///
+  /// The catalogue is small and the client searches locally, so one entry per
+  /// locale is enough and the map keeps working offline after a single fetch.
+  static String rooms(String locale) => 'campusmap.rooms.$locale';
+
   /// Full public-calendar catalogue.
   static String publicCalendars(String locale) => 'calendars.public.$locale';
 

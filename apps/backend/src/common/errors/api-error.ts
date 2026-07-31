@@ -16,6 +16,7 @@ export type ApiErrorCode =
   | 'CANTEEN_NOT_FOUND'
   | 'TIMETABLE_GROUP_NOT_FOUND'
   | 'PUBLIC_CALENDAR_NOT_FOUND'
+  | 'ROOM_NOT_FOUND'
   | 'UPSTREAM_UNAVAILABLE'
   | 'UPSTREAM_TIMEOUT'
   | 'INTERNAL_ERROR';
@@ -51,6 +52,10 @@ const MESSAGES: Record<ApiErrorCode, Messages> = {
     de: 'Der angeforderte öffentliche Kalender wurde nicht gefunden.',
     en: 'The requested public calendar was not found.',
   },
+  ROOM_NOT_FOUND: {
+    de: 'Der angeforderte Raum wurde nicht gefunden.',
+    en: 'The requested room was not found.',
+  },
   UPSTREAM_UNAVAILABLE: {
     de: 'Die Inhalte sind derzeit nicht verfügbar. Bitte später erneut versuchen.',
     en: 'Content is currently unavailable. Please try again later.',
@@ -73,6 +78,7 @@ const STATUS: Record<ApiErrorCode, HttpStatus> = {
   CANTEEN_NOT_FOUND: HttpStatus.NOT_FOUND,
   TIMETABLE_GROUP_NOT_FOUND: HttpStatus.NOT_FOUND,
   PUBLIC_CALENDAR_NOT_FOUND: HttpStatus.NOT_FOUND,
+  ROOM_NOT_FOUND: HttpStatus.NOT_FOUND,
   UPSTREAM_UNAVAILABLE: HttpStatus.SERVICE_UNAVAILABLE,
   UPSTREAM_TIMEOUT: HttpStatus.GATEWAY_TIMEOUT,
   INTERNAL_ERROR: HttpStatus.INTERNAL_SERVER_ERROR,

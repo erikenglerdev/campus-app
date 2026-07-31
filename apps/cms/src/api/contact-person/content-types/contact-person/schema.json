@@ -108,6 +108,18 @@
       "relation": "manyToMany",
       "target": "api::contact-area.contact-area",
       "mappedBy": "persons"
+    },
+    "rooms": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::room.room",
+      "inversedBy": "contactPersons",
+      "description": "Optional. Zero rooms is a normal, fully supported state.",
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
     }
   }
 }

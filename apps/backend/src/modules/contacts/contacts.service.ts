@@ -4,6 +4,8 @@ import { ApiError } from '../../common/errors/api-error';
 import { LocaleResolution } from '../../common/locale/locale';
 import { StrapiClient, StrapiListResponse, StrapiRequestError } from '../strapi/strapi.client';
 import { ContactAreaDetailDto, ContactAreaListItemDto, ContactPersonDto } from './contacts.types';
+import { ROOM_REFERENCE_FIELDS, mapRoomReferences } from '../rooms/rooms.service';
+import { Locale } from '../../common/locale/locale';
 import { asString } from '../../common/util/coerce';
 
 /**
@@ -49,7 +51,7 @@ function email(value: unknown): string | null {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate) ? candidate : null;
 }
 
-function mapPerson(raw: unknown): ContactPersonDto | null {
+function mapPerson(raw: unknown, locale: Locale): ContactPersonDto | null {
   if (!isRecord(raw) || raw['isActive'] === false) {
     return null;
   }
@@ -67,6 +69,8 @@ function mapPerson(raw: unknown): ContactPersonDto | null {
     website: httpsUrl(raw['website']),
     profileImage: image,
     sortOrder: typeof raw['sortOrder'] === 'number' ? raw['sortOrder'] : 0,
+    // Absent relation -> empty list. A person without a room stays valid.
+    rooms: mapRoomReferences(raw['rooms'], locale).rooms,
   };
 }
 
@@ -87,10 +91,10 @@ function mapAreaBase(raw: Raw): Omit<ContactAreaListItemDto, 'personCount'> {
   };
 }
 
-function activePersons(raw: Raw): ContactPersonDto[] {
+function activePersons(raw: Raw, locale: Locale): ContactPersonDto[] {
   const persons = Array.isArray(raw['persons']) ? raw['persons'] : [];
   return persons
-    .map(mapPerson)
+    .map((person) => mapPerson(person, locale))
     .filter((person): person is ContactPersonDto => person !== null)
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
 }
@@ -167,7 +171,10 @@ export class ContactsService {
         fallbackUsed = true;
       }
       const merged = localised ? { ...raw, ...localised, ...sharedFields(raw) } : raw;
-      return { ...mapAreaBase(merged), personCount: activePersons(raw).length };
+      return {
+        ...mapAreaBase(merged),
+        personCount: activePersons(raw, locale.resolvedLocale).length,
+      };
     });
 
     data.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
@@ -195,8 +202,12 @@ export class ContactsService {
           'sortOrder',
           'isActive',
         ],
-        populate: { profileImage: { fields: ['url'] } },
+        populate: {
+          profileImage: { fields: ['url'] },
+          rooms: { fields: [...ROOM_REFERENCE_FIELDS] },
+        },
       },
+      rooms: { fields: [...ROOM_REFERENCE_FIELDS] },
     };
 
     const canonical = (
@@ -230,15 +241,21 @@ export class ContactsService {
 
     const { blocks, droppedBlockTypes } = sanitizeBlocks(merged['description']);
 
+    // Rooms are shared across locales (the room relation is not localised), so
+    // the canonical entry is the reliable source for them.
+    const areaRooms = mapRoomReferences(canonical['rooms'], locale.resolvedLocale);
+
     return {
       data: {
         ...mapAreaBase(merged),
         description: blocks,
         // Persons carry only non-localised contact data plus localised role and
         // description; the localised variant wins when present.
-        persons: activePersons(localised ?? canonical),
+        persons: activePersons(localised ?? canonical, locale.resolvedLocale),
+        rooms: areaRooms.rooms,
       },
-      translationFallback: locale.resolvedLocale !== CANONICAL_LOCALE && !localised,
+      translationFallback:
+        (locale.resolvedLocale !== CANONICAL_LOCALE && !localised) || areaRooms.fallback,
       droppedBlockTypes,
     };
   }

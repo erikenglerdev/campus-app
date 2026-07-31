@@ -1,11 +1,9 @@
 {
   "@@locale": "de",
-
   "appTitle": "Campus Köthen",
   "@appTitle": {
     "description": "Sichtbarer Name der App."
   },
-
   "navNews": "News",
   "@navNews": {
     "description": "Label des News-Tabs in der unteren Navigation."
@@ -34,7 +32,6 @@
   "@navigationSemanticLabel": {
     "description": "Screenreader-Label der unteren Navigationsleiste."
   },
-
   "actionRetry": "Erneut versuchen",
   "@actionRetry": {},
   "actionRefresh": "Aktualisieren",
@@ -47,12 +44,10 @@
   "@actionOpenExternally": {},
   "actionSelect": "Auswählen",
   "@actionSelect": {},
-
   "commonLoading": "Wird geladen …",
   "@commonLoading": {},
   "commonLoadingSemanticLabel": "Inhalte werden geladen",
   "@commonLoadingSemanticLabel": {},
-
   "errorGenericTitle": "Etwas ist schiefgelaufen",
   "@errorGenericTitle": {},
   "errorGenericMessage": "Die Inhalte konnten nicht geladen werden. Bitte versuche es erneut.",
@@ -69,7 +64,6 @@
   "@errorLinkNotOpened": {},
   "errorLinkBlocked": "Dieser Link wurde aus Sicherheitsgründen nicht geöffnet.",
   "@errorLinkBlocked": {},
-
   "offlineCachedTitle": "Offline gespeicherte Inhalte",
   "@offlineCachedTitle": {},
   "offlineCachedAt": "Zuletzt geladen: {timestamp}",
@@ -83,7 +77,6 @@
   },
   "offlineCachedUnknownTime": "Zuletzt geladen: unbekannt",
   "@offlineCachedUnknownTime": {},
-
   "newsTitle": "News",
   "@newsTitle": {},
   "newsEmptyTitle": "Keine Beiträge",
@@ -168,7 +161,6 @@
   },
   "newsTranslationFallbackHint": "Für diesen Inhalt liegt noch keine englische Fassung vor. Angezeigt wird der deutsche Originaltext.",
   "@newsTranslationFallbackHint": {},
-
   "canteenTitle": "Mensa",
   "@canteenTitle": {},
   "canteenPickerTitle": "Mensa wählen",
@@ -259,7 +251,6 @@
       }
     }
   },
-
   "timetableTitle": "Stundenplan",
   "@timetableTitle": {},
   "timetableGroupPickerTitle": "Kurs wählen",
@@ -412,7 +403,6 @@
   },
   "timetableSourceLanguageHint": "Fach-, Raum- und Personennamen stammen unverändert aus der Quelle und werden nicht übersetzt.",
   "@timetableSourceLanguageHint": {},
-
   "contactsTitle": "Kontakte",
   "@contactsTitle": {},
   "contactsEmptyTitle": "Keine Kontaktbereiche",
@@ -457,7 +447,6 @@
       }
     }
   },
-
   "settingsTitle": "Einstellungen",
   "@settingsTitle": {},
   "settingsSectionAppearance": "Darstellung",
@@ -506,7 +495,6 @@
   "@settingsImprint": {},
   "settingsPrivacy": "Datenschutz",
   "@settingsPrivacy": {},
-
   "aboutTitle": "Über diese App",
   "@aboutTitle": {},
   "aboutVersion": "Version {version} ({build})",
@@ -540,7 +528,6 @@
   "@aboutOpenSourceLicenses": {},
   "aboutFontNotice": "Schriftart Manrope, lizenziert unter der SIL Open Font License 1.1.",
   "@aboutFontNotice": {},
-
   "imprintTitle": "Impressum",
   "@imprintTitle": {},
   "privacyTitle": "Datenschutz",
@@ -565,7 +552,6 @@
   "@legalOperatorNotConfirmed": {},
   "legalNotPublishedHint": "Die App befindet sich in Entwicklung und ist nicht veröffentlicht.",
   "@legalNotPublishedHint": {},
-
   "moreTitle": "Mehr",
   "@moreTitle": {},
   "moreMail": "Studentische E-Mail",
@@ -578,7 +564,6 @@
   "@moreGradesSubtitle": {},
   "moreSettings": "Einstellungen",
   "@moreSettings": {},
-
   "mailTitle": "Studentische E-Mail",
   "@mailTitle": {},
   "mailSetupHeadline": "Mit dem Hochschulpostfach verbinden",
@@ -605,7 +590,6 @@
   "@mailSetupInvalidEmail": {},
   "mailSetupPasswordRequired": "Bitte gib dein Passwort ein.",
   "@mailSetupPasswordRequired": {},
-
   "mailInboxTitle": "Posteingang",
   "@mailInboxTitle": {},
   "mailInboxEmpty": "Keine Nachrichten in diesem Ordner.",
@@ -682,7 +666,6 @@
   "@mailAccountRemoveConfirm": {},
   "mailCancel": "Abbrechen",
   "@mailCancel": {},
-
   "mailReply": "Antworten",
   "@mailReply": {},
   "mailReplyAll": "Allen antworten",
@@ -702,7 +685,6 @@
   "@mailMessageAttachmentsUnsupported": {},
   "mailMessageRemoteImagesBlocked": "Bilder aus dem Internet werden zum Schutz deiner Privatsphäre nicht automatisch geladen.",
   "@mailMessageRemoteImagesBlocked": {},
-
   "mailComposeTitle": "Neue Nachricht",
   "@mailComposeTitle": {},
   "mailComposeFrom": "Von {email}",
@@ -731,7 +713,6 @@
   "@mailComposeSent": {},
   "mailComposeSentNoCopy": "Nachricht gesendet. Es konnte keine Kopie im Ordner „Gesendet“ abgelegt werden.",
   "@mailComposeSentNoCopy": {},
-
   "mailErrorInvalidCredentials": "Anmeldung fehlgeschlagen. Bitte prüfe E-Mail-Adresse und Passwort.",
   "@mailErrorInvalidCredentials": {},
   "mailErrorNetwork": "Keine Verbindung zum Mailserver. Bitte prüfe deine Internetverbindung.",
@@ -748,7 +729,6 @@
   "@mailErrorSecureStorage": {},
   "mailErrorGeneric": "Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
   "@mailErrorGeneric": {},
-
   "gradesTitle": "Noten",
   "@gradesTitle": {},
   "gradeSetupHeadline": "Mit dem Prüfungsportal verbinden",
@@ -773,7 +753,6 @@
   "@gradeSetupSubmit": {},
   "gradeSetupPortalLink": "Im Prüfungsportal öffnen",
   "@gradeSetupPortalLink": {},
-
   "gradesLastUpdated": "Zuletzt aktualisiert: {when}",
   "@gradesLastUpdated": {
     "placeholders": {
@@ -806,7 +785,6 @@
   "@gradesDeleteConfirm": {},
   "gradesCancel": "Abbrechen",
   "@gradesCancel": {},
-
   "gradeNoGrade": "Keine Note",
   "@gradeNoGrade": {},
   "gradePassedUngraded": "Bestanden (unbenotet)",
@@ -817,7 +795,6 @@
   "@gradeStatusFailed": {},
   "gradeStatusPresent": "Prüfung vorhanden",
   "@gradeStatusPresent": {},
-
   "gradeDetailTitle": "Prüfungsdetails",
   "@gradeDetailTitle": {},
   "gradeFieldExamNumber": "Prüfungsnummer",
@@ -836,7 +813,6 @@
   "@gradeFieldBonus": {},
   "gradeFieldPoints": "Punkte",
   "@gradeFieldPoints": {},
-
   "gradeErrorInvalidCredentials": "Anmeldung fehlgeschlagen. Bitte prüfe Benutzername und Passwort.",
   "@gradeErrorInvalidCredentials": {},
   "gradeErrorNetwork": "Keine Verbindung zum Prüfungsportal. Bitte prüfe deine Internetverbindung.",
@@ -857,15 +833,12 @@
   "@gradeErrorSessionExpired": {},
   "gradeErrorGeneric": "Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
   "@gradeErrorGeneric": {},
-
   "navCalendar": "Kalender",
   "@navCalendar": {},
-
   "moreMoodle": "Moodle",
   "@moreMoodle": {},
   "moreMoodleSubtitle": "Kurse, Materialien und Fristen direkt aus Moodle",
   "@moreMoodleSubtitle": {},
-
   "moodleTitle": "Moodle",
   "@moodleTitle": {},
   "moodleSetupHeadline": "Mit Moodle verbinden",
@@ -886,7 +859,6 @@
   "@moodlePasswordRequired": {},
   "moodlePrivacyNote": "Deine Zugangsdaten werden nur zur direkten Anmeldung an Moodle verwendet. Es wird ausschließlich ein Sitzungs-Token sicher auf diesem Gerät gespeichert; dein Passwort wird nicht gespeichert.",
   "@moodlePrivacyNote": {},
-
   "moodleCoursesTitle": "Meine Kurse",
   "@moodleCoursesTitle": {},
   "moodleNoCoursesTitle": "Keine Kurse",
@@ -894,18 +866,35 @@
   "moodleNoCoursesMessage": "In Moodle sind derzeit keine Kurse für dich sichtbar.",
   "@moodleNoCoursesMessage": {},
   "moodleCourseProgress": "{percent}% abgeschlossen",
-  "@moodleCourseProgress": { "placeholders": { "percent": { "type": "int" } } },
+  "@moodleCourseProgress": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "moodleLastUpdated": "Zuletzt aktualisiert: {time}",
-  "@moodleLastUpdated": { "placeholders": { "time": { "type": "String" } } },
+  "@moodleLastUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "moodleNeverUpdated": "Noch nicht synchronisiert",
   "@moodleNeverUpdated": {},
   "moodleRefresh": "Aktualisieren",
   "@moodleRefresh": {},
   "moodleOfflineHint": "Offline-Ansicht der zuletzt geladenen Daten.",
   "@moodleOfflineHint": {},
-
   "moodleConnectedAs": "Verbunden als {name}",
-  "@moodleConnectedAs": { "placeholders": { "name": { "type": "String" } } },
+  "@moodleConnectedAs": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "moodleDisconnect": "Moodle-Verbindung und lokale Daten löschen",
   "@moodleDisconnect": {},
   "moodleDisconnectConfirmTitle": "Verbindung trennen?",
@@ -916,7 +905,6 @@
   "@moodleDisconnectConfirm": {},
   "moodleCancel": "Abbrechen",
   "@moodleCancel": {},
-
   "moodleTabContents": "Inhalte",
   "@moodleTabContents": {},
   "moodleTabAssignments": "Aufgaben",
@@ -936,7 +924,13 @@
   "moodleHiddenModule": "Nicht verfügbar",
   "@moodleHiddenModule": {},
   "moodleAssignmentDue": "Fällig: {date}",
-  "@moodleAssignmentDue": { "placeholders": { "date": { "type": "String" } } },
+  "@moodleAssignmentDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "moodleAssignmentNoDue": "Keine Frist",
   "@moodleAssignmentNoDue": {},
   "moodleSubmissionSubmitted": "Abgegeben",
@@ -950,14 +944,19 @@
   "moodleSubmissionLate": "Verspätet",
   "@moodleSubmissionLate": {},
   "moodleSubmissionGraded": "Bewertet: {grade}",
-  "@moodleSubmissionGraded": { "placeholders": { "grade": { "type": "String" } } },
+  "@moodleSubmissionGraded": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "moodleFileDownloading": "Datei wird geladen …",
   "@moodleFileDownloading": {},
   "moodleExternalLinkNotice": "Dieser Link führt aus Moodle heraus und wird ohne Anmeldedaten geöffnet.",
   "@moodleExternalLinkNotice": {},
   "moodleOpenLinkFailed": "Der Link konnte nicht geöffnet werden.",
   "@moodleOpenLinkFailed": {},
-
   "moodleErrorInvalidCredentials": "Anmeldung fehlgeschlagen. Bitte prüfe Benutzername und Passwort.",
   "@moodleErrorInvalidCredentials": {},
   "moodleErrorTokenRejected": "Die Moodle-Anmeldung wurde abgelehnt. Bitte verbinde dich erneut.",
@@ -988,7 +987,6 @@
   "@moodleErrorDownloadFailed": {},
   "moodleErrorGeneric": "Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
   "@moodleErrorGeneric": {},
-
   "calendarTitle": "Kalender",
   "@calendarTitle": {},
   "calendarViewMonth": "Kalender",
@@ -1017,7 +1015,6 @@
   "@calendarConnectMoodleHint": {},
   "calendarSelectGroupHint": "Wähle im Stundenplan eine Gruppe, um Termine zu sehen.",
   "@calendarSelectGroupHint": {},
-
   "calendarManageTitle": "Kalender verwalten",
   "@calendarManageTitle": {},
   "calendarManageTooltip": "Kalender verwalten",
@@ -1035,7 +1032,13 @@
   "calendarDataStale": "Veraltete Daten",
   "@calendarDataStale": {},
   "calendarLastUpdated": "Zuletzt aktualisiert: {time}",
-  "@calendarLastUpdated": { "placeholders": { "time": { "type": "String" } } },
+  "@calendarLastUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "calendarOpenInGoogle": "In Google Kalender öffnen",
   "@calendarOpenInGoogle": {},
   "calendarOpenSelectedInGoogle": "Ausgewählte in Google Kalender öffnen",
@@ -1045,15 +1048,19 @@
   "calendarGoogleCombinedNote": "Nur öffentliche Google-Kalender können gemeinsam geöffnet werden. Stundenplan und Moodle gehören nicht dazu.",
   "@calendarGoogleCombinedNote": {},
   "calendarSelectedCountLabel": "{count, plural, =0{Keine Kalender ausgewählt} =1{1 Kalender ausgewählt} other{{count} Kalender ausgewählt}}",
-  "@calendarSelectedCountLabel": { "placeholders": { "count": { "type": "int" } } },
+  "@calendarSelectedCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "calendarGoogleLinkFailed": "Der Google-Link konnte nicht geöffnet werden.",
   "@calendarGoogleLinkFailed": {},
-
   "moreTodos": "Aufgaben",
   "@moreTodos": {},
   "moreTodosSubtitle": "Lokale To-do-Liste, nur auf diesem Gerät",
   "@moreTodosSubtitle": {},
-
   "todosTitle": "Aufgaben",
   "@todosTitle": {},
   "todoAddHint": "Neue Aufgabe …",
@@ -1067,5 +1074,167 @@
   "todoEmptyTitle": "Keine Aufgaben",
   "@todoEmptyTitle": {},
   "todoEmptyMessage": "Füge oben deine erste Aufgabe hinzu. Die Liste bleibt nur lokal auf diesem Gerät.",
-  "@todoEmptyMessage": {}
+  "@todoEmptyMessage": {},
+  "moreCampusMap": "Lageplan",
+  "@moreCampusMap": {
+    "description": "Eintrag „Lageplan\" im Mehr-Bereich."
+  },
+  "moreCampusMapSubtitle": "Fiktiver Demo-Etagenplan mit Raumsuche",
+  "@moreCampusMapSubtitle": {
+    "description": "Untertitel des Lageplan-Eintrags im Mehr-Bereich."
+  },
+  "campusMapTitle": "Lageplan",
+  "@campusMapTitle": {
+    "description": "Titel des Lageplan-Bildschirms."
+  },
+  "campusMapDemoNotice": "Demonstrationsplan: Gebäude, Etage und alle 30 Räume sind frei erfunden. Es werden keine realen Gebäude oder Räume dargestellt.",
+  "@campusMapDemoNotice": {
+    "description": "Gut sichtbarer Hinweis, dass der Plan fiktiv ist."
+  },
+  "campusMapSearchLabel": "Raum suchen",
+  "@campusMapSearchLabel": {
+    "description": "Label des Suchfelds."
+  },
+  "campusMapSearchHint": "z. B. B.201 oder B201",
+  "@campusMapSearchHint": {
+    "description": "Hilfetext im Suchfeld."
+  },
+  "campusMapSearchClear": "Suche zurücksetzen",
+  "@campusMapSearchClear": {
+    "description": "Tooltip zum Leeren des Suchfelds."
+  },
+  "campusMapNoResults": "Kein Raum gefunden",
+  "@campusMapNoResults": {
+    "description": "Leerzustand der Suche."
+  },
+  "campusMapNoResultsHint": "Prüfe die Schreibweise. Raumnummern funktionieren mit und ohne Punkt.",
+  "@campusMapNoResultsHint": {
+    "description": "Hilfetext im Leerzustand der Suche."
+  },
+  "campusMapRoomCount": "{count, plural, =0{Keine Räume} =1{1 Raum} other{{count} Räume}}",
+  "@campusMapRoomCount": {
+    "description": "Anzahl der gefundenen Räume.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "campusMapBuildingLabel": "Gebäude",
+  "@campusMapBuildingLabel": {
+    "description": "Feldbeschriftung Gebäude."
+  },
+  "campusMapFloorLabel": "Etage",
+  "@campusMapFloorLabel": {
+    "description": "Feldbeschriftung Etage."
+  },
+  "campusMapRoomLabel": "Raum",
+  "@campusMapRoomLabel": {
+    "description": "Feldbeschriftung Raum."
+  },
+  "campusMapRoomTypeLabel": "Raumart",
+  "@campusMapRoomTypeLabel": {
+    "description": "Feldbeschriftung Raumart."
+  },
+  "campusMapRoomTypeLecture": "Hörsaal",
+  "@campusMapRoomTypeLecture": {
+    "description": "Raumart lecture."
+  },
+  "campusMapRoomTypeSeminar": "Seminarraum",
+  "@campusMapRoomTypeSeminar": {
+    "description": "Raumart seminar."
+  },
+  "campusMapRoomTypeOffice": "Büro",
+  "@campusMapRoomTypeOffice": {
+    "description": "Raumart office."
+  },
+  "campusMapRoomTypeLab": "Labor",
+  "@campusMapRoomTypeLab": {
+    "description": "Raumart lab."
+  },
+  "campusMapRoomTypeMeeting": "Besprechungsraum",
+  "@campusMapRoomTypeMeeting": {
+    "description": "Raumart meeting."
+  },
+  "campusMapRoomTypeService": "Service und Technik",
+  "@campusMapRoomTypeService": {
+    "description": "Raumart service."
+  },
+  "campusMapRoomTypeUnknown": "Sonstiger Raum",
+  "@campusMapRoomTypeUnknown": {
+    "description": "Raumart, die diese App-Version noch nicht kennt."
+  },
+  "campusMapLegendTitle": "Legende",
+  "@campusMapLegendTitle": {
+    "description": "Überschrift der Kartenlegende."
+  },
+  "campusMapSelectedRoom": "Ausgewählt: {room}",
+  "@campusMapSelectedRoom": {
+    "description": "Textliche Kennzeichnung des ausgewählten Raums, zusätzlich zur farblichen Hervorhebung.",
+    "placeholders": {
+      "room": {
+        "type": "String"
+      }
+    }
+  },
+  "campusMapShowWholeFloor": "Gesamte Etage anzeigen",
+  "@campusMapShowWholeFloor": {
+    "description": "Aktion, um die Auswahl aufzuheben und die Etage komplett zu zeigen."
+  },
+  "campusMapResetZoom": "Ansicht zurücksetzen",
+  "@campusMapResetZoom": {
+    "description": "Tooltip zum Zurücksetzen von Zoom und Verschiebung."
+  },
+  "campusMapRoomNotOnMap": "Dieser Raum ist im mitgelieferten Plan nicht enthalten.",
+  "@campusMapRoomNotOnMap": {
+    "description": "Hinweis bei einem roomKey ohne Geometrie im lokalen Kartenasset."
+  },
+  "campusMapVersionMismatch": "Der mitgelieferte Plan passt nicht zur aktuellen Raumliste. Räume werden als Liste angezeigt; ein App-Update bringt den passenden Plan.",
+  "@campusMapVersionMismatch": {
+    "description": "Hinweis bei abweichender mapVersion zwischen API und lokalem Asset."
+  },
+  "campusMapUnavailable": "Der Lageplan konnte nicht geladen werden.",
+  "@campusMapUnavailable": {
+    "description": "Fehlerzustand des Kartenassets."
+  },
+  "campusMapEmpty": "Es sind noch keine Räume veröffentlicht.",
+  "@campusMapEmpty": {
+    "description": "Leerzustand, wenn die API keine Räume liefert."
+  },
+  "campusMapSemanticMap": "Etagenplan, zoombar und verschiebbar",
+  "@campusMapSemanticMap": {
+    "description": "Screenreader-Beschreibung der Karte."
+  },
+  "campusMapSemanticSelectedRoom": "Raum {room} ist ausgewählt und auf dem Plan hervorgehoben",
+  "@campusMapSemanticSelectedRoom": {
+    "description": "Screenreader-Ansage für den ausgewählten Raum.",
+    "placeholders": {
+      "room": {
+        "type": "String"
+      }
+    }
+  },
+  "campusMapOpenRoom": "Auf dem Lageplan zeigen",
+  "@campusMapOpenRoom": {
+    "description": "Aktion in Kontaktdetails, die den Lageplan mit dem Raum öffnet."
+  },
+  "contactRoomsLabel": "Räume",
+  "@contactRoomsLabel": {
+    "description": "Überschrift der Raumzeilen in Kontaktdetails."
+  },
+  "contactRoomSummary": "{building}, {floor}, Raum {room}",
+  "@contactRoomSummary": {
+    "description": "Verständliche Textdarstellung einer Raumreferenz.",
+    "placeholders": {
+      "building": {
+        "type": "String"
+      },
+      "floor": {
+        "type": "String"
+      },
+      "room": {
+        "type": "String"
+      }
+    }
+  }
 }

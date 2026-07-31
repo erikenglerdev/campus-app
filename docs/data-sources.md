@@ -35,6 +35,15 @@ Inhalte erhalten (siehe [`../CLAUDE.md`](../CLAUDE.md) §2, Grenzen G10–G12).
 
 Details in §6. Für sie gilt umgekehrt: **kein** Backend darf sie jemals abrufen.
 
+### 1.3 Keine Quelle: der Lageplan
+
+Die Kartengeometrie ist **keine** Fremdquelle. Sie ist ein selbst erstelltes, vollständig fiktives
+Asset im Repository (`packages/campus-map`), wird validiert, deterministisch in App-Assets
+übersetzt und mit der App gebündelt. Zur Laufzeit wird dafür **nichts** geladen — weder von einem
+Drittanbieter noch aus Strapi. Nur die Raum*bezeichnungen* und redaktionellen Raumtexte sind
+Campusdaten und laufen deshalb über die Campus API (`/v1/rooms`).
+Details: [campus-map.md](campus-map.md).
+
 ---
 
 ## 2. Strapi

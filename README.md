@@ -27,22 +27,24 @@ Dieses Projekt verwendet **keine** Logos, Wappen, Markenassets oder Designsystem
 
 ## Umfang des MVP
 
-| Enthalten                                             | Nicht enthalten                               |
-| ----------------------------------------------------- | --------------------------------------------- |
-| News mit dynamischer Kanal-Auswahl                    | Nutzerkonten für die App selbst               |
-| Quellenübergreifender Kalender (Monatsraster/Liste)   | Push-Nachrichten                              |
-| Gruppenstundenplan (WebUntis, serverseitig schaltbar) | Persönlicher WebUntis-Login                   |
-| Öffentliche Google-Kalender (öffentlicher ICS-Feed)   | Gebäudepläne, Raumbelegung, Indoor-Navigation |
-| Mensapläne (alle Preisgruppen)                        | Analytics, Tracking, Crash-Reporting          |
-| Kontakte und Kontaktbereiche                          | Redis, SMTP                                   |
-| Studenten-E-Mail (IMAP/SMTP, direkt vom Gerät)        | Automatisches Deployment                      |
-| Notenspiegel HIS-QIS (direkt vom Gerät)               | Globale Volltextsuche                         |
-| Moodle: Kurse, Materialien, Aufgaben, Ankündigungen   | Schreibzugriffe auf Moodle                    |
-| Lokale Aufgabenliste (rein auf dem Gerät)             | Serverseitige Synchronisierung der Aufgaben   |
-| Lokale Einstellungen (Sprache, Theme, Abos)           | Mehrere Mail- oder Moodle-Konten              |
-| Offline-/Cache-Verhalten                              |                                               |
-| About, Impressums- und Datenschutz-Platzhalter        |                                               |
-| Deutsch und Englisch                                  |                                               |
+| Enthalten                                             | Nicht enthalten                                 |
+| ----------------------------------------------------- | ----------------------------------------------- |
+| News mit dynamischer Kanal-Auswahl                    | Nutzerkonten für die App selbst                 |
+| Quellenübergreifender Kalender (Monatsraster/Liste)   | Push-Nachrichten                                |
+| Gruppenstundenplan (WebUntis, serverseitig schaltbar) | Persönlicher WebUntis-Login                     |
+| Öffentliche Google-Kalender (öffentlicher ICS-Feed)   | Reale Gebäudepläne und Grundrisse               |
+| Mensapläne (alle Preisgruppen)                        | Analytics, Tracking, Crash-Reporting            |
+| Kontakte und Kontaktbereiche                          | Redis, SMTP                                     |
+| Studenten-E-Mail (IMAP/SMTP, direkt vom Gerät)        | Automatisches Deployment                        |
+| Notenspiegel HIS-QIS (direkt vom Gerät)               | Globale Volltextsuche                           |
+| Moodle: Kurse, Materialien, Aufgaben, Ankündigungen   | Schreibzugriffe auf Moodle                      |
+| Lokale Aufgabenliste (rein auf dem Gerät)             | Serverseitige Synchronisierung der Aufgaben     |
+| Lageplan: fiktiver Demo-Etagenplan mit Raumsuche      | Indoor-Navigation, Wegberechnung, Live-Position |
+| Räume mit Kontaktbezug und Deep-Link in den Plan      | Raumbelegung und Buchung                        |
+| Lokale Einstellungen (Sprache, Theme, Abos)           | Mehrere Mail- oder Moodle-Konten                |
+| Offline-/Cache-Verhalten                              |                                                 |
+| About, Impressums- und Datenschutz-Platzhalter        |                                                 |
+| Deutsch und Englisch                                  |                                                 |
 
 Details: [docs/product/mvp.md](docs/product/mvp.md)
 
@@ -101,6 +103,7 @@ apps/
   mobile/                      Flutter (iOS/Android)
 packages/
   openapi/                     Veröffentlichter API-Vertrag (OpenAPI 3.1)
+  campus-map/                  Kanonischer Kartenkatalog, Validator, Asset-Generator
 infrastructure/
   local/                       Lokaler Compose-Stack
   myaioffice-dev/              Dokumentierter DEV-Deployment-Vertrag (kein Deployment)
@@ -209,6 +212,7 @@ Diese Punkte sind bewusst **nicht** erledigt und blockieren eine Veröffentlichu
 - [ ] Nutzungsfreigabe der WebUntis-Stundenplanquelle: Erlaubnis zur automatisierten Nutzung der internen View-API, akzeptable Abrufrate, Stabilitätszusage bzw. offizielle API, gewünschte Quellenangabe, zulässige Speicherung von Lehrpersonennamen — bis dahin bleibt `WEBUNTIS_ENABLED=false`
 - [ ] Abstimmung mit der Hochschule Anhalt über die automatisierte Nutzung des HIS-QIS-Prüfungsportals
 - [ ] Veröffentlichungsrechte je öffentlichem Google-Kalender: Zustimmung des Inhabers, zulässiger Quellenhinweis, ob Beschreibung und Ort gezeigt werden dürfen, Verhalten bei Entzug
+- [ ] **Reale Gebäudepläne**: Herkunft, Bearbeitungs- und Veröffentlichungsrecht, Ausschluss sicherheitsrelevanter Pläne, Personenbezug und Pflegeprozess klären — bis dahin bleibt es beim fiktiven Demo-Plan ([docs/campus-map.md](docs/campus-map.md))
 
 **Technisch und betrieblich**
 
