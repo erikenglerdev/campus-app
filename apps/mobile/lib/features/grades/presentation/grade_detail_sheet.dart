@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/locale/formatters.dart';
 import '../../../core/theme/app_dimensions.dart';
+import '../../../core/widgets/sheet_body.dart';
 import '../../../l10n/l10n.dart';
 import '../domain/grade.dart';
 import 'grade_messages.dart';
@@ -62,35 +63,39 @@ class _GradeDetailSheet extends StatelessWidget {
           AppSpacing.lg,
           AppSpacing.lg,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              entry.title.isEmpty ? l10n.gradeDetailTitle : entry.title,
-              style: text.titleLarge,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            for (final ({String label, String value}) row in rows)
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    SizedBox(
-                      width: 132,
-                      child: Text(
-                        row.label,
-                        style: text.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        child: SheetBody(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                entry.title.isEmpty ? l10n.gradeDetailTitle : entry.title,
+                style: text.titleLarge,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              for (final ({String label, String value}) row in rows)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      SizedBox(
+                        width: 132,
+                        child: Text(
+                          row.label,
+                          style: text.bodyMedium?.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
-                    ),
-                    Expanded(child: Text(row.value, style: text.bodyMedium)),
-                  ],
+                      Expanded(child: Text(row.value, style: text.bodyMedium)),
+                    ],
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

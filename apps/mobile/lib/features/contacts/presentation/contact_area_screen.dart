@@ -12,6 +12,7 @@ import '../../../core/widgets/content_blocks_view.dart';
 import '../../../core/widgets/icon_keys.dart';
 import '../../../core/widgets/offline_notice.dart';
 import '../../../core/widgets/remote_image.dart';
+import '../../../core/widgets/sheet_body.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/status_banner.dart';
 import '../../../l10n/l10n.dart';
@@ -244,67 +245,69 @@ class _PersonDetailsSheet extends StatelessWidget {
         AppSpacing.lg,
         AppSpacing.xl,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          if (person.profileImageUrl != null) ...<Widget>[
-            Center(
-              child: SizedBox(
-                width: AppSizes.illustrationIcon * 2,
-                child: ClipOval(
-                  child: RemoteImage(
-                    url: person.profileImageUrl!,
-                    alternativeText: person.name,
-                    aspectRatio: 1,
+      child: SheetBody(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            if (person.profileImageUrl != null) ...<Widget>[
+              Center(
+                child: SizedBox(
+                  width: AppSizes.illustrationIcon * 2,
+                  child: ClipOval(
+                    child: RemoteImage(
+                      url: person.profileImageUrl!,
+                      alternativeText: person.name,
+                      aspectRatio: 1,
+                    ),
                   ),
                 ),
               ),
+              const SizedBox(height: AppSpacing.lg),
+            ],
+            Semantics(
+              header: true,
+              child: Text(person.name, style: text.headlineSmall),
             ),
-            const SizedBox(height: AppSpacing.lg),
-          ],
-          Semantics(
-            header: true,
-            child: Text(person.name, style: text.headlineSmall),
-          ),
-          if (person.role != null) ...<Widget>[
-            const SizedBox(height: AppSpacing.xxs),
-            Text(
-              person.role!,
-              style: text.titleSmall?.copyWith(color: colors.textSecondary),
-            ),
-          ],
-          if (person.description != null) ...<Widget>[
-            const SizedBox(height: AppSpacing.md),
-            Text(person.description!, style: text.bodyMedium),
-          ],
-          if (hasChannels) ...<Widget>[
-            const SizedBox(height: AppSpacing.sm),
-            if (person.email != null)
-              ContactActionTile(
-                icon: Icons.mail_outline,
-                label: l10n.contactEmailLabel,
-                value: person.email!,
-                uri: mailtoUri(person.email),
+            if (person.role != null) ...<Widget>[
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                person.role!,
+                style: text.titleSmall?.copyWith(color: colors.textSecondary),
               ),
-            if (person.phone != null)
-              ContactActionTile(
-                icon: Icons.phone_outlined,
-                label: l10n.contactPhoneLabel,
-                value: person.phone!,
-                uri: telUri(person.phone),
-              ),
-            if (person.website != null)
-              ContactActionTile(
-                icon: Icons.language_outlined,
-                label: l10n.contactWebsiteLabel,
-                value: person.website!,
-                uri: Uri.tryParse(person.website!),
-              ),
+            ],
+            if (person.description != null) ...<Widget>[
+              const SizedBox(height: AppSpacing.md),
+              Text(person.description!, style: text.bodyMedium),
+            ],
+            if (hasChannels) ...<Widget>[
+              const SizedBox(height: AppSpacing.sm),
+              if (person.email != null)
+                ContactActionTile(
+                  icon: Icons.mail_outline,
+                  label: l10n.contactEmailLabel,
+                  value: person.email!,
+                  uri: mailtoUri(person.email),
+                ),
+              if (person.phone != null)
+                ContactActionTile(
+                  icon: Icons.phone_outlined,
+                  label: l10n.contactPhoneLabel,
+                  value: person.phone!,
+                  uri: telUri(person.phone),
+                ),
+              if (person.website != null)
+                ContactActionTile(
+                  icon: Icons.language_outlined,
+                  label: l10n.contactWebsiteLabel,
+                  value: person.website!,
+                  uri: Uri.tryParse(person.website!),
+                ),
+            ],
+            // Renders nothing when the person has no room.
+            RoomLinkSection(rooms: person.rooms),
           ],
-          // Renders nothing when the person has no room.
-          RoomLinkSection(rooms: person.rooms),
-        ],
+        ),
       ),
     );
   }

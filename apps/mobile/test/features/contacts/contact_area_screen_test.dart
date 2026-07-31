@@ -6,6 +6,7 @@ import 'package:campus_koethen/core/network/loaded.dart';
 import 'package:campus_koethen/features/contacts/application/contacts_providers.dart';
 import 'package:campus_koethen/features/contacts/data/contact_models.dart';
 import 'package:campus_koethen/features/contacts/presentation/contact_area_screen.dart';
+import 'package:flutter/material.dart' show BottomSheet, Material, Size;
 import 'package:flutter_riverpod/flutter_riverpod.dart' show Ref;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
@@ -134,5 +135,43 @@ void main() {
     expect(tester.takeException(), isNull);
     // The name appears both in the list and in the opened sheet.
     expect(find.text('Nur Name'), findsWidgets);
+  });
+
+  testWidgets('the person sheet fills the width even with only a name', (
+    WidgetTester tester,
+  ) async {
+    // A Material 3 bottom sheet is laid out with LOOSE width constraints, so
+    // content that shrink-wraps produces a narrow card floating in the middle
+    // as soon as a person has nothing but a short name.
+    const Size phone = Size(390, 844);
+    await tester.binding.setSurfaceSize(phone);
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await pumpScreen(
+      tester,
+      const ContactAreaScreen(slug: 'stura'),
+      overrides: <Override>[
+        _areaOverride(
+          const ContactArea(
+            slug: 'stura',
+            name: 'Studierendenrat',
+            sortOrder: 0,
+            persons: <ContactPerson>[ContactPerson(name: 'Luisa')],
+          ),
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Luisa'));
+    await tester.pumpAndSettle();
+
+    // Not the BottomSheet itself — that is only the layout box and is always
+    // full width. What the user sees is the Material surface inside it.
+    final Finder surface = find.descendant(
+      of: find.byType(BottomSheet),
+      matching: find.byType(Material),
+    );
+    expect(tester.getSize(surface.first).width, phone.width);
   });
 }
