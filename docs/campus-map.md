@@ -188,24 +188,45 @@ Sprung in den Lageplan, ohne Strapi-ID.
 
 ## 7. App
 
-- **„Mehr → Lageplan“**, eigener Routenpfad. **Keine** sechste Bottom-Navigation.
-- Suche über Raumnummer, **normalisierte** Raumnummer (`B.201` und `B201` finden denselben Raum),
-  Anzeigenamen sowie Gebäude- und Etagenbezeichnung. Ranking: exakte Nummer → Nummernpräfix →
-  Anzeigename → Ort, danach deterministisch nach `sortOrder` und `roomKey`.
-- Zoom- und verschiebbare Karte; ein Treffer öffnet die passende Etage und rückt den Raum in einen
-  sinnvollen Ausschnitt.
-- **Hervorhebung nie nur über Farbe**: kräftige Kontur **plus** Marker über dem Raum **plus**
-  textliche Aussage „Ausgewählt: …“ außerhalb der Karte; in der Liste zusätzlich ein eigenes Icon.
-- Gut sichtbare Aktionen „Gesamte Etage anzeigen“ und „Ansicht zurücksetzen“.
-- Deep-Link `\/more\/campus-map?room=<roomKey>` aus Kontaktdetails.
-- **Unbekannter `roomKey`**: Text anzeigen, Kartenaktion deaktivieren, nicht abstürzen.
-- **`mapVersion`-Konflikt**: verständlicher Hinweis, Räume bleiben als Liste nutzbar.
-- Raumkatalog über den bestehenden `CachedEndpoint`/Hive-Cache; ein Cachefehler degradiert auf
-  einen Netzabruf, gecachte Daten werden wie überall als offline gekennzeichnet.
-- Eine leere Raumliste rendert **nichts** — ein Kontakt ohne Raum sieht aus wie zuvor.
+Der Plan ist **vollflächig**; alles andere schwebt darüber. Die Karte ist der
+Inhalt, kein Vorschaubild zwischen Formularfeldern.
 
-Räume sind bewusst **nicht** durch Tippen auf beliebige SVG-Pfade auswählbar: Das gebündelte Asset
-wird zur Laufzeit nicht analysiert, und Suche plus Deep-Link decken den Bedarf vollständig ab.
+- **„Mehr → Lageplan"**, eigener Routenpfad. **Keine** sechste Bottom-Navigation.
+- **Schwebende Suchleiste** oben mit Zurück-Pfeil; Treffer erscheinen als
+  Overlay darunter. Gesucht wird über Raumnummer, **normalisierte** Raumnummer
+  (`B.201` und `B201` finden denselben Raum), Anzeigenamen sowie Gebäude- und
+  Etagenbezeichnung. Ranking: exakte Nummer → Nummernpräfix → Anzeigename →
+  Ort, danach deterministisch nach `sortOrder` und `roomKey`.
+- **Demo-Badge** dauerhaft sichtbar; ein Tippen zeigt den vollständigen
+  Hinweistext im Dialog. Der Democharakter ist damit nie verborgen.
+- **Untere Leiste** im Ruhezustand: Anzahl der Räume und „Alle anzeigen", das
+  die vollständige Liste als ziehbares Sheet öffnet.
+- **Detail-Sheet** unten, sobald ein Raum gewählt ist: Auswahl im Klartext,
+  Gebäude/Etage/Raum, Raumart, optionale Beschreibung und „Gesamte Etage
+  anzeigen".
+- **Fokus respektiert die Overlays.** Die Karte liegt hinter Suchleiste und
+  Sheet, deshalb zentriert die Auswahl auf die Mitte des _sichtbaren_
+  Ausschnitts (`FloorMapView.visiblePadding`) — sonst läge der gewählte Raum
+  hinter einem Panel.
+- **Hervorhebung nie nur über Farbe**: kräftige Kontur **plus** Marker über dem
+  Raum **plus** textliche Aussage „Ausgewählt: …" im Sheet; in der Liste
+  zusätzlich ein eigenes Icon.
+- **Etagenauswahl** als schwebender Umschalter auf der Karte, eingeblendet
+  sobald es mehr als eine Etage gibt. Der Demo-Plan hat eine.
+- Deep-Link `/more/campus-map?room=<roomKey>` aus Kontaktdetails.
+- **Unbekannter `roomKey`**: Text anzeigen, Kartenaktion deaktivieren, nicht
+  abstürzen.
+- **`mapVersion`-Konflikt**: Der Plan wird zurückgehalten und erklärt; die Räume
+  bleiben über die Liste erreichbar.
+- Raumkatalog über den bestehenden `CachedEndpoint`/Hive-Cache; ein Cachefehler
+  degradiert auf einen Netzabruf, gecachte Daten werden als offline
+  gekennzeichnet.
+- Eine leere Raumliste rendert **nichts** — ein Kontakt ohne Raum sieht aus wie
+  zuvor.
+
+Räume sind bewusst **nicht** durch Tippen auf beliebige SVG-Pfade auswählbar:
+Das gebündelte Asset wird zur Laufzeit nicht analysiert, und Suche plus
+Deep-Link decken den Bedarf vollständig ab.
 
 ## 8. Release-Gate: reale Gebäudepläne
 

@@ -757,5 +757,13 @@
         "type": "String"
       }
     }
+  },
+  "campusMapDemoBadge": "Fictional demo plan",
+  "@campusMapDemoBadge": {
+    "description": "Immer sichtbarer Kurzhinweis auf der Karte; der vollständige Text erscheint beim Antippen."
+  },
+  "campusMapShowAllRooms": "Show all",
+  "@campusMapShowAllRooms": {
+    "description": "Aktion in der unteren Leiste, die die vollständige Raumliste öffnet."
   }
 }

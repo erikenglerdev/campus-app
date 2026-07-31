@@ -1236,5 +1236,13 @@
         "type": "String"
       }
     }
+  },
+  "campusMapDemoBadge": "Fiktiver Demoplan",
+  "@campusMapDemoBadge": {
+    "description": "Immer sichtbarer Kurzhinweis auf der Karte; der vollständige Text erscheint beim Antippen."
+  },
+  "campusMapShowAllRooms": "Alle anzeigen",
+  "@campusMapShowAllRooms": {
+    "description": "Aktion in der unteren Leiste, die die vollständige Raumliste öffnet."
   }
 }

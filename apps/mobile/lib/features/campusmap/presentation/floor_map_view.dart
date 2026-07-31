@@ -21,10 +21,24 @@ import '../domain/map_catalog.dart';
 /// outline, a marker above the room, and a textual statement of the selection
 /// outside the map (see [CampusMapScreen]).
 class FloorMapView extends StatefulWidget {
-  const FloorMapView({required this.floor, required this.selected, super.key});
+  const FloorMapView({
+    required this.floor,
+    required this.selected,
+    this.visiblePadding = EdgeInsets.zero,
+    super.key,
+  });
 
   final MapFloor floor;
   final MapRoomGeometry? selected;
+
+  /// How much of the view is covered by overlays — the search bar above and the
+  /// detail sheet below.
+  ///
+  /// The map is full-bleed on purpose, so parts of it sit behind those panels.
+  /// Focusing on the geometric centre would push the selected room underneath
+  /// one of them; the focus therefore targets the centre of what is actually
+  /// visible.
+  final EdgeInsets visiblePadding;
 
   @override
   State<FloorMapView> createState() => FloorMapViewState();
@@ -41,7 +55,8 @@ class FloorMapViewState extends State<FloorMapView> {
   void didUpdateWidget(FloorMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selected?.roomKey != widget.selected?.roomKey ||
-        oldWidget.floor.floorKey != widget.floor.floorKey) {
+        oldWidget.floor.floorKey != widget.floor.floorKey ||
+        oldWidget.visiblePadding != widget.visiblePadding) {
       // Focus after layout so the viewport size is known.
       WidgetsBinding.instance.addPostFrameCallback((_) => _focusSelection());
     }
@@ -87,12 +102,16 @@ class FloorMapViewState extends State<FloorMapView> {
       return;
     }
 
+    // The part of the view that is not covered by the overlays.
+    final Rect visible = visibleRect;
+    if (visible.width <= 0 || visible.height <= 0) return;
+
     final Rect bounds = room.bounds;
     // Leave room around the shape so the highlight is not glued to the edge.
     const double padding = 1.6;
     final double fit = math.min(
-      _viewport.width / (bounds.width * _planScale * padding),
-      _viewport.height / (bounds.height * _planScale * padding),
+      visible.width / (bounds.width * _planScale * padding),
+      visible.height / (bounds.height * _planScale * padding),
     );
     final double scale = fit.clamp(1.0, 6.0);
 
@@ -105,13 +124,25 @@ class FloorMapViewState extends State<FloorMapView> {
     setState(() {
       _controller.value = Matrix4.identity()
         ..translateByDouble(
-          _viewport.width / 2 - centre.dx * scale,
-          _viewport.height / 2 - centre.dy * scale,
+          visible.center.dx - centre.dx * scale,
+          visible.center.dy - centre.dy * scale,
           0,
           1,
         )
         ..scaleByDouble(scale, scale, 1, 1);
     });
+  }
+
+  /// The uncovered area of the view, in viewport coordinates.
+  @visibleForTesting
+  Rect get visibleRect {
+    final EdgeInsets pad = widget.visiblePadding;
+    return Rect.fromLTRB(
+      pad.left,
+      pad.top,
+      _viewport.width - pad.right,
+      _viewport.height - pad.bottom,
+    );
   }
 
   /// Back to the whole floor.

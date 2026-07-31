@@ -166,12 +166,28 @@ void main() {
     expect(find.byType(CampusMapScreen), findsOneWidget);
   });
 
-  testWidgets('shows the fictional-demo notice', (WidgetTester tester) async {
+  testWidgets('shows the fictional-demo badge at all times', (
+    WidgetTester tester,
+  ) async {
     await pumpMap(tester);
+    expect(
+      find.text('Fiktiver Demoplan'),
+      findsOneWidget,
+      reason: 'the demo character must be visible without any interaction',
+    );
+  });
+
+  testWidgets('the badge reveals the full demo notice', (
+    WidgetTester tester,
+  ) async {
+    await pumpMap(tester);
+    await tester.tap(find.text('Fiktiver Demoplan'));
+    await tester.pumpAndSettle();
+
     expect(
       find.textContaining('frei erfunden'),
       findsOneWidget,
-      reason: 'the demo character must be visible',
+      reason: 'the full wording must stay reachable',
     );
   });
 
@@ -256,7 +272,9 @@ void main() {
       find.textContaining('passt nicht zur aktuellen Raumliste'),
       findsOneWidget,
     );
-    // The rooms remain browsable as a list.
+    // The plan is withheld, but the rooms stay browsable through the list.
+    await tester.tap(find.text('Alle anzeigen'));
+    await tester.pumpAndSettle();
     expect(find.text('B.201'), findsWidgets);
   });
 
@@ -280,8 +298,12 @@ void main() {
     WidgetTester tester,
   ) async {
     await pumpMap(tester, locale: AppLocales.english);
-    expect(find.text('Campus map'), findsWidgets);
+    expect(find.text('Fictional demo plan'), findsOneWidget);
     expect(find.text('Search rooms'), findsOneWidget);
+    expect(find.text('Show all'), findsOneWidget);
+
+    await tester.tap(find.text('Fictional demo plan'));
+    await tester.pumpAndSettle();
     expect(find.textContaining('fictional'), findsOneWidget);
   });
 
@@ -299,6 +321,11 @@ void main() {
     WidgetTester tester,
   ) async {
     await pumpMap(tester);
+
+    // The map is the resting state now, so the rows live in the room list.
+    await tester.tap(find.text('Alle anzeigen'));
+    await tester.pumpAndSettle();
+
     final Iterable<ListTile> tiles = tester.widgetList<ListTile>(
       find.byType(ListTile),
     );
@@ -306,6 +333,21 @@ void main() {
     for (final ListTile tile in tiles) {
       expect(tile.minTileHeight, greaterThanOrEqualTo(48));
     }
+  });
+
+  testWidgets('the room list opens from the bottom bar and selects a room', (
+    WidgetTester tester,
+  ) async {
+    await pumpMap(tester);
+    expect(find.text('30 Räume'), findsNothing, reason: 'fixture has 3 rooms');
+    expect(find.text('3 Räume'), findsOneWidget);
+
+    await tester.tap(find.text('Alle anzeigen'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Großer Hörsaal').last);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Ausgewählt: Großer Hörsaal'), findsOneWidget);
   });
 
   testWidgets('survives doubled text size without overflow', (
