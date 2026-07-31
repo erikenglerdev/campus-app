@@ -89,8 +89,23 @@ COPY --from=build --chown=node:node /opt/deploy/prisma.config.ts ./prisma.config
 # A deployment image that carries migrations but cannot execute them is not a
 # deployable artefact. Keep this assertion in the image build itself so the
 # Images workflow fails before publishing a broken migration contract.
+#
+# Checking that the binary and the folder exist is NOT enough — that version of
+# this test passed while the published image was in fact unusable: prisma.config.ts
+# imports `dotenv/config`, dotenv sat in devDependencies, and `pnpm deploy --prod`
+# dropped it. The migration gate then died on the server with
+# "Cannot find module 'dotenv/config'".
+#
+# So the test now LOADS the config the way every real Prisma command does.
+# `prisma validate` parses prisma.config.ts and the schema without opening a
+# connection, so the placeholder URL below is never dialled — it exists only
+# because the config resolves DATABASE_URL eagerly and would otherwise throw.
 RUN test -x /opt/app/node_modules/.bin/prisma \
- && test -d /opt/app/prisma/migrations
+ && test -d /opt/app/prisma/migrations \
+ && node -e "require.resolve('dotenv/config')" \
+ && DATABASE_URL='postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder?schema=public' \
+    /opt/app/node_modules/.bin/prisma validate \
+ && echo 'migration runtime contract ok: prisma config loads and the schema validates'
 
 USER node
 
