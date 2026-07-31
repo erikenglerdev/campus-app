@@ -102,6 +102,11 @@ class _AreaDetail extends StatelessWidget {
           _ContactDetails(area: area)
         else
           Text(l10n.contactNoContactDetailsMessage, style: text.bodyMedium),
+        // Outside the block above on purpose: a room is not a contact channel.
+        // An area may well have a room and no e-mail at all, and the way into
+        // the floor plan must not disappear with the contact rows.
+        // Renders nothing when the area has no room.
+        RoomLinkSection(rooms: area.rooms),
         const SizedBox(height: AppSpacing.xl),
         Semantics(
           header: true,
@@ -173,8 +178,6 @@ class _ContactDetails extends StatelessWidget {
             label: l10n.contactOpeningHoursLabel,
             value: area.openingHours!,
           ),
-        // Renders nothing when the area has no room.
-        RoomLinkSection(rooms: area.rooms),
       ],
     );
   }

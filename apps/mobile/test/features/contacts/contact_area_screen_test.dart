@@ -77,6 +77,38 @@ void main() {
     },
   );
 
+  testWidgets('rooms are shown even when the area has no contact channels', (
+    WidgetTester tester,
+  ) async {
+    // A room is not a contact channel. An area that maintains no e-mail, phone
+    // or website at all — the normal state for the demo content — must still
+    // offer the way into the floor plan.
+    await pumpScreen(
+      tester,
+      const ContactAreaScreen(slug: 'stura'),
+      overrides: <Override>[
+        _areaOverride(
+          const ContactArea(
+            slug: 'stura',
+            name: 'Studierendenrat',
+            sortOrder: 0,
+            rooms: <RoomReference>[
+              RoomReference(
+                roomKey: 'demo-north-level2-b201',
+                roomNumber: 'B.201',
+                buildingName: 'Demo-Gebäude Nord',
+                floorName: '2. Obergeschoss',
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('B.201'), findsOneWidget);
+  });
+
   testWidgets('a person with only a name still opens without crashing', (
     WidgetTester tester,
   ) async {
