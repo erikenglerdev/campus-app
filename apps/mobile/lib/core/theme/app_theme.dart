@@ -3,22 +3,43 @@
 
 import 'package:flutter/material.dart';
 
+import 'accent_palette.dart';
 import 'app_colors.dart';
+import 'app_density.dart';
 import 'app_dimensions.dart';
+import 'app_motion.dart';
 
 /// Builds the Material 3 themes from the typed tokens in [AppColors].
 ///
 /// The font family is the locally bundled variable font *Manrope*
 /// (`assets/fonts/Manrope-Variable.ttf`, SIL OFL 1.1). No font is ever fetched
 /// at runtime, therefore the `google_fonts` package is deliberately not used.
+///
+/// Personalisation — accent palette, display density and reduced motion — is
+/// applied **here**, so a screen never has to know which one is active. It
+/// reads `context.colors`, `context.metrics` and `context.motion` and gets the
+/// resolved answer.
 abstract final class AppTheme {
   static const String fontFamily = 'Manrope';
 
-  static ThemeData light() => _build(AppColors.light);
+  static ThemeData light({
+    AccentPalette accent = AccentPalette.fallback,
+    DisplayDensity density = DisplayDensity.fallback,
+    AppMotion motion = AppMotion.enabled,
+  }) => _build(accent.applyTo(AppColors.light), density, motion);
 
-  static ThemeData dark() => _build(AppColors.dark);
+  static ThemeData dark({
+    AccentPalette accent = AccentPalette.fallback,
+    DisplayDensity density = DisplayDensity.fallback,
+    AppMotion motion = AppMotion.enabled,
+  }) => _build(accent.applyTo(AppColors.dark), density, motion);
 
-  static ThemeData _build(AppColors colors) {
+  static ThemeData _build(
+    AppColors colors,
+    DisplayDensity density,
+    AppMotion motion,
+  ) {
+    final AppMetrics metrics = AppMetrics.of(density);
     final ColorScheme scheme = ColorScheme(
       brightness: colors.brightness,
       primary: colors.primary,
@@ -62,7 +83,17 @@ abstract final class AppTheme {
       scaffoldBackgroundColor: colors.background,
       canvasColor: colors.background,
       textTheme: baseText,
-      extensions: <ThemeExtension<dynamic>>[colors],
+      extensions: <ThemeExtension<dynamic>>[colors, metrics, motion],
+      // Reduced motion must also silence the transitions Flutter itself
+      // drives; a token the app reads is not enough for page routes.
+      pageTransitionsTheme: motion.reduced
+          ? const PageTransitionsTheme(
+              builders: <TargetPlatform, PageTransitionsBuilder>{
+                TargetPlatform.android: _NoTransitionsBuilder(),
+                TargetPlatform.iOS: _NoTransitionsBuilder(),
+              },
+            )
+          : const PageTransitionsTheme(),
       appBarTheme: AppBarTheme(
         backgroundColor: colors.background,
         foregroundColor: colors.textPrimary,
@@ -78,7 +109,7 @@ abstract final class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: BorderRadius.circular(metrics.cardRadius),
           side: BorderSide(color: colors.outline.withValues(alpha: 0.24)),
         ),
       ),
@@ -90,15 +121,16 @@ abstract final class AppTheme {
       listTileTheme: ListTileThemeData(
         iconColor: colors.textSecondary,
         textColor: colors.textPrimary,
-        minVerticalPadding: AppSpacing.md,
-        minTileHeight: AppSizes.minTouchTarget,
+        minVerticalPadding: density.isCompact ? AppSpacing.sm : AppSpacing.md,
+        // Never below the minimum touch target, in either density.
+        minTileHeight: metrics.listRowMinHeight,
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: colors.surface,
         surfaceTintColor: Colors.transparent,
         indicatorColor: colors.primaryContainer,
         elevation: 0,
-        height: 72,
+        height: density.isCompact ? 64 : 72,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         labelTextStyle: WidgetStateProperty.resolveWith(
           (Set<WidgetState> states) => states.contains(WidgetState.selected)
@@ -225,4 +257,22 @@ abstract final class AppTheme {
       labelSmall: style(12, FontWeight.w600, height: 1.3),
     );
   }
+}
+
+/// A page transition that does not move anything.
+///
+/// Used when reduced motion is active. `PageTransitionsBuilder` has no
+/// built-in "none" variant, and returning the child unchanged is the only way
+/// to remove the platform slide without also removing the route itself.
+class _NoTransitionsBuilder extends PageTransitionsBuilder {
+  const _NoTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T>? route,
+    BuildContext? context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) => child;
 }

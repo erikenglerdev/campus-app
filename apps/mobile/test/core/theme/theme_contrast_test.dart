@@ -1,6 +1,7 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
+import 'package:campus_koethen/core/theme/accent_palette.dart';
 import 'package:campus_koethen/core/theme/app_colors.dart';
 import 'package:campus_koethen/core/theme/contrast.dart';
 import 'package:flutter/material.dart';
@@ -92,6 +93,79 @@ void main() {
       const Color a = Color(0xFF5B3FD0);
       const Color b = Color(0xFFF7F5F2);
       expect(Contrast.ratio(a, b), closeTo(Contrast.ratio(b, a), 1e-12));
+    });
+  });
+
+  // Every curated accent palette has to clear the same bars as the base
+  // palette. Iterating over the enum means a NEW palette that fails is a
+  // failing test rather than a shipped accessibility regression.
+  for (final AccentPalette palette in AccentPalette.values) {
+    group('light theme · accent ${palette.storageValue}', () {
+      for (final _Pair pair in _pairsFor(palette.applyTo(AppColors.light))) {
+        test('${pair.name} meets ${pair.threshold}:1', () {
+          final double ratio = Contrast.ratio(pair.foreground, pair.background);
+          expect(
+            ratio,
+            greaterThanOrEqualTo(pair.threshold),
+            reason:
+                '${palette.storageValue}: ${pair.name} is '
+                '${ratio.toStringAsFixed(2)}:1, required ${pair.threshold}:1',
+          );
+        });
+      }
+    });
+
+    group('dark theme · accent ${palette.storageValue}', () {
+      for (final _Pair pair in _pairsFor(palette.applyTo(AppColors.dark))) {
+        test('${pair.name} meets ${pair.threshold}:1', () {
+          final double ratio = Contrast.ratio(pair.foreground, pair.background);
+          expect(
+            ratio,
+            greaterThanOrEqualTo(pair.threshold),
+            reason:
+                '${palette.storageValue}: ${pair.name} is '
+                '${ratio.toStringAsFixed(2)}:1, required ${pair.threshold}:1',
+          );
+        });
+      }
+    });
+  }
+
+  group('accent palettes', () {
+    test('storage identifiers are unique and stable', () {
+      final Set<String> seen = <String>{};
+      for (final AccentPalette palette in AccentPalette.values) {
+        expect(
+          seen.add(palette.storageValue),
+          isTrue,
+          reason: 'duplicate storage value ${palette.storageValue}',
+        );
+      }
+      // The canonical brand palette must keep its identifier.
+      expect(AccentPalette.fallback, AccentPalette.campusViolet);
+      expect(AccentPalette.campusViolet.storageValue, 'campus-violet');
+    });
+
+    test('an unknown stored value falls back instead of throwing', () {
+      expect(AccentPalette.fromStorage(null), AccentPalette.fallback);
+      expect(AccentPalette.fromStorage(''), AccentPalette.fallback);
+      expect(AccentPalette.fromStorage('neon-pink'), AccentPalette.fallback);
+    });
+
+    test('a palette leaves body copy and semantic colours untouched', () {
+      for (final AccentPalette palette in AccentPalette.values) {
+        final AppColors themed = palette.applyTo(AppColors.light);
+        expect(themed.textPrimary, AppColors.light.textPrimary);
+        expect(themed.textSecondary, AppColors.light.textSecondary);
+        expect(themed.background, AppColors.light.background);
+        expect(themed.surface, AppColors.light.surface);
+        expect(themed.error, AppColors.light.error);
+        expect(themed.success, AppColors.light.success);
+      }
+    });
+
+    test('the six curated palettes are all offered', () {
+      expect(AccentPalette.values.length, 6);
     });
   });
 
