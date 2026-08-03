@@ -2,6 +2,8 @@
   "@@locale": "en",
   "appTitle": "Campus Köthen",
   "navNews": "News",
+  "navToday": "Today",
+  "requestsTitle": "Applications & feedback",
   "navTimetable": "Timetable",
   "navCanteen": "Canteen",
   "navContacts": "Contacts",

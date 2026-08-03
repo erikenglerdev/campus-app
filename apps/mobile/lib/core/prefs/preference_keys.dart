@@ -52,4 +52,32 @@ abstract final class PreferenceKeys {
 
   /// Current schema version of the public-calendar selection store.
   static const int publicCalendarStoreCurrentVersion = 1;
+
+  // --- Personalisation (mobile-first redesign) -----------------------------
+
+  /// Storage value of the chosen [AccentPalette].
+  static const String accentPalette = 'settings.accentPalette.v1';
+
+  /// Storage value of the chosen [DisplayDensity].
+  static const String displayDensity = 'settings.displayDensity.v1';
+
+  /// `1` when the user asked for reduced motion locally. The operating
+  /// system's own setting is honoured independently of this flag.
+  static const String reducedMotion = 'settings.reducedMotion.v1';
+
+  /// The three user-chosen middle entries of the bottom navigation bar, as
+  /// section storage values in bar order.
+  static const String navigationMiddle = 'settings.navigation.middle.v1';
+
+  /// Dashboard cards in display order. Absent means "the product default".
+  static const String dashboardCardOrder = 'settings.dashboard.order.v1';
+
+  /// Dashboard cards the user switched off.
+  static const String dashboardHiddenCards = 'settings.dashboard.hidden.v1';
+
+  /// buildingKey of the building the campus map opens on.
+  static const String defaultBuilding = 'settings.defaultBuilding.v1';
+
+  /// `1` once the first-run onboarding has been completed or skipped.
+  static const String onboardingCompleted = 'settings.onboarding.completed.v1';
 }

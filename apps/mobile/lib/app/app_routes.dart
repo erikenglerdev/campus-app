@@ -3,6 +3,9 @@
 
 /// All route paths and names of the app in one place.
 abstract final class AppRoutes {
+  /// The day dashboard — the app's entry point and the first navigation tab.
+  static const String today = '/today';
+
   static const String news = '/news';
   static const String newsDetailName = 'news-detail';
   static const String newsDetailPath = ':slug';
@@ -57,6 +60,21 @@ abstract final class AppRoutes {
   /// and the map is a perfectly valid destination without one.
   static String campusMapForRoom(String roomKey) =>
       '$campusMap?$campusMapRoomParam=${Uri.encodeQueryComponent(roomKey)}';
+
+  // Applications and feedback, nested under More.
+  static const String requestsPath = 'requests';
+  static const String requests = '/more/requests';
+  static const String requestDraftName = 'request-draft';
+
+  /// Draft editor. The id is the local draft's identifier; `new` starts one.
+  static const String requestDraftPath = 'draft/:id';
+
+  /// Global search over non-sensitive content only.
+  static const String searchPath = 'search';
+  static const String search = '/more/search';
+
+  /// First-run onboarding. A top-level route, outside the navigation shell.
+  static const String onboarding = '/onboarding';
 
   // Settings is a sub-page of More.
   static const String settings = '/more/settings';

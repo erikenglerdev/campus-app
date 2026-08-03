@@ -5,6 +5,8 @@
     "description": "Sichtbarer Name der App."
   },
   "navNews": "News",
+  "navToday": "Heute",
+  "requestsTitle": "Anträge & Feedback",
   "@navNews": {
     "description": "Label des News-Tabs in der unteren Navigation."
   },
