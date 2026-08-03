@@ -833,5 +833,25 @@
         "type": "int"
       }
     }
+  },
+  "calendarViewDay": "Day",
+  "calendarPickDate": "Choose date",
+  "calendarPreviousDay": "Previous day",
+  "calendarNextDay": "Next day",
+  "calendarWeekStripSemantic": "Week, {day} selected",
+  "@calendarWeekStripSemantic": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarDayHasEntries": "{count, plural, =1{1 entry} other{{count} entries}}",
+  "@calendarDayHasEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

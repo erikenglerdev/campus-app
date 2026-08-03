@@ -4,7 +4,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:table_calendar/table_calendar.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../core/locale/formatters.dart';
@@ -13,9 +12,11 @@ import '../../../core/widgets/status_banner.dart';
 import '../../../l10n/l10n.dart';
 import '../../moodle/application/moodle_account_controller.dart';
 import '../../moodle/application/moodle_controller.dart';
+import '../../timetable/application/timetable_week.dart';
 import '../../timetable/presentation/timetable_group_picker_sheet.dart';
 import '../application/calendar_providers.dart';
 import '../domain/calendar_entry.dart';
+import 'week_strip.dart';
 
 /// The top-level "Kalender" tab: one calendar merged from the timetable and
 /// Moodle deadlines, with an explicit month-grid vs list toggle.
@@ -38,6 +39,24 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     });
   }
 
+  /// A compact date picker replaces the month grid.
+  ///
+  /// The product rule is that a month view must not be the primary content
+  /// surface on a phone; jumping to a date is the one thing it was actually
+  /// used for, and the platform picker does that in a sheet.
+  Future<void> _pickDate(BuildContext context, WidgetRef ref) async {
+    final DateTime current = ref.read(calendarFocusedDayProvider);
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: current,
+      firstDate: DateTime(current.year - 1),
+      lastDate: DateTime(current.year + 2),
+    );
+    if (picked != null) {
+      ref.read(calendarFocusedDayProvider.notifier).select(picked);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
@@ -54,6 +73,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             icon: const Icon(Icons.tune_outlined),
           ),
           IconButton(
+            tooltip: l10n.calendarPickDate,
+            onPressed: () => _pickDate(context, ref),
+            icon: const Icon(Icons.calendar_month_outlined),
+          ),
+          IconButton(
             tooltip: l10n.calendarToday,
             onPressed: () =>
                 ref.read(calendarFocusedDayProvider.notifier).today(),
@@ -68,8 +92,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             // so nothing can overflow a short viewport.
             _ViewToggle(mode: mode),
             Expanded(
-              child: mode == CalendarViewMode.month
-                  ? _MonthView(data: data)
+              child: mode == CalendarViewMode.day
+                  ? _DayAgendaView(data: data)
                   : _ListView(data: data),
             ),
           ],
@@ -113,6 +137,14 @@ class _ViewToggle extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AppLocalizations l10n = context.l10n;
+    // Icon *and* label do not fit two segments onto a 320 px phone once the
+    // user scales text up. The label is what gets dropped, never the control:
+    // the icon keeps its tooltip and its accessible name, so nothing is lost
+    // for a screen reader.
+    final bool roomForLabels =
+        MediaQuery.textScalerOf(context).scale(14) < 20 ||
+        MediaQuery.sizeOf(context).width > 360;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.lg,
@@ -123,14 +155,16 @@ class _ViewToggle extends ConsumerWidget {
       child: SegmentedButton<CalendarViewMode>(
         segments: <ButtonSegment<CalendarViewMode>>[
           ButtonSegment<CalendarViewMode>(
-            value: CalendarViewMode.month,
+            value: CalendarViewMode.day,
             icon: const Icon(Icons.calendar_month_outlined),
-            label: Text(l10n.calendarViewMonth),
+            tooltip: l10n.calendarViewDay,
+            label: roomForLabels ? Text(l10n.calendarViewDay) : null,
           ),
           ButtonSegment<CalendarViewMode>(
             value: CalendarViewMode.list,
             icon: const Icon(Icons.view_agenda_outlined),
-            label: Text(l10n.calendarViewList),
+            tooltip: l10n.calendarViewList,
+            label: roomForLabels ? Text(l10n.calendarViewList) : null,
           ),
         ],
         selected: <CalendarViewMode>{mode},
@@ -198,14 +232,27 @@ class _GroupHint extends ConsumerWidget {
         margin: EdgeInsets.zero,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
+          // A Column rather than a Row: at large text scales the action's
+          // label and the hint cannot share a 320 px line, and a hint that
+          // overflows is worse than one that takes an extra line.
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              const Icon(Icons.schedule_outlined),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(child: Text(l10n.calendarSelectGroupHint)),
-              TextButton(
-                onPressed: () => showTimetableGroupPickerSheet(context),
-                child: Text(l10n.calendarSourceTimetable),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Icon(Icons.schedule_outlined),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(child: Text(l10n.calendarSelectGroupHint)),
+                ],
+              ),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TextButton(
+                  onPressed: () => showTimetableGroupPickerSheet(context),
+                  child: Text(l10n.calendarSourceTimetable),
+                ),
               ),
             ],
           ),
@@ -215,58 +262,83 @@ class _GroupHint extends ConsumerWidget {
   }
 }
 
-class _MonthView extends ConsumerWidget {
-  const _MonthView({required this.data});
+/// The primary view: a week strip and the chosen day's entries.
+///
+/// Horizontal swiping moves a day at a time, which is how a phone calendar is
+/// expected to behave; the strip above shows where in the week that lands.
+class _DayAgendaView extends ConsumerWidget {
+  const _DayAgendaView({required this.data});
 
   final CalendarData data;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final AppLocalizations l10n = context.l10n;
     final String locale = Localizations.localeOf(context).languageCode;
     final DateTime focused = ref.watch(calendarFocusedDayProvider);
-    final DateTime now = DateTime.now();
-    final List<CalendarEntry> dayEntries = data.forDay(focused);
+    final DateTime today = TimetableWeek.dayOf(DateTime.now());
+    final List<CalendarEntry> entries = data.forDay(focused);
 
-    // The header, grid and day agenda scroll together, so they never overflow a
-    // short viewport.
-    return ListView(
+    final Map<DateTime, int> counts = <DateTime, int>{};
+    for (final CalendarEntry entry in data.entries) {
+      final DateTime day = TimetableWeek.dayOf(entry.start);
+      counts[day] = (counts[day] ?? 0) + 1;
+    }
+
+    return Column(
       children: <Widget>[
-        ..._calendarHeader(context, data),
-        TableCalendar<CalendarEntry>(
-          locale: locale,
-          firstDay: DateTime(now.year - 1),
-          lastDay: DateTime(now.year + 2),
-          focusedDay: focused,
-          startingDayOfWeek: StartingDayOfWeek.monday,
-          availableCalendarFormats: const <CalendarFormat, String>{
-            CalendarFormat.month: '',
-          },
-          headerStyle: const HeaderStyle(formatButtonVisible: false),
-          selectedDayPredicate: (DateTime d) => isSameDay(d, focused),
-          eventLoader: data.forDay,
-          calendarStyle: CalendarStyle(
-            markerDecoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-              shape: BoxShape.circle,
+        WeekStrip(
+          selected: focused,
+          today: today,
+          entryCounts: counts,
+          onSelect: (DateTime day) =>
+              ref.read(calendarFocusedDayProvider.notifier).select(day),
+        ),
+        Expanded(
+          child: GestureDetector(
+            // A day per swipe. `primaryVelocity` is negative when the finger
+            // moves left, which means "forward" in a left-to-right calendar.
+            onHorizontalDragEnd: (DragEndDetails details) {
+              final double velocity = details.primaryVelocity ?? 0;
+              if (velocity == 0) return;
+              ref
+                  .read(calendarFocusedDayProvider.notifier)
+                  .select(focused.add(Duration(days: velocity < 0 ? 1 : -1)));
+            },
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+              children: <Widget>[
+                ..._calendarHeader(context, data),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                    AppSpacing.lg,
+                    AppSpacing.xs,
+                  ),
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      AppDateFormats.weekdayDate(focused, locale),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                ),
+                if (entries.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Text(
+                      l10n.calendarNoEntriesForDay,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  )
+                else
+                  for (final CalendarEntry entry in entries)
+                    _EntryTile(entry: entry, locale: locale),
+              ],
             ),
           ),
-          onDaySelected: (DateTime selected, DateTime _) =>
-              ref.read(calendarFocusedDayProvider.notifier).select(selected),
-          onPageChanged: (DateTime page) =>
-              ref.read(calendarFocusedDayProvider.notifier).select(page),
         ),
-        const Divider(height: 1),
-        if (dayEntries.isEmpty)
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            child: Text(
-              context.l10n.calendarNoEntriesForDay,
-              textAlign: TextAlign.center,
-            ),
-          )
-        else
-          for (final CalendarEntry e in dayEntries)
-            _EntryTile(entry: e, locale: locale),
       ],
     );
   }

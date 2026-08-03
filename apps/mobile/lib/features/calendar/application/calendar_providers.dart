@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/loaded.dart';
+import '../../../core/prefs/preference_keys.dart';
+import '../../../core/prefs/settings_controller.dart';
 import '../../moodle/application/moodle_account_controller.dart';
 import '../../moodle/application/moodle_controller.dart';
 import '../../timetable/application/timetable_providers.dart';
@@ -14,17 +16,22 @@ import '../domain/calendar_entry.dart';
 import 'calendar_merge.dart';
 import 'public_calendar_providers.dart';
 
-/// Month grid or agenda list — the two explicit calendar views.
-enum CalendarViewMode { month, list }
+/// Day agenda or month list — the two explicit calendar views.
+///
+/// The day agenda is the default. A month grid used to be, but on a phone it
+/// spends most of the screen answering "which day?" and leaves almost none for
+/// what is actually on that day; the week strip answers the same question in a
+/// fraction of the space. A month is now only reachable as a date picker.
+enum CalendarViewMode { day, list }
 
 class CalendarViewModeController extends Notifier<CalendarViewMode> {
   @override
-  CalendarViewMode build() => CalendarViewMode.month;
+  CalendarViewMode build() => CalendarViewMode.day;
 
   void set(CalendarViewMode mode) => state = mode;
-  void toggle() => state = state == CalendarViewMode.month
+  void toggle() => state = state == CalendarViewMode.day
       ? CalendarViewMode.list
-      : CalendarViewMode.month;
+      : CalendarViewMode.day;
 }
 
 final NotifierProvider<CalendarViewModeController, CalendarViewMode>
@@ -49,19 +56,41 @@ calendarFocusedDayProvider =
       CalendarFocusedDayController.new,
     );
 
-/// Which sources contribute to the calendar. Both are on by default; the user
-/// can hide either without losing the other's data.
+/// Which sources contribute to the calendar.
+///
+/// Every source is on by default and the user can hide any of them without
+/// losing the others' data. The choice is persisted as the **disabled** set:
+/// a source added in a later version is then visible by default rather than
+/// hidden until someone finds the filter.
 class CalendarEnabledSourcesController extends Notifier<Set<CalendarSource>> {
   @override
-  Set<CalendarSource> build() => <CalendarSource>{
-    CalendarSource.timetable,
-    CalendarSource.moodle,
-  };
+  Set<CalendarSource> build() {
+    final Set<CalendarSource> off =
+        (ref
+                    .watch(keyValueStoreProvider)
+                    .getStringList(PreferenceKeys.calendarDisabledSources) ??
+                const <String>[])
+            .map(CalendarSource.fromStorage)
+            .whereType<CalendarSource>()
+            .toSet();
+    return CalendarSource.values
+        .where((CalendarSource s) => !off.contains(s))
+        .toSet();
+  }
 
-  void toggle(CalendarSource source) {
+  Future<void> toggle(CalendarSource source) async {
     final Set<CalendarSource> next = <CalendarSource>{...state};
     if (!next.remove(source)) next.add(source);
     state = next;
+    await ref
+        .read(keyValueStoreProvider)
+        .setStringList(
+          PreferenceKeys.calendarDisabledSources,
+          CalendarSource.values
+              .where((CalendarSource s) => !next.contains(s))
+              .map((CalendarSource s) => s.storageValue)
+              .toList(growable: false),
+        );
   }
 }
 

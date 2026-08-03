@@ -1312,5 +1312,25 @@
         "type": "int"
       }
     }
+  },
+  "calendarViewDay": "Tag",
+  "calendarPickDate": "Datum wählen",
+  "calendarPreviousDay": "Vorheriger Tag",
+  "calendarNextDay": "Nächster Tag",
+  "calendarWeekStripSemantic": "Woche, {day} ausgewählt",
+  "@calendarWeekStripSemantic": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarDayHasEntries": "{count, plural, =1{1 Termin} other{{count} Termine}}",
+  "@calendarDayHasEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

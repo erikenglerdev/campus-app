@@ -80,4 +80,11 @@ abstract final class PreferenceKeys {
 
   /// `1` once the first-run onboarding has been completed or skipped.
   static const String onboardingCompleted = 'settings.onboarding.completed.v1';
+
+  /// Calendar sources the user switched OFF, as source storage values.
+  ///
+  /// Stored as the disabled set rather than the enabled one on purpose: a
+  /// source added in a later version is then on by default instead of
+  /// invisible until the user finds the filter.
+  static const String calendarDisabledSources = 'calendar.sources.off.v1';
 }
