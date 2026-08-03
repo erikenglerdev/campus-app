@@ -235,6 +235,22 @@ class CanteenMenu {
   final String? campusLabel;
   final List<MenuDay> days;
 
+  /// The first day from [from] onwards that actually has meals.
+  ///
+  /// A canteen is closed at weekends and in the holidays, so "today" is often
+  /// an empty page. Pointing at the next day with an offer is the answer the
+  /// user wanted; showing an empty list and letting them tap forward is not.
+  MenuDay? nextOpenDayFrom(DateTime from) {
+    final DateTime start = DateTime(from.year, from.month, from.day);
+    MenuDay? best;
+    for (final MenuDay day in days) {
+      if (day.meals.isEmpty) continue;
+      if (day.date.isBefore(start)) continue;
+      if (best == null || day.date.isBefore(best.date)) best = day;
+    }
+    return best;
+  }
+
   MenuDay? dayFor(DateTime date) {
     for (final MenuDay day in days) {
       if (day.date.year == date.year &&

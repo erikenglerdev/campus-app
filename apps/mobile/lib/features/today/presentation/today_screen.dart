@@ -11,11 +11,17 @@ import '../../../core/theme/app_density.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../l10n/l10n.dart';
 import '../../search/presentation/search_screen.dart';
+import '../../calendar/application/public_calendar_providers.dart';
+import '../../campusmap/application/campus_map_providers.dart';
+import '../../canteen/application/canteen_providers.dart';
+import '../../news/application/news_providers.dart';
+import '../../todos/application/todos_controller.dart';
 import '../domain/dashboard_card.dart';
 import '../domain/day_phase.dart';
 import 'cards/agenda_card.dart';
 import 'cards/canteen_card.dart';
 import 'cards/news_card.dart';
+import 'cards/personal_status_cards.dart';
 import 'cards/quick_actions_card.dart';
 import 'cards/tasks_card.dart';
 
@@ -106,13 +112,10 @@ class TodayScreen extends ConsumerWidget {
         ),
         DashboardCard.canteen => CanteenCard(date: focusDate),
         DashboardCard.news => const UnreadNewsCard(),
+        DashboardCard.mailStatus => const MailStatusCard(),
+        DashboardCard.gradesStatus => const GradesStatusCard(),
         DashboardCard.tasks => const TasksCard(),
         DashboardCard.quickActions => const QuickActionsCard(),
-        // Unreachable: DashboardConfig.visible filters these out until their
-        // feature lands. Kept exhaustive so adding a card is a compile error
-        // here rather than a blank space at runtime.
-        DashboardCard.mailStatus ||
-        DashboardCard.gradesStatus => const SizedBox.shrink(),
       };
 
   static String _greeting(AppLocalizations l10n, DayPhase phase) =>
@@ -124,10 +127,21 @@ class TodayScreen extends ConsumerWidget {
 
   /// Re-reads every source the dashboard shows.
   ///
-  /// Deliberately explicit rather than a blanket container reset: invalidating
-  /// unrelated providers would drop caches the rest of the app still needs.
+  /// Explicitly listed rather than a blanket container reset: invalidating
+  /// everything would drop caches the rest of the app still needs. Listed
+  /// *completely*, though — an earlier version invalidated only the settings,
+  /// so pulling to refresh reloaded the user's preferences and none of the
+  /// data, which is a refresh in name only.
   void _refresh(WidgetRef ref) {
-    ref.invalidate(settingsProvider);
+    ref.invalidate(newsFeedProvider);
+    ref.invalidate(roomsProvider);
+    ref.invalidate(canteensProvider);
+    final String? canteen = ref.read(selectedCanteenSlugProvider);
+    if (canteen != null) ref.invalidate(canteenMenuProvider(canteen));
+    // The calendar aggregates the timetable and the public calendars; both are
+    // reached through their own providers, which the aggregator watches.
+    ref.invalidate(publicCalendarsCatalogProvider);
+    ref.invalidate(todosControllerProvider);
   }
 }
 

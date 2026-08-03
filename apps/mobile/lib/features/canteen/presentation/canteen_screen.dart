@@ -243,10 +243,30 @@ class _MenuContent extends ConsumerWidget {
         else if (meals.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
-            child: EmptyView(
-              icon: Icons.no_meals_outlined,
-              title: l10n.canteenNoMealsTitle,
-              message: l10n.canteenNoMealsMessage,
+            child: Builder(
+              builder: (BuildContext context) {
+                // Closed at the weekend and in the holidays, so an empty day is
+                // normal. Offering the next day that HAS something beats making
+                // the user tap forward until they find it.
+                final MenuDay? next = menu.nextOpenDayFrom(selectedDay);
+                return EmptyView(
+                  icon: Icons.no_meals_outlined,
+                  title: l10n.canteenNoMealsTitle,
+                  message: l10n.canteenNoMealsMessage,
+                  action: next == null
+                      ? null
+                      : FilledButton.icon(
+                          onPressed: () => ref
+                              .read(selectedMenuDayProvider.notifier)
+                              .select(next.date),
+                          icon: const Icon(Icons.skip_next_outlined),
+                          label: Text(
+                            '${l10n.canteenJumpToNextOpen} · '
+                            '${AppDateFormats.shortWeekdayDate(next.date, locale)}',
+                          ),
+                        ),
+                );
+              },
             ),
           )
         else

@@ -11,6 +11,7 @@ library;
 
 import 'dart:io';
 
+import 'package:campus_koethen/features/calendar/domain/calendar_entry.dart';
 import 'package:campus_koethen/features/search/domain/search_result.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -61,6 +62,37 @@ void main() {
       expect(names, isNot(contains('mail')));
       expect(names, isNot(contains('grade')));
       expect(names, isNot(contains('moodle')));
+    });
+
+    test('a Moodle calendar entry can never become a search hit', () {
+      // The calendar aggregator merges three sources, and one of them is
+      // Moodle. Indexing its entries wholesale would smuggle personal
+      // deadlines into the public search through the back door, so the
+      // assembler maps sources explicitly and drops that one.
+      //
+      // This is the one place where the guarantee rests on a runtime filter
+      // rather than on an absent import, which is exactly why it is asserted
+      // here rather than assumed.
+      final String assembler = File(
+        'lib/features/search/application/search_providers.dart',
+      ).readAsStringSync();
+
+      expect(
+        assembler.contains('CalendarSource.moodle => null'),
+        isTrue,
+        reason:
+            'the assembler must map the Moodle calendar source to no category '
+            'at all; anything else lets personal deadlines into the index',
+      );
+      // And the mapping has to be exhaustive, so a source added later is a
+      // compile error rather than a silent inclusion.
+      for (final CalendarSource source in CalendarSource.values) {
+        expect(
+          assembler.contains('CalendarSource.${source.name}'),
+          isTrue,
+          reason: 'the assembler does not decide about ${source.name}',
+        );
+      }
     });
 
     test('the index builder sends nothing anywhere', () {

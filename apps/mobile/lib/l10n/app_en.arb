@@ -1023,5 +1023,37 @@
         "type": "int"
       }
     }
-  }
+  },
+  "canteenNextOpenDay": "Next day with an offer",
+  "canteenShowingToday": "Today",
+  "canteenJumpToNextOpen": "Go to the next offer",
+  "todayMailStatusUnread": "{count, plural, =0{No unread messages} =1{1 unread message} other{{count} unread messages}}",
+  "@todayMailStatusUnread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayGradesChecked": "Last checked: {when}",
+  "@todayGradesChecked": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGradesNeverChecked": "Not fetched yet",
+  "todayGradesPrivacyHint": "Grades are not shown here.",
+  "todayTasksMoodleDue": "{count, plural, =1{1 submission in the next 7 days} other{{count} submissions in the next 7 days}}",
+  "@todayTasksMoodleDue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "requestsAddAttachment": "Add file",
+  "requestsRemoveAttachment": "Remove attachment",
+  "requestsNoAttachments": "No attachments."
 }

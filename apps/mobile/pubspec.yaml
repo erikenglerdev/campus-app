@@ -29,6 +29,9 @@ dependencies:
   hive_ce_flutter: ^2.3.4
 
   # Small scalar settings
+  file_selector: ^1.0.3
+  # Transitively present already; declared because we import it directly.
+  path_provider: ^2.1.5
   shared_preferences: ^2.5.3
 
   # Annotations for pure-Dart domain models (@immutable)

@@ -1502,5 +1502,37 @@
         "type": "int"
       }
     }
-  }
+  },
+  "canteenNextOpenDay": "Nächster Tag mit Angebot",
+  "canteenShowingToday": "Heute",
+  "canteenJumpToNextOpen": "Zum nächsten Angebot",
+  "todayMailStatusUnread": "{count, plural, =0{Keine ungelesenen Nachrichten} =1{1 ungelesene Nachricht} other{{count} ungelesene Nachrichten}}",
+  "@todayMailStatusUnread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayGradesChecked": "Zuletzt geprüft: {when}",
+  "@todayGradesChecked": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGradesNeverChecked": "Noch nicht abgerufen",
+  "todayGradesPrivacyHint": "Noten werden hier nicht angezeigt.",
+  "todayTasksMoodleDue": "{count, plural, =1{1 Abgabe in den nächsten 7 Tagen} other{{count} Abgaben in den nächsten 7 Tagen}}",
+  "@todayTasksMoodleDue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "requestsAddAttachment": "Datei hinzufügen",
+  "requestsRemoveAttachment": "Anhang entfernen",
+  "requestsNoAttachments": "Keine Anhänge."
 }

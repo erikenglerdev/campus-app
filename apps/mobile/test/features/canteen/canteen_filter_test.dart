@@ -155,6 +155,8 @@ void main() {
     });
   });
 
+  group('next open day', _nextOpenDayTests);
+
   group('price group', () {
     test('is null by default so the API keeps its own emphasis', () {
       expect(CanteenFilter.none.priceGroup, isNull);
@@ -174,5 +176,46 @@ void main() {
       final List<Meal> meals = <Meal>[_meal('a')];
       expect(CanteenFilter.none.withPriceGroup('guest').apply(meals).length, 1);
     });
+  });
+}
+
+void _nextOpenDayTests() {
+  CanteenMenu menu(List<MenuDay> days) =>
+      CanteenMenu(canteenSlug: 's', displayName: 'M', days: days);
+  MenuDay day(int d, {bool open = true}) => MenuDay(
+    date: DateTime(2026, 5, d),
+    meals: open ? <Meal>[Meal(id: '$d', name: 'Gericht $d')] : const <Meal>[],
+  );
+
+  test('finds the next day that actually has an offer', () {
+    // Closed at the weekend: the answer is Monday, not "nothing".
+    final CanteenMenu m = menu(<MenuDay>[
+      day(15),
+      day(16, open: false),
+      day(17, open: false),
+      day(18),
+    ]);
+    expect(
+      m.nextOpenDayFrom(DateTime(2026, 5, 16))?.date,
+      DateTime(2026, 5, 18),
+    );
+  });
+
+  test('today counts when today is open', () {
+    final CanteenMenu m = menu(<MenuDay>[day(15), day(18)]);
+    expect(
+      m.nextOpenDayFrom(DateTime(2026, 5, 15))?.date,
+      DateTime(2026, 5, 15),
+    );
+  });
+
+  test('never looks backwards', () {
+    final CanteenMenu m = menu(<MenuDay>[day(10), day(11)]);
+    expect(m.nextOpenDayFrom(DateTime(2026, 5, 20)), isNull);
+  });
+
+  test('an entirely closed window has no answer, and that is fine', () {
+    final CanteenMenu m = menu(<MenuDay>[day(15, open: false)]);
+    expect(m.nextOpenDayFrom(DateTime(2026, 5, 15)), isNull);
   });
 }

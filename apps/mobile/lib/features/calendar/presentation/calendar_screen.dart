@@ -16,6 +16,9 @@ import '../../moodle/application/moodle_controller.dart';
 import '../../timetable/application/timetable_week.dart';
 import '../../timetable/presentation/timetable_group_picker_sheet.dart';
 import '../application/calendar_providers.dart';
+import '../application/public_calendar_providers.dart';
+import '../application/public_calendar_selection.dart';
+import '../domain/public_calendar.dart';
 import '../domain/calendar_entry.dart';
 import 'week_strip.dart';
 
@@ -185,6 +188,13 @@ class _SourceFilters extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AppLocalizations l10n = context.l10n;
+    final List<PublicCalendar> publicCalendars =
+        ref.watch(publicCalendarsCatalogProvider).value?.value ??
+        const <PublicCalendar>[];
+    final PublicCalendarSelectionState selection = ref.watch(
+      publicCalendarSelectionProvider,
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
@@ -218,6 +228,20 @@ class _SourceFilters extends ConsumerWidget {
                       .toggle(CalendarSource.moodle)
                 : null,
           ),
+          // Each public calendar individually, right where the other filters
+          // are. This toggles the SAME selection that "manage calendars"
+          // writes — a second, parallel notion of "visible" would leave the
+          // user with two switches for one thing and no way to tell which won.
+          if (data.enabledSources.contains(CalendarSource.publicCalendar))
+            for (final PublicCalendar calendar in publicCalendars)
+              FilterChip(
+                avatar: const Icon(Icons.public, size: AppSizes.iconSmall),
+                label: Text(calendar.name),
+                selected: selection.isSelected(calendar.slug),
+                onSelected: (bool value) => ref
+                    .read(publicCalendarSelectionProvider.notifier)
+                    .setSelected(calendar.slug, selected: value),
+              ),
         ],
       ),
     );

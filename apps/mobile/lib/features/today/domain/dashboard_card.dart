@@ -29,29 +29,28 @@ enum DashboardCard {
 
   /// Whether there is unread mail — a count and an entry point, never a
   /// subject line.
-  mailStatus('mail-status', isImplemented: false),
+  mailStatus('mail-status'),
 
   /// Whether new grades exist — never a grade value.
-  gradesStatus('grades-status', isImplemented: false),
+  gradesStatus('grades-status'),
 
   /// Room search, contacts and other one-tap entries.
   quickActions('quick-actions');
 
-  const DashboardCard(this.storageValue, {this.isImplemented = true});
+  const DashboardCard(this.storageValue);
 
   /// Stable identifier written to local storage, never the enum index.
   final String storageValue;
 
-  /// Whether this card's data source is wired up yet.
+  /// Every card's source is wired up.
   ///
-  /// The redesign lands feature by feature, and a card that renders an empty
-  /// frame is worse than a card that is not there: it promises information the
-  /// app cannot deliver. Rather than leaving such a card in the list and
-  /// silently drawing nothing, the dashboard filters on this flag — and a test
-  /// asserts that only implemented cards are ever rendered.
-  ///
-  /// Each flag disappears when its feature lands.
-  final bool isImplemented;
+  /// This used to be a per-value flag while the redesign landed feature by
+  /// feature: a card that renders an empty frame is worse than a card that is
+  /// not there, because it promises information the app cannot deliver. The
+  /// last two sources arrived with the personal status cards, so the flag has
+  /// nothing left to distinguish and is kept only as the constant the
+  /// dashboard and its tests still read.
+  bool get isImplemented => true;
 
   static DashboardCard? fromStorage(String? value) {
     for (final DashboardCard card in DashboardCard.values) {

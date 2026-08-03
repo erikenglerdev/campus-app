@@ -9,6 +9,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/status_banner.dart';
 import '../../../l10n/l10n.dart';
 import '../application/requests_controller.dart';
+import '../data/attachment_picker.dart';
 import '../domain/request_gateway.dart';
 import '../domain/request_models.dart';
 import '../domain/request_validation.dart';
@@ -97,7 +98,43 @@ class _RequestDraftScreenState extends ConsumerState<RequestDraftScreen> {
         null => null,
       };
 
-  Future<void> _save() async {
+  /// Human-readable size. Binary units, because that is what a file manager
+  /// shows for the same file.
+  static String _formatSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  Future<void> _addAttachments() async {
+    final List<RequestAttachment> picked = await ref
+        .read(attachmentPickerProvider)
+        .pick();
+    if (picked.isEmpty || !mounted) return;
+    setState(() {
+      _draft = _draft.copyWith(
+        attachments: <RequestAttachment>[..._draft.attachments, ...picked],
+      );
+    });
+    // Persisted at once: the copy already exists on disk, and losing the
+    // reference to it would leave an orphaned file behind.
+    await _save(silent: true);
+  }
+
+  Future<void> _removeAttachment(RequestAttachment file) async {
+    await ref.read(attachmentPickerProvider).discard(file);
+    if (!mounted) return;
+    setState(() {
+      _draft = _draft.copyWith(
+        attachments: _draft.attachments
+            .where((RequestAttachment a) => a.path != file.path)
+            .toList(),
+      );
+    });
+    await _save(silent: true);
+  }
+
+  Future<void> _save({bool silent = false}) async {
     await ref.read(requestsProvider.notifier).save(_draft, now: DateTime.now());
     if (!mounted) return;
     ScaffoldMessenger.of(
@@ -274,6 +311,36 @@ class _RequestDraftScreenState extends ConsumerState<RequestDraftScreen> {
           Text(
             l10n.requestsAttachmentsHint,
             style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          if (_draft.attachments.isEmpty)
+            Text(
+              l10n.requestsNoAttachments,
+              style: Theme.of(context).textTheme.bodySmall,
+            )
+          else
+            for (final RequestAttachment file in _draft.attachments)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.attach_file),
+                title: Text(file.fileName),
+                subtitle: file.sizeBytes == null
+                    ? null
+                    : Text(_formatSize(file.sizeBytes!)),
+                trailing: IconButton(
+                  icon: const Icon(Icons.close),
+                  tooltip: l10n.requestsRemoveAttachment,
+                  onPressed: () => _removeAttachment(file),
+                ),
+              ),
+          const SizedBox(height: AppSpacing.sm),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: OutlinedButton.icon(
+              onPressed: _addAttachments,
+              icon: const Icon(Icons.attach_file),
+              label: Text(l10n.requestsAddAttachment),
+            ),
           ),
 
           SizedBox(height: metrics.sectionGap),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/loaded.dart';
+import '../../../core/prefs/settings_controller.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/offline_notice.dart';
 import '../../../core/widgets/state_views.dart';
@@ -169,6 +170,9 @@ class _MapSurface extends ConsumerWidget {
       explicitFloor: explicitFloor,
       selectedRoom: selectedRoom,
       rooms: allRooms,
+      defaultBuildingKey: ref.watch(
+        settingsProvider.select((AppSettings s) => s.defaultBuildingKey),
+      ),
     );
     final String? floorKey = _visibleFloorKey(
       map: map,
@@ -258,6 +262,7 @@ class _MapSurface extends ConsumerWidget {
     required String? explicitFloor,
     required Room? selectedRoom,
     required List<Room> rooms,
+    required String? defaultBuildingKey,
   }) {
     if (map == null) return null;
     if (map.building(explicitBuilding) != null) return explicitBuilding;
@@ -267,6 +272,10 @@ class _MapSurface extends ConsumerWidget {
         map.geometryFor(selectedRoom?.roomKey ?? '')?.buildingKey ??
         map.buildingOfFloor(selectedRoom?.floorKey);
     if (fromRoom != null) return fromRoom;
+    // The user's chosen building, before falling back to the first one in the
+    // catalogue. Without this the setting would be stored, offered in the
+    // onboarding and the settings — and never do anything.
+    if (map.building(defaultBuildingKey) != null) return defaultBuildingKey;
     return map.buildings.isNotEmpty
         ? map.buildings.first.buildingKey
         : map.buildingOfFloor(rooms.isEmpty ? null : rooms.first.floorKey);

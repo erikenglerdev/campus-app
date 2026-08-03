@@ -13,6 +13,8 @@ import '../../canteen/application/canteen_providers.dart';
 import '../../canteen/data/canteen_models.dart';
 import '../../contacts/application/contacts_providers.dart';
 import '../../contacts/data/contact_models.dart';
+import '../../calendar/application/calendar_providers.dart';
+import '../../calendar/domain/calendar_entry.dart';
 import '../../news/application/news_providers.dart';
 import '../../news/data/news_models.dart';
 import '../domain/search_index.dart';
@@ -101,7 +103,36 @@ final Provider<List<SearchEntry>> searchIndexProvider =
         );
       }
 
-      // 5. Meals of the cached menu window.
+      // 5. This month's calendar: public events and timetable entries.
+      //
+      // Both come from the aggregator for *today's* month, which is the window
+      // the app has loaded anyway. Moodle deadlines are a source of that
+      // aggregator too and are filtered out here: they are personal content,
+      // and the public search must not surface them.
+      final DateTime today = DateTime.now();
+      final CalendarData calendar = ref.watch(
+        calendarDataProvider(DateTime(today.year, today.month, today.day)),
+      );
+      for (final CalendarEntry entry in calendar.entries) {
+        final SearchCategory? category = switch (entry.source) {
+          CalendarSource.timetable => SearchCategory.timetable,
+          CalendarSource.publicCalendar => SearchCategory.event,
+          // Deliberately dropped — see above.
+          CalendarSource.moodle => null,
+        };
+        if (category == null) continue;
+        entries.add(
+          SearchEntry(
+            category: category,
+            title: entry.title,
+            subtitle: entry.location ?? entry.sourceLabel,
+            route: AppRoutes.calendar,
+            sortKey: entry.start.toIso8601String(),
+          ),
+        );
+      }
+
+      // 6. Meals of the cached menu window.
       final String? canteenSlug = ref.watch(selectedCanteenSlugProvider);
       if (canteenSlug != null) {
         final Loaded<CanteenMenu>? menu = ref
