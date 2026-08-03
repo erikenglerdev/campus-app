@@ -796,5 +796,29 @@
   },
   "@campusMapShowAllRooms": {
     "description": "Aktion in der unteren Leiste, die die vollständige Raumliste öffnet."
-  }
+  },
+  "todayGreetingMorning": "Good morning",
+  "todayGreetingDay": "Hello",
+  "todayGreetingEvening": "Good evening",
+  "todayTomorrowHint": "A look at tomorrow",
+  "todayNowLabel": "Right now",
+  "todayNextLabel": "Up next",
+  "todayNothingToday": "Nothing is scheduled for today.",
+  "todayAgendaTitle": "Your day",
+  "todayCanteenTitle": "Canteen today",
+  "todayTasksTitle": "Tasks",
+  "todayTasksOpen": "{count, plural, =0{Nothing open} =1{1 open task} other{{count} open tasks}}",
+  "@todayTasksOpen": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayQuickActionsTitle": "Quick actions",
+  "todayFindRoom": "Find a room",
+  "todayFindContact": "Find a contact",
+  "todayCardFailed": "This section could not be loaded.",
+  "todayRefresh": "Refresh",
+  "todayEmptyDashboard": "All cards are hidden. You can switch them back on in the settings."
 }

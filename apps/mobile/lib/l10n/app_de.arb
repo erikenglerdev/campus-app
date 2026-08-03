@@ -1275,5 +1275,29 @@
   },
   "@campusMapShowAllRooms": {
     "description": "Aktion in der unteren Leiste, die die vollständige Raumliste öffnet."
-  }
+  },
+  "todayGreetingMorning": "Guten Morgen",
+  "todayGreetingDay": "Hallo",
+  "todayGreetingEvening": "Guten Abend",
+  "todayTomorrowHint": "Vorschau auf morgen",
+  "todayNowLabel": "Gerade jetzt",
+  "todayNextLabel": "Als Nächstes",
+  "todayNothingToday": "Für heute ist nichts eingetragen.",
+  "todayAgendaTitle": "Dein Tag",
+  "todayCanteenTitle": "Mensa heute",
+  "todayTasksTitle": "Aufgaben",
+  "todayTasksOpen": "{count, plural, =0{Nichts offen} =1{1 offene Aufgabe} other{{count} offene Aufgaben}}",
+  "@todayTasksOpen": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayQuickActionsTitle": "Schnellzugriff",
+  "todayFindRoom": "Raum suchen",
+  "todayFindContact": "Kontakt finden",
+  "todayCardFailed": "Dieser Bereich konnte nicht geladen werden.",
+  "todayRefresh": "Aktualisieren",
+  "todayEmptyDashboard": "Alle Karten sind ausgeblendet. In den Einstellungen kannst du sie wieder einschalten."
 }

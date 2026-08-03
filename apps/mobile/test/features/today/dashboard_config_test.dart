@@ -16,9 +16,10 @@ void main() {
         DashboardCard.news,
       ]);
       expect(DashboardConfig.defaults.hidden, isEmpty);
+      // `visible` only ever contains cards whose source is wired up.
       expect(
-        DashboardConfig.defaults.visible.length,
-        DashboardCard.values.length,
+        DashboardConfig.defaults.visible,
+        DashboardCard.values.where((DashboardCard c) => c.isImplemented),
       );
     });
 
@@ -134,6 +135,23 @@ void main() {
       for (final DashboardCard card in DashboardCard.values) {
         expect(seen.add(card.storageValue), isTrue);
       }
+    });
+
+    test('an unimplemented card is never rendered, only ever configurable', () {
+      // The dashboard must not draw an empty frame for a feature that does not
+      // exist yet — but settings still list the card so the order is stable.
+      final Iterable<DashboardCard> pending = DashboardCard.values.where(
+        (DashboardCard c) => !c.isImplemented,
+      );
+      for (final DashboardCard card in pending) {
+        expect(DashboardConfig.defaults.visible, isNot(contains(card)));
+        expect(DashboardConfig.defaults.configurable, contains(card));
+      }
+      expect(
+        DashboardConfig.defaults.visible,
+        isNotEmpty,
+        reason: 'at least one card has to be real',
+      );
     });
   });
 }

@@ -10,6 +10,7 @@ import 'package:campus_koethen/core/network/network_providers.dart';
 import 'package:campus_koethen/core/prefs/key_value_store.dart';
 import 'package:campus_koethen/core/prefs/settings_controller.dart';
 import 'package:campus_koethen/core/theme/app_theme.dart';
+import 'package:campus_koethen/features/today/presentation/today_screen.dart';
 import 'package:campus_koethen/l10n/l10n.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -31,9 +32,14 @@ Future<ProviderContainer> pumpApp(
       contentCacheProvider.overrideWithValue(
         SafeContentCache(MemoryContentCache()),
       ),
+      // An empty envelope rather than a thrown request: these tests assert the
+      // navigation bar, not offline behaviour, and a throwing adapter leaves a
+      // retry timer pending once the dashboard is the first screen.
       apiClientProvider.overrideWithValue(
         fakeApiClient(
-          FakeHttpAdapter((RequestOptions _) => throw Exception('offline')),
+          FakeHttpAdapter(
+            (RequestOptions _) => FakeHttpResponse(envelope(<Object>[])),
+          ),
         ),
       ),
     ],
@@ -70,24 +76,32 @@ void main() {
       bar.destinations.cast<NavigationDestination>().map(
         (NavigationDestination destination) => destination.label,
       ),
-      <String>['News', 'Kalender', 'Mensa', 'Kontakte', 'Mehr'],
+      // The redesign puts the day dashboard first and keeps More last; the
+      // three between them are the user's defaults until they change them.
+      <String>['Heute', 'Kalender', 'Mensa', 'News', 'Mehr'],
     );
   });
 
   testWidgets('navigates to the calendar', (WidgetTester tester) async {
     await pumpApp(tester);
 
-    await tester.tap(find.text('Kalender'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Kalender'),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // The calendar's explicit view toggle (month vs list) is shown.
     expect(find.text('Liste'), findsOneWidget);
   });
 
-  testWidgets('starts on the news route', (WidgetTester tester) async {
+  testWidgets('starts on the day dashboard', (WidgetTester tester) async {
     await pumpApp(tester);
 
-    expect(AppRoutes.calendar, '/calendar');
+    expect(AppRoutes.today, '/today');
+    expect(find.byType(TodayScreen), findsOneWidget);
     // The calendar view toggle is not shown until the Kalender tab is opened.
     expect(find.text('Liste'), findsNothing);
   });
@@ -103,10 +117,10 @@ void main() {
 
     expect(tester.takeException(), isNull);
     for (final String label in <String>[
-      'News',
+      'Heute',
       'Kalender',
       'Mensa',
-      'Kontakte',
+      'News',
       'Mehr',
     ]) {
       expect(
@@ -131,7 +145,12 @@ void main() {
       reason: 'every one of the five destinations stays hittable',
     );
 
-    await tester.tap(find.text('Kalender'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Kalender'),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Liste'), findsOneWidget);
   });

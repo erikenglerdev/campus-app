@@ -13,34 +13,45 @@ import '../../../app/app_sections.dart';
 /// discreet status of the personal services.
 enum DashboardCard {
   /// The lecture happening now, or the next one.
-  nextClass('next-class'),
+  nextClass('next-class', isImplemented: false),
 
   /// The remaining appointments of the day, across all calendar sources.
-  todaysAgenda('todays-agenda'),
+  todaysAgenda('todays-agenda', isImplemented: false),
 
   /// Today's canteen offer.
   canteen('canteen'),
 
   /// Unread announcements.
-  news('news'),
+  news('news', isImplemented: false),
 
   /// Local to-dos and, once Moodle is set up, its upcoming submissions.
   tasks('tasks'),
 
   /// Whether there is unread mail — a count and an entry point, never a
   /// subject line.
-  mailStatus('mail-status'),
+  mailStatus('mail-status', isImplemented: false),
 
   /// Whether new grades exist — never a grade value.
-  gradesStatus('grades-status'),
+  gradesStatus('grades-status', isImplemented: false),
 
   /// Room search, contacts and other one-tap entries.
   quickActions('quick-actions');
 
-  const DashboardCard(this.storageValue);
+  const DashboardCard(this.storageValue, {this.isImplemented = true});
 
   /// Stable identifier written to local storage, never the enum index.
   final String storageValue;
+
+  /// Whether this card's data source is wired up yet.
+  ///
+  /// The redesign lands feature by feature, and a card that renders an empty
+  /// frame is worse than a card that is not there: it promises information the
+  /// app cannot deliver. Rather than leaving such a card in the list and
+  /// silently drawing nothing, the dashboard filters on this flag — and a test
+  /// asserts that only implemented cards are ever rendered.
+  ///
+  /// Each flag disappears when its feature lands.
+  final bool isImplemented;
 
   static DashboardCard? fromStorage(String? value) {
     for (final DashboardCard card in DashboardCard.values) {
@@ -121,9 +132,16 @@ class DashboardConfig {
   }
 
   /// The cards actually rendered, in order.
+  ///
+  /// Filters out cards whose source is not wired up yet, so the dashboard can
+  /// never show an empty frame for a feature that does not exist.
   List<DashboardCard> get visible => order
-      .where((DashboardCard c) => !hidden.contains(c))
+      .where((DashboardCard c) => c.isImplemented && !hidden.contains(c))
       .toList(growable: false);
+
+  /// Every card the user may reorder or switch off, including the ones that
+  /// are not implemented yet — settings show the full, stable list.
+  List<DashboardCard> get configurable => order;
 
   bool isVisible(DashboardCard card) => !hidden.contains(card);
 

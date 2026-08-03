@@ -27,15 +27,25 @@ import '../features/news/presentation/news_list_screen.dart';
 import '../features/settings/presentation/channel_settings_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/todos/presentation/todos_screen.dart';
+import '../features/today/presentation/today_screen.dart';
 import 'app_routes.dart';
 import 'app_shell.dart';
 
 /// The application router.
 ///
-/// Five stateful branches — one per bottom navigation destination — so each
-/// section keeps its own navigation stack. The branch order is the order of
-/// the destinations in [AppShell].
-GoRouter createAppRouter({String initialLocation = AppRoutes.news}) {
+/// One stateful branch per [AppSection], **in enum order**, so the branch
+/// index is the section's index and no lookup table can drift out of sync.
+///
+/// A branch for every section rather than only for the five visible tabs: the
+/// bottom bar is user-configurable, and a section that is temporarily not in
+/// the bar has to keep its navigation stack anyway. Rebuilding the router when
+/// the bar changes would throw that stack away — and would also rebuild the
+/// whole widget tree for what is a presentation change.
+///
+/// The personal services keep their `/more/...` paths even though they are
+/// branches of their own: the paths are deep-linked from contacts and tests,
+/// and there was no product reason to break them.
+GoRouter createAppRouter({String initialLocation = AppRoutes.today}) {
   return GoRouter(
     initialLocation: initialLocation,
     routes: <RouteBase>[
@@ -47,6 +57,44 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.news}) {
               StatefulNavigationShell navigationShell,
             ) => AppShell(navigationShell: navigationShell),
         branches: <StatefulShellBranch>[
+          // AppSection.today
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: AppRoutes.today,
+                builder: (BuildContext _, GoRouterState _) =>
+                    const TodayScreen(),
+              ),
+            ],
+          ),
+          // AppSection.calendar
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: AppRoutes.calendar,
+                builder: (BuildContext _, GoRouterState _) =>
+                    const CalendarScreen(),
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: AppRoutes.calendarManagePath,
+                    builder: (BuildContext _, GoRouterState _) =>
+                        const ManageCalendarsScreen(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // AppSection.canteen
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: AppRoutes.canteen,
+                builder: (BuildContext _, GoRouterState _) =>
+                    const CanteenScreen(),
+              ),
+            ],
+          ),
+          // AppSection.news
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
@@ -66,31 +114,85 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.news}) {
               ),
             ],
           ),
+          // AppSection.moodle
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
-                path: AppRoutes.calendar,
+                path: AppRoutes.moodle,
                 builder: (BuildContext _, GoRouterState _) =>
-                    const CalendarScreen(),
+                    const MoodleScreen(),
                 routes: <RouteBase>[
                   GoRoute(
-                    path: AppRoutes.calendarManagePath,
-                    builder: (BuildContext _, GoRouterState _) =>
-                        const ManageCalendarsScreen(),
+                    path: AppRoutes.moodleCoursePath,
+                    name: AppRoutes.moodleCourseName,
+                    builder: (BuildContext _, GoRouterState state) =>
+                        MoodleCourseScreen(
+                          courseId:
+                              int.tryParse(state.pathParameters['id'] ?? '') ??
+                              0,
+                        ),
                   ),
                 ],
               ),
             ],
           ),
+          // AppSection.mail
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
-                path: AppRoutes.canteen,
+                path: AppRoutes.mail,
                 builder: (BuildContext _, GoRouterState _) =>
-                    const CanteenScreen(),
+                    const MailScreen(),
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: 'search',
+                    builder: (BuildContext _, GoRouterState _) =>
+                        const MailSearchScreen(),
+                  ),
+                  GoRoute(
+                    path: 'compose',
+                    builder: (BuildContext _, GoRouterState state) =>
+                        MailComposeScreen(
+                          draft: state.extra is ComposeDraft
+                              ? state.extra as ComposeDraft
+                              : null,
+                        ),
+                  ),
+                  GoRoute(
+                    path: 'message/:id',
+                    name: AppRoutes.mailMessageName,
+                    builder: (BuildContext _, GoRouterState state) =>
+                        MailMessageScreen(id: state.pathParameters['id'] ?? ''),
+                  ),
+                ],
               ),
             ],
           ),
+          // AppSection.todos
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: AppRoutes.todos,
+                builder: (BuildContext _, GoRouterState _) =>
+                    const TodosScreen(),
+              ),
+            ],
+          ),
+          // AppSection.campusMap
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: AppRoutes.campusMap,
+                builder: (BuildContext _, GoRouterState state) =>
+                    CampusMapScreen(
+                      initialRoomKey: state
+                          .uri
+                          .queryParameters[AppRoutes.campusMapRoomParam],
+                    ),
+              ),
+            ],
+          ),
+          // AppSection.contacts
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
@@ -110,6 +212,18 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.news}) {
               ),
             ],
           ),
+          // AppSection.grades
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: AppRoutes.grades,
+                builder: (BuildContext _, GoRouterState _) =>
+                    const GradesScreen(),
+              ),
+            ],
+          ),
+          // AppSection.more — settings and the legal pages stay here; every
+          // other area is reachable from this screen through its own branch.
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
@@ -117,73 +231,6 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.news}) {
                 builder: (BuildContext _, GoRouterState _) =>
                     const MoreScreen(),
                 routes: <RouteBase>[
-                  GoRoute(
-                    path: 'mail',
-                    builder: (BuildContext _, GoRouterState _) =>
-                        const MailScreen(),
-                    routes: <RouteBase>[
-                      GoRoute(
-                        path: 'search',
-                        builder: (BuildContext _, GoRouterState _) =>
-                            const MailSearchScreen(),
-                      ),
-                      GoRoute(
-                        path: 'compose',
-                        builder: (BuildContext _, GoRouterState state) =>
-                            MailComposeScreen(
-                              draft: state.extra is ComposeDraft
-                                  ? state.extra as ComposeDraft
-                                  : null,
-                            ),
-                      ),
-                      GoRoute(
-                        path: 'message/:id',
-                        name: AppRoutes.mailMessageName,
-                        builder: (BuildContext _, GoRouterState state) =>
-                            MailMessageScreen(
-                              id: state.pathParameters['id'] ?? '',
-                            ),
-                      ),
-                    ],
-                  ),
-                  GoRoute(
-                    path: 'grades',
-                    builder: (BuildContext _, GoRouterState _) =>
-                        const GradesScreen(),
-                  ),
-                  GoRoute(
-                    path: 'moodle',
-                    builder: (BuildContext _, GoRouterState _) =>
-                        const MoodleScreen(),
-                    routes: <RouteBase>[
-                      GoRoute(
-                        path: AppRoutes.moodleCoursePath,
-                        name: AppRoutes.moodleCourseName,
-                        builder: (BuildContext _, GoRouterState state) =>
-                            MoodleCourseScreen(
-                              courseId:
-                                  int.tryParse(
-                                    state.pathParameters['id'] ?? '',
-                                  ) ??
-                                  0,
-                            ),
-                      ),
-                    ],
-                  ),
-                  GoRoute(
-                    path: AppRoutes.todosPath,
-                    builder: (BuildContext _, GoRouterState _) =>
-                        const TodosScreen(),
-                  ),
-                  GoRoute(
-                    path: AppRoutes.campusMapPath,
-                    builder: (BuildContext _, GoRouterState state) =>
-                        CampusMapScreen(
-                          initialRoomKey: state
-                              .uri
-                              .queryParameters[AppRoutes.campusMapRoomParam],
-                        ),
-                  ),
                   GoRoute(
                     path: 'settings',
                     builder: (BuildContext _, GoRouterState _) =>
