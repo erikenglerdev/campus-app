@@ -853,5 +853,36 @@
         "type": "int"
       }
     }
-  }
+  },
+  "settingsSectionPersonalisation": "Personalisation",
+  "settingsAccentColor": "Accent colour",
+  "settingsAccentCampusViolet": "Campus violet",
+  "settingsAccentOceanBlue": "Ocean blue",
+  "settingsAccentDeepTeal": "Deep teal",
+  "settingsAccentFreshGreen": "Fresh green",
+  "settingsAccentBrightMagenta": "Bright magenta",
+  "settingsAccentWarmAmber": "Warm amber",
+  "settingsDensity": "Display density",
+  "settingsDensityComfortable": "Comfortable",
+  "settingsDensityCompact": "Compact",
+  "settingsReducedMotion": "Reduce motion",
+  "settingsReducedMotionSubtitle": "Turns animations off. The system setting is honoured regardless.",
+  "settingsNavigation": "Navigation bar",
+  "settingsNavigationSubtitle": "Choose the three middle entries",
+  "settingsNavigationHint": "Today and More are fixed. Pick exactly three areas in between.",
+  "settingsDashboard": "Cards on Today",
+  "settingsDashboardSubtitle": "Order and visibility",
+  "settingsDashboardPending": "Coming in a later version",
+  "settingsDefaultBuilding": "Default building",
+  "settingsDefaultBuildingNone": "Not set",
+  "settingsSectionData": "App data",
+  "settingsReset": "Reset local app data",
+  "settingsResetSubtitle": "Resets appearance and preferences. Mail, grades and Moodle accounts are left untouched.",
+  "settingsResetConfirmTitle": "Reset?",
+  "settingsResetConfirmMessage": "Language, theme, accent colour, density, navigation bar, dashboard cards and your chosen canteen, timetable group and default building are reset. Your accounts and local tasks are kept.",
+  "settingsResetConfirmAction": "Reset",
+  "settingsResetDone": "Reset done.",
+  "settingsCardMoveUp": "Move up",
+  "settingsCardMoveDown": "Move down",
+  "settingsSelectExactlyThree": "Pick exactly three areas"
 }

@@ -1332,5 +1332,36 @@
         "type": "int"
       }
     }
-  }
+  },
+  "settingsSectionPersonalisation": "Personalisierung",
+  "settingsAccentColor": "Akzentfarbe",
+  "settingsAccentCampusViolet": "Campus-Violett",
+  "settingsAccentOceanBlue": "Ozeanblau",
+  "settingsAccentDeepTeal": "Petrol",
+  "settingsAccentFreshGreen": "Frischgrün",
+  "settingsAccentBrightMagenta": "Magenta",
+  "settingsAccentWarmAmber": "Bernstein",
+  "settingsDensity": "Darstellungsdichte",
+  "settingsDensityComfortable": "Komfortabel",
+  "settingsDensityCompact": "Kompakt",
+  "settingsReducedMotion": "Bewegung reduzieren",
+  "settingsReducedMotionSubtitle": "Blendet Animationen aus. Die Systemeinstellung wird ohnehin beachtet.",
+  "settingsNavigation": "Navigationsleiste",
+  "settingsNavigationSubtitle": "Die drei mittleren Einträge wählen",
+  "settingsNavigationHint": "Heute und Mehr sind fest. Wähle genau drei Bereiche dazwischen.",
+  "settingsDashboard": "Karten auf „Heute\"",
+  "settingsDashboardSubtitle": "Reihenfolge und Sichtbarkeit",
+  "settingsDashboardPending": "Folgt in einer späteren Version",
+  "settingsDefaultBuilding": "Standardgebäude",
+  "settingsDefaultBuildingNone": "Nicht festgelegt",
+  "settingsSectionData": "App-Daten",
+  "settingsReset": "Lokale App-Daten zurücksetzen",
+  "settingsResetSubtitle": "Setzt Darstellung und Präferenzen zurück. Mail-, Noten- und Moodle-Konten bleiben unberührt.",
+  "settingsResetConfirmTitle": "Zurücksetzen?",
+  "settingsResetConfirmMessage": "Sprache, Theme, Akzentfarbe, Dichte, Navigationsleiste, Dashboard-Karten und deine gewählte Mensa, Stundenplangruppe und Standardgebäude werden zurückgesetzt. Deine Konten und lokalen Aufgaben bleiben erhalten.",
+  "settingsResetConfirmAction": "Zurücksetzen",
+  "settingsResetDone": "Zurückgesetzt.",
+  "settingsCardMoveUp": "Nach oben",
+  "settingsCardMoveDown": "Nach unten",
+  "settingsSelectExactlyThree": "Genau drei Bereiche wählen"
 }

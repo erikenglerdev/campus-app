@@ -82,4 +82,6 @@ abstract final class AppRoutes {
   static const String imprint = '/more/settings/imprint';
   static const String privacy = '/more/settings/privacy';
   static const String channels = '/more/settings/channels';
+  static const String settingsNavigation = '/more/settings/navigation';
+  static const String settingsDashboard = '/more/settings/dashboard';
 }

@@ -25,6 +25,8 @@ import '../features/more/presentation/more_screen.dart';
 import '../features/news/presentation/news_detail_screen.dart';
 import '../features/news/presentation/news_list_screen.dart';
 import '../features/settings/presentation/channel_settings_screen.dart';
+import '../features/settings/presentation/dashboard_settings_screen.dart';
+import '../features/settings/presentation/navigation_settings_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/todos/presentation/todos_screen.dart';
 import '../features/today/presentation/today_screen.dart';
@@ -245,6 +247,16 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.today}) {
                         path: 'channels',
                         builder: (BuildContext _, GoRouterState _) =>
                             const ChannelSettingsScreen(),
+                      ),
+                      GoRoute(
+                        path: 'navigation',
+                        builder: (BuildContext _, GoRouterState _) =>
+                            const NavigationSettingsScreen(),
+                      ),
+                      GoRoute(
+                        path: 'dashboard',
+                        builder: (BuildContext _, GoRouterState _) =>
+                            const DashboardSettingsScreen(),
                       ),
                       GoRoute(
                         path: 'imprint',
