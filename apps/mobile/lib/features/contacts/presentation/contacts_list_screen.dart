@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../core/network/loaded.dart';
+import '../../../core/theme/app_density.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/icon_keys.dart';
 import '../../../core/widgets/offline_notice.dart';
@@ -72,7 +73,7 @@ class _AreaList extends StatelessWidget {
 
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: EdgeInsets.all(context.metrics.screenPadding),
       itemCount: areas.length + (loaded.fromCache ? 1 : 0),
       separatorBuilder: (BuildContext _, int _) =>
           const SizedBox(height: AppSpacing.md),
@@ -113,7 +114,7 @@ class _AreaCard extends StatelessWidget {
               minHeight: AppSizes.minTouchTarget,
             ),
             child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: EdgeInsets.all(context.metrics.screenPadding),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[

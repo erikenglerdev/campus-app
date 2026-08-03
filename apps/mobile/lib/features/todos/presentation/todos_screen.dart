@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_density.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
@@ -96,7 +97,7 @@ class _InputBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: EdgeInsets.all(context.metrics.screenPadding),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[

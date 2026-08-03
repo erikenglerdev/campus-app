@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_density.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../l10n/l10n.dart';
 import '../application/mail_account_controller.dart';
@@ -157,7 +158,7 @@ class _MailComposeScreenState extends ConsumerState<MailComposeScreen> {
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: EdgeInsets.all(context.metrics.screenPadding),
             children: <Widget>[
               if (email != null)
                 Padding(
