@@ -917,5 +917,20 @@
   "onboardingRestartSubtitle": "Takes you through the setup again.",
   "onboardingOpenChannels": "Choose news channels",
   "onboardingOpenCalendars": "Choose public calendars",
-  "onboardingOpenTimetableGroup": "Choose timetable group"
+  "onboardingOpenTimetableGroup": "Choose timetable group",
+  "newsUnreadBadge": "New",
+  "newsUnreadOnly": "Unread only",
+  "newsShowAll": "Show all",
+  "newsMarkAllRead": "Mark all as read",
+  "newsAllRead": "Everything is read.",
+  "newsNoUnread": "No unread announcements.",
+  "newsUnreadCount": "{count, plural, =0{Nothing unread} =1{1 unread announcement} other{{count} unread announcements}}",
+  "@newsUnreadCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newsUnreadSemantic": "Unread"
 }

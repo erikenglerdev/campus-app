@@ -15,16 +15,39 @@ import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/status_banner.dart';
 import '../../../l10n/l10n.dart';
 import '../application/news_providers.dart';
+import '../application/news_read_controller.dart';
 import '../data/news_models.dart';
 
 /// Renders one article. Only the block types of the API contract are drawn.
-class NewsDetailScreen extends ConsumerWidget {
+///
+/// Opening an article marks it read. That happens on open rather than on
+/// scroll-to-end: the list badge is about "have I seen this", and a student
+/// who opens a post and decides it is irrelevant has seen it.
+class NewsDetailScreen extends ConsumerStatefulWidget {
   const NewsDetailScreen({required this.slug, super.key});
 
   final String slug;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NewsDetailScreen> createState() => _NewsDetailScreenState();
+}
+
+class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Providers must not be written during initState.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(newsReadProvider.notifier).markRead(widget.slug);
+      }
+    });
+  }
+
+  String get slug => widget.slug;
+
+  @override
+  Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
     final AsyncValue<Loaded<NewsArticle>> article = ref.watch(
       newsArticleProvider(slug),

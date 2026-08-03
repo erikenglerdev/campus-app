@@ -1396,5 +1396,20 @@
   "onboardingRestartSubtitle": "Führt dich noch einmal durch die Einrichtung.",
   "onboardingOpenChannels": "News-Kanäle wählen",
   "onboardingOpenCalendars": "Öffentliche Kalender wählen",
-  "onboardingOpenTimetableGroup": "Stundenplangruppe wählen"
+  "onboardingOpenTimetableGroup": "Stundenplangruppe wählen",
+  "newsUnreadBadge": "Neu",
+  "newsUnreadOnly": "Nur ungelesene",
+  "newsShowAll": "Alle anzeigen",
+  "newsMarkAllRead": "Alle als gelesen markieren",
+  "newsAllRead": "Alles gelesen.",
+  "newsNoUnread": "Keine ungelesenen Meldungen.",
+  "newsUnreadCount": "{count, plural, =0{Keine ungelesenen} =1{1 ungelesene Meldung} other{{count} ungelesene Meldungen}}",
+  "@newsUnreadCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newsUnreadSemantic": "Ungelesen"
 }

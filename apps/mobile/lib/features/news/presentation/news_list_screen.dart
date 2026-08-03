@@ -13,6 +13,8 @@ import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
 import '../application/channel_subscriptions.dart';
 import '../application/news_providers.dart';
+import '../application/news_read_controller.dart';
+import '../domain/read_state.dart';
 import '../data/news_models.dart';
 import 'channel_picker_sheet.dart';
 import 'news_card.dart';
@@ -26,11 +28,47 @@ class NewsListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final AppLocalizations l10n = context.l10n;
     final AsyncValue<Loaded<NewsPage>> feed = ref.watch(newsFeedProvider);
+    final bool unreadOnly = ref.watch(newsUnreadOnlyProvider);
+    final List<String> feedSlugs =
+        feed.value?.value.articles
+            .map((NewsArticle a) => a.slug)
+            .toList(growable: false) ??
+        const <String>[];
+
+    // Reconcile read markers with whatever the feed now contains: new items
+    // become unread, vanished ones lose their marker. Done in a listener so a
+    // build never writes to a provider.
+    ref.listen<AsyncValue<Loaded<NewsPage>>>(newsFeedProvider, (
+      AsyncValue<Loaded<NewsPage>>? _,
+      AsyncValue<Loaded<NewsPage>> next,
+    ) {
+      final List<NewsArticle>? articles = next.value?.value.articles;
+      if (articles == null) return;
+      ref
+          .read(newsReadProvider.notifier)
+          .syncWithFeed(articles.map((NewsArticle a) => a.slug));
+    });
 
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.newsTitle),
         actions: <Widget>[
+          IconButton(
+            tooltip: unreadOnly ? l10n.newsShowAll : l10n.newsUnreadOnly,
+            onPressed: () => ref.read(newsUnreadOnlyProvider.notifier).toggle(),
+            isSelected: unreadOnly,
+            icon: const Icon(Icons.mark_email_unread_outlined),
+            selectedIcon: const Icon(Icons.mark_email_unread),
+          ),
+          IconButton(
+            tooltip: l10n.newsMarkAllRead,
+            onPressed: feedSlugs.isEmpty
+                ? null
+                : () => ref
+                      .read(newsReadProvider.notifier)
+                      .markAllRead(feedSlugs),
+            icon: const Icon(Icons.done_all),
+          ),
           IconButton(
             tooltip: l10n.newsChannelPickerTooltip,
             onPressed: () => showChannelPickerSheet(context),
@@ -93,7 +131,31 @@ class _NewsListBody extends ConsumerWidget {
     final ChannelSubscriptionState subscriptions = ref.watch(
       channelSubscriptionProvider,
     );
-    final List<NewsArticle> articles = loaded.value.articles;
+    final NewsReadState readState = ref.watch(newsReadProvider);
+    final bool unreadOnly = ref.watch(newsUnreadOnlyProvider);
+    final List<NewsArticle> all = loaded.value.articles;
+    final List<NewsArticle> articles = unreadOnly
+        ? all
+              .where((NewsArticle a) => readState.isUnread(a.slug))
+              .toList(growable: false)
+        : all;
+
+    // "Nothing unread" is a different answer from "no announcements at all",
+    // and the filter is the thing to undo — so it gets its own empty state.
+    if (articles.isEmpty && unreadOnly && all.isNotEmpty) {
+      return NewsListScreen._scrollable(
+        child: EmptyView(
+          icon: Icons.mark_email_read_outlined,
+          title: l10n.newsAllRead,
+          message: l10n.newsNoUnread,
+          action: FilledButton.icon(
+            onPressed: () => ref.read(newsUnreadOnlyProvider.notifier).toggle(),
+            icon: const Icon(Icons.list),
+            label: Text(l10n.newsShowAll),
+          ),
+        ),
+      );
+    }
 
     if (articles.isEmpty) {
       final Widget empty;
@@ -145,6 +207,7 @@ class _NewsListBody extends ConsumerWidget {
             articles[loaded.fromCache ? index - 1 : index];
         return NewsCard(
           article: article,
+          isUnread: readState.isUnread(article.slug),
           onTap: () => context.pushNamed(
             AppRoutes.newsDetailName,
             pathParameters: <String, String>{'slug': article.slug},

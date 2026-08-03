@@ -81,6 +81,17 @@ abstract final class PreferenceKeys {
   /// `1` once the first-run onboarding has been completed or skipped.
   static const String onboardingCompleted = 'settings.onboarding.completed.v1';
 
+  /// Slugs of announcements the user has read. Pruned against the feed on
+  /// every load, so this cannot grow without bound.
+  static const String newsReadSlugs = 'news.read.slugs.v1';
+
+  /// `1` once this installation has seen a news feed at all. Distinguishes
+  /// "nothing read yet" from "brand new install".
+  static const String newsReadInitialised = 'news.read.initialised.v1';
+
+  /// `1` while the news list is filtered to unread items only.
+  static const String newsUnreadOnly = 'news.filter.unreadOnly.v1';
+
   /// Calendar sources the user switched OFF, as source storage values.
   ///
   /// Stored as the disabled set rather than the enabled one on purpose: a

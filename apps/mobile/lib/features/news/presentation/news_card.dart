@@ -14,10 +14,21 @@ import '../data/news_models.dart';
 /// Pinned articles are marked with an icon **and** a text label — never with
 /// colour alone.
 class NewsCard extends StatelessWidget {
-  const NewsCard({required this.article, required this.onTap, super.key});
+  const NewsCard({
+    required this.article,
+    required this.onTap,
+    this.isUnread = false,
+    super.key,
+  });
 
   final NewsArticle article;
   final VoidCallback onTap;
+
+  /// Whether this announcement has not been read yet.
+  ///
+  /// Marked by a labelled badge and a heavier title, **not** by colour alone:
+  /// a tint is invisible to a large share of users and to a screen reader.
+  final bool isUnread;
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +38,16 @@ class NewsCard extends StatelessWidget {
     final String locale = Localizations.localeOf(context).languageCode;
     final DateTime? publishedAt = article.publishedAt;
 
-    final String semanticLabel = publishedAt == null
+    final String base = publishedAt == null
         ? article.title
         : l10n.newsArticleSemanticLabel(
             article.title,
             AppDateFormats.longDate(publishedAt, locale),
           );
+    // The unread state is part of the accessible name, not only a visual.
+    final String semanticLabel = isUnread
+        ? '${l10n.newsUnreadSemantic}. $base'
+        : base;
 
     return Semantics(
       button: true,
@@ -72,7 +87,46 @@ class NewsCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                  Text(article.title, style: text.titleMedium),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      if (isUnread) ...<Widget>[
+                        // A word, not a dot: "Neu" is legible, translatable
+                        // and survives being read aloud.
+                        Container(
+                          margin: const EdgeInsets.only(
+                            top: AppSpacing.xxs,
+                            right: AppSpacing.sm,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                            vertical: AppSpacing.xxs,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.primaryContainer,
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                          child: Text(
+                            l10n.newsUnreadBadge,
+                            style: text.labelSmall?.copyWith(
+                              color: colors.onPrimaryContainer,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                      Expanded(
+                        child: Text(
+                          article.title,
+                          style: isUnread
+                              ? text.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                )
+                              : text.titleMedium,
+                        ),
+                      ),
+                    ],
+                  ),
                   if (article.teaser != null) ...<Widget>[
                     const SizedBox(height: AppSpacing.xs),
                     Text(

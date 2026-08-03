@@ -14,6 +14,7 @@ import '../domain/dashboard_card.dart';
 import '../domain/day_phase.dart';
 import 'cards/agenda_card.dart';
 import 'cards/canteen_card.dart';
+import 'cards/news_card.dart';
 import 'cards/quick_actions_card.dart';
 import 'cards/tasks_card.dart';
 
@@ -102,12 +103,12 @@ class TodayScreen extends ConsumerWidget {
           mode: AgendaMode.restOfDay,
         ),
         DashboardCard.canteen => CanteenCard(date: focusDate),
+        DashboardCard.news => const UnreadNewsCard(),
         DashboardCard.tasks => const TasksCard(),
         DashboardCard.quickActions => const QuickActionsCard(),
         // Unreachable: DashboardConfig.visible filters these out until their
         // feature lands. Kept exhaustive so adding a card is a compile error
         // here rather than a blank space at runtime.
-        DashboardCard.news ||
         DashboardCard.mailStatus ||
         DashboardCard.gradesStatus => const SizedBox.shrink(),
       };

@@ -22,7 +22,7 @@ enum DashboardCard {
   canteen('canteen'),
 
   /// Unread announcements.
-  news('news', isImplemented: false),
+  news('news'),
 
   /// Local to-dos and, once Moodle is set up, its upcoming submissions.
   tasks('tasks'),
