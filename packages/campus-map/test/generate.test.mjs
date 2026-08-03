@@ -81,10 +81,7 @@ test('the mobile catalogue carries building and floor names, but no room prose',
   // The app shows a different notice per kind of drawing, so the claim travels
   // with the data and a new building cannot inherit the wrong one.
   assert.equal(overview.planKind, 'schematic');
-  assert.equal(
-    mobile.buildings.find((b) => b.buildingKey === 'demo-north').planKind,
-    'fictional',
-  );
+  assert.equal(mobile.buildings.find((b) => b.buildingKey === 'demo-north').planKind, 'fictional');
   const overviewFloor = mobile.floors.find((f) => f.floorKey === 'koethen-campus-overview-level');
   assert.equal(overviewFloor.nameDe, 'Campusübersicht');
   assert.equal(overviewFloor.nameEn, 'Campus overview');

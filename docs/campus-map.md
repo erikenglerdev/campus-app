@@ -8,10 +8,10 @@ Texte kommen über die Campus API und werden offline gecacht.
 
 Zwei Kartengebäude, bewusst unterschiedlicher Natur:
 
-| Gebäude                       | `buildingKey`             | Ebene                           | Räume |
-| ----------------------------- | ------------------------- | ------------------------------- | ----- |
-| Demogebäude Nord (fiktiv)     | `demo-north`              | `demo-north-level2`             | 30    |
-| Campus Köthen – Übersicht     | `koethen-campus-overview` | `koethen-campus-overview-level` | 0     |
+| Gebäude                   | `buildingKey`             | Ebene                           | Räume |
+| ------------------------- | ------------------------- | ------------------------------- | ----- |
+| Demogebäude Nord (fiktiv) | `demo-north`              | `demo-north-level2`             | 30    |
+| Campus Köthen – Übersicht | `koethen-campus-overview` | `koethen-campus-overview-level` | 0     |
 
 > ⚠️ **Das Demogebäude ist vollständig erfunden.** Etage und alle 30 Räume (B.201–B.230) sind
 > Demonstrationsdaten; es wird kein realer Grundriss und kein realer Raum dargestellt.
@@ -55,11 +55,11 @@ Schreibweg aus der App ins CMS.
 
 ## 2. Kanonische Quellen
 
-| Datei                             | Rolle                                                          |
-| --------------------------------- | -------------------------------------------------------------- |
-| `buildings/demo-north/level2.svg` | Geometriequelle: Wände, Flure, Türen, 30 Raumrechtecke         |
-| `campus/koethen-overview.svg`     | Geometriequelle: 21 Gebäudegruppen, Wege, Grün, Symbole        |
-| `catalog/campus-map.catalog.json` | strukturierte Quelle: Schlüssel, Typen, Fokus, Sortierung      |
+| Datei                             | Rolle                                                     |
+| --------------------------------- | --------------------------------------------------------- |
+| `buildings/demo-north/level2.svg` | Geometriequelle: Wände, Flure, Türen, 30 Raumrechtecke    |
+| `campus/koethen-overview.svg`     | Geometriequelle: 21 Gebäudegruppen, Wege, Grün, Symbole   |
+| `catalog/campus-map.catalog.json` | strukturierte Quelle: Schlüssel, Typen, Fokus, Sortierung |
 
 Der Katalog enthält `schemaVersion`, `mapVersion`, Gebäude (lokalisierte Namen DE/EN), Etagen
 (`level`, `viewBox`, `svgPath`, `expectedRoomCount`) und Räume (`roomKey`, `roomNumber`,
@@ -106,14 +106,15 @@ Zwei Gründe, beide durch Tests abgesichert:
    über eine **Allowlist** von Textklassen — ein Denylist-Ansatz hatte beim ersten unbekannten
    Klassennamen prompt deutschen Text durchgelassen:
 
-   | Klasse        | überlebt                                                            |
-   | ------------- | ------------------------------------------------------------------- |
-   | `room-number` | Raumnummern des Etagenplans (`B.201`)                               |
-   | `map-label`   | Gebäudecodes (`01`, `W VII`, `TZK`), Straßennamen, Maßstabsangaben   |
+   | Klasse        | überlebt                                                           |
+   | ------------- | ------------------------------------------------------------------ |
+   | `room-number` | Raumnummern des Etagenplans (`B.201`)                              |
+   | `map-label`   | Gebäudecodes (`01`, `W VII`, `TZK`), Straßennamen, Maßstabsangaben |
 
    Die Campusübersicht verliert dadurch bewusst die Beschriftungen „Mensa“, „KITA“ und
    „Richtung City“: Es sind Gattungsbegriffe mit englischer Entsprechung, keine sprachneutralen
    Codes. `data-building-number` trägt sie weiterhin als **Metadaten**, die nichts zeichnen.
+
 2. **Renderer.** `flutter_svg` unterstützt **keine** `<style>`-Blöcke (`unhandled element <style/>`)
    und verwirft die gesamte Stylesheet — jeder Raum wäre ungestylt. Der Generator löst die
    CSS-Klassenregeln deshalb in Präsentationsattribute auf. `<marker>` und `marker-*` werden
