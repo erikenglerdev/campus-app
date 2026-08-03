@@ -15,9 +15,27 @@ import '../data/canteen_models.dart';
 /// The student price group is emphasised typographically *and* with an icon, so
 /// the emphasis survives greyscale and colour blindness.
 class MealCard extends StatelessWidget {
-  const MealCard({required this.meal, super.key});
+  const MealCard({
+    required this.meal,
+    this.isFavourite = false,
+    this.emphasisedPriceGroup,
+    this.onToggleFavourite,
+    this.onHide,
+    super.key,
+  });
 
   final Meal meal;
+
+  /// Whether the user starred this dish. Marked by a filled star **and** a
+  /// semantic label, never by colour alone.
+  final bool isFavourite;
+
+  /// Price group the user asked to emphasise, or `null` to keep the API's own
+  /// emphasis. Every delivered group stays visible either way.
+  final String? emphasisedPriceGroup;
+
+  final VoidCallback? onToggleFavourite;
+  final VoidCallback? onHide;
 
   @override
   Widget build(BuildContext context) {
@@ -56,9 +74,35 @@ class MealCard extends StatelessWidget {
                   ),
                 ),
               ),
-            Semantics(
-              header: true,
-              child: Text(meal.name, style: text.titleMedium),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    label: isFavourite
+                        ? '${l10n.canteenFavouriteSemantic}. ${meal.name}'
+                        : meal.name,
+                    child: Text(meal.name, style: text.titleMedium),
+                  ),
+                ),
+                if (onToggleFavourite != null)
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    tooltip: isFavourite
+                        ? l10n.canteenFavouriteRemove
+                        : l10n.canteenFavouriteAdd,
+                    onPressed: onToggleFavourite,
+                    icon: Icon(isFavourite ? Icons.star : Icons.star_border),
+                  ),
+                if (onHide != null)
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    tooltip: l10n.canteenHideMeal,
+                    onPressed: onHide,
+                    icon: const Icon(Icons.visibility_off_outlined),
+                  ),
+              ],
             ),
             if (meal.subtitle != null) ...<Widget>[
               const SizedBox(height: AppSpacing.xxs),
@@ -93,7 +137,10 @@ class MealCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: AppSpacing.md),
-            _PriceList(prices: meal.orderedPrices),
+            _PriceList(
+              prices: meal.orderedPrices,
+              emphasisedGroup: emphasisedPriceGroup,
+            ),
           ],
         ),
       ),
@@ -135,9 +182,12 @@ class _LabelledWrap extends StatelessWidget {
 /// Renders **every** price group the API delivered. Nothing is estimated and
 /// nothing is hidden; a missing group simply does not appear.
 class _PriceList extends StatelessWidget {
-  const _PriceList({required this.prices});
+  const _PriceList({required this.prices, this.emphasisedGroup});
 
   final List<MealPrice> prices;
+
+  /// Which group to highlight, or `null` for the API's own emphasis.
+  final String? emphasisedGroup;
 
   @override
   Widget build(BuildContext context) {
@@ -165,7 +215,13 @@ class _PriceList extends StatelessWidget {
                     locale: locale,
                   ) ??
                   l10n.canteenPriceMissing;
-              final bool emphasised = price.isStudentGroup;
+              // The API emphasises the student price; a user who is not a
+              // student can point the emphasis at their own group. Every group
+              // stays listed either way — the setting changes what is
+              // highlighted, never what is available.
+              final bool emphasised = emphasisedGroup == null
+                  ? price.isStudentGroup
+                  : price.group == emphasisedGroup;
               return Semantics(
                 label: emphasised
                     ? l10n.canteenPriceStudentSemanticLabel(

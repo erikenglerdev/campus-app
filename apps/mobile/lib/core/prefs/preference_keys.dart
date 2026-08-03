@@ -92,6 +92,25 @@ abstract final class PreferenceKeys {
   /// `1` while the news list is filtered to unread items only.
   static const String newsUnreadOnly = 'news.filter.unreadOnly.v1';
 
+  /// Marker codes a meal must carry to be shown.
+  static const String canteenRequiredMarkers = 'canteen.filter.required.v1';
+
+  /// Marker codes that hide a meal — allergens and ingredients to avoid.
+  static const String canteenExcludedMarkers = 'canteen.filter.excluded.v1';
+
+  /// The price group the canteen screen emphasises, or absent for the API's
+  /// own emphasis.
+  static const String canteenPriceGroup = 'canteen.filter.priceGroup.v1';
+
+  /// Names of starred dishes. Names, not upstream ids — those change weekly.
+  static const String canteenFavourites = 'canteen.favourites.v1';
+
+  /// Names of dishes the user never wants to see.
+  static const String canteenHidden = 'canteen.hidden.v1';
+
+  /// `1` while the canteen list is filtered to favourites only.
+  static const String canteenFavouritesOnly = 'canteen.filter.favOnly.v1';
+
   /// Calendar sources the user switched OFF, as source storage values.
   ///
   /// Stored as the disabled set rather than the enabled one on purpose: a

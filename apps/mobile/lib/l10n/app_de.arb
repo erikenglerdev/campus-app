@@ -1411,5 +1411,30 @@
       }
     }
   },
-  "newsUnreadSemantic": "Ungelesen"
+  "newsUnreadSemantic": "Ungelesen",
+  "canteenFilterTitle": "Filter",
+  "canteenFilterTooltip": "Filter und Favoriten",
+  "canteenFilterRequire": "Muss enthalten",
+  "canteenFilterExclude": "Ausschließen",
+  "canteenFilterMarkersHint": "Nur Kennzeichnungen, die die Quelle für diesen Tag liefert.",
+  "canteenFilterNoMarkers": "Für diesen Tag liefert die Quelle keine Kennzeichnungen.",
+  "canteenFilterFavouritesOnly": "Nur Favoriten",
+  "canteenFilterClear": "Filter zurücksetzen",
+  "canteenFilterActive": "Filter aktiv",
+  "canteenNoMealsAfterFilter": "Kein Gericht passt zu deinem Filter.",
+  "canteenFavouriteAdd": "Zu Favoriten",
+  "canteenFavouriteRemove": "Aus Favoriten entfernen",
+  "canteenHideMeal": "Gericht ausblenden",
+  "canteenUnhideMeal": "Wieder einblenden",
+  "canteenHiddenCount": "{count, plural, =1{1 Gericht ausgeblendet} other{{count} Gerichte ausgeblendet}}",
+  "@canteenHiddenCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "canteenFavouriteSemantic": "Favorit",
+  "canteenPriceGroupLabel": "Bevorzugte Preisgruppe",
+  "canteenPriceGroupDefault": "Wie von der Quelle vorgegeben"
 }

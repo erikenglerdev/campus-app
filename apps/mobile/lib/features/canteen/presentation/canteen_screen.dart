@@ -11,7 +11,10 @@ import '../../../core/widgets/offline_notice.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/status_banner.dart';
 import '../../../l10n/l10n.dart';
+import '../application/canteen_filter_controller.dart';
 import '../application/canteen_providers.dart';
+import '../domain/canteen_filter.dart';
+import 'canteen_filter_sheet.dart';
 import '../application/canteen_refresh_scheduler.dart';
 import '../data/canteen_models.dart';
 import 'canteen_picker_sheet.dart';
@@ -133,7 +136,21 @@ class _MenuContent extends ConsumerWidget {
     final DateTime selectedDay = ref.watch(selectedMenuDayProvider);
     final CanteenMenu menu = loaded.value;
     final MenuDay? day = menu.dayFor(selectedDay);
-    final List<Meal> meals = day?.meals ?? const <Meal>[];
+    final List<Meal> allMeals = day?.meals ?? const <Meal>[];
+    final CanteenFilter filter = ref.watch(canteenFilterProvider);
+    final List<Meal> meals = filter.apply(allMeals);
+    final int hiddenCount = allMeals.where(filter.isHidden).length;
+
+    // The filter offers only what the source published for the visible day —
+    // never a fixed vocabulary the data may not support.
+    final Map<String, MealMarker> markerVocabulary = <String, MealMarker>{
+      for (final Meal meal in allMeals)
+        for (final MealMarker marker in meal.markers) marker.code: marker,
+    };
+    final Map<String, MealPrice> priceVocabulary = <String, MealPrice>{
+      for (final Meal meal in allMeals)
+        for (final MealPrice price in meal.prices) price.group: price,
+    };
 
     final DateTime? lastSync = loaded.meta.lastSuccessfulSyncAt;
     final bool stale = loaded.meta.dataStale;
@@ -153,6 +170,34 @@ class _MenuContent extends ConsumerWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         _DayNavigator(date: selectedDay),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          children: <Widget>[
+            OutlinedButton.icon(
+              onPressed: () => showCanteenFilterSheet(
+                context,
+                markerVocabulary.values.toList(growable: false),
+                priceVocabulary.values.toList(growable: false),
+              ),
+              icon: const Icon(Icons.tune, size: AppSizes.iconSmall),
+              label: Text(
+                filter.isActive
+                    ? l10n.canteenFilterActive
+                    : l10n.canteenFilterTitle,
+              ),
+            ),
+            if (hiddenCount > 0) ...<Widget>[
+              const SizedBox(width: AppSpacing.sm),
+              Flexible(
+                child: Text(
+                  l10n.canteenHiddenCount(hiddenCount),
+                  style: Theme.of(context).textTheme.bodySmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ],
+        ),
         const SizedBox(height: AppSpacing.md),
         if (loaded.fromCache) ...<Widget>[
           OfflineNotice(cachedAt: loaded.cachedAt),
@@ -176,7 +221,24 @@ class _MenuContent extends ConsumerWidget {
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: AppSpacing.md),
-        if (meals.isEmpty)
+        // "Nothing on offer" and "nothing matches your filter" are different
+        // answers, and only the second one has an obvious remedy.
+        if (meals.isEmpty && allMeals.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
+            child: EmptyView(
+              icon: Icons.filter_alt_off_outlined,
+              title: l10n.canteenNoMealsAfterFilter,
+              message: l10n.canteenFilterMarkersHint,
+              action: FilledButton.icon(
+                onPressed: () =>
+                    ref.read(canteenFilterProvider.notifier).clear(),
+                icon: const Icon(Icons.filter_alt_off_outlined),
+                label: Text(l10n.canteenFilterClear),
+              ),
+            ),
+          )
+        else if (meals.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
             child: EmptyView(
@@ -187,7 +249,16 @@ class _MenuContent extends ConsumerWidget {
           )
         else
           for (final Meal meal in meals) ...<Widget>[
-            MealCard(meal: meal),
+            MealCard(
+              meal: meal,
+              isFavourite: filter.isFavourite(meal),
+              emphasisedPriceGroup: filter.priceGroup,
+              onToggleFavourite: () => ref
+                  .read(canteenFilterProvider.notifier)
+                  .toggleFavourite(meal),
+              onHide: () =>
+                  ref.read(canteenFilterProvider.notifier).toggleHidden(meal),
+            ),
             const SizedBox(height: AppSpacing.md),
           ],
         if (meals.any((Meal meal) => meal.sourceLanguage == 'de'))
