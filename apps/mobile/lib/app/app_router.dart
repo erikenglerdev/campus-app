@@ -25,6 +25,9 @@ import '../features/more/presentation/more_screen.dart';
 import '../features/news/presentation/news_detail_screen.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/news/presentation/news_list_screen.dart';
+import '../features/requests/domain/request_models.dart';
+import '../features/requests/presentation/request_draft_screen.dart';
+import '../features/requests/presentation/requests_screen.dart';
 import '../features/settings/presentation/channel_settings_screen.dart';
 import '../features/settings/presentation/dashboard_settings_screen.dart';
 import '../features/settings/presentation/navigation_settings_screen.dart';
@@ -241,6 +244,31 @@ GoRouter createAppRouter({
                 path: AppRoutes.grades,
                 builder: (BuildContext _, GoRouterState _) =>
                     const GradesScreen(),
+              ),
+            ],
+          ),
+          // AppSection.requests
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: AppRoutes.requests,
+                builder: (BuildContext _, GoRouterState _) =>
+                    const RequestsScreen(),
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: AppRoutes.requestDraftPath,
+                    name: AppRoutes.requestDraftName,
+                    builder: (BuildContext _, GoRouterState state) =>
+                        RequestDraftScreen(
+                          draftId: state.pathParameters['id'] ?? 'new',
+                          kind:
+                              RequestKind.fromStorage(
+                                state.uri.queryParameters['kind'],
+                              ) ??
+                              RequestKind.feedback,
+                        ),
+                  ),
+                ],
               ),
             ],
           ),

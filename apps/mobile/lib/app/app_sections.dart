@@ -77,6 +77,12 @@ enum AppSection {
     icon: Icons.grade_outlined,
     selectedIcon: Icons.grade,
   ),
+  requests(
+    storageValue: 'requests',
+    route: AppRoutes.requests,
+    icon: Icons.rate_review_outlined,
+    selectedIcon: Icons.rate_review,
+  ),
 
   /// The catch-all. Always the last navigation entry, never configurable —
   /// it is how every area stays reachable regardless of the bar's contents.
@@ -128,6 +134,7 @@ enum AppSection {
     AppSection.campusMap => l10n.campusMapTitle,
     AppSection.contacts => l10n.navContacts,
     AppSection.grades => l10n.gradesTitle,
+    AppSection.requests => l10n.requestsTitle,
     AppSection.more => l10n.navMore,
   };
 

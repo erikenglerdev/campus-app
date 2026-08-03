@@ -126,6 +126,7 @@ void main() {
         AppSection.campusMap,
         AppSection.contacts,
         AppSection.grades,
+        AppSection.requests,
       ]) {
         expect(offered, contains(expected));
       }
