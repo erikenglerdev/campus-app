@@ -10,6 +10,7 @@ import '../../../core/locale/formatters.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/status_banner.dart';
 import '../../../l10n/l10n.dart';
+import '../../search/presentation/search_screen.dart';
 import '../../moodle/application/moodle_account_controller.dart';
 import '../../moodle/application/moodle_controller.dart';
 import '../../timetable/application/timetable_week.dart';
@@ -67,6 +68,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       appBar: AppBar(
         title: Text(l10n.calendarTitle),
         actions: <Widget>[
+          const SearchIconButton(),
           IconButton(
             tooltip: l10n.calendarManageTooltip,
             onPressed: () => context.push(AppRoutes.calendarManage),

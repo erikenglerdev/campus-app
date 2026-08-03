@@ -11,6 +11,7 @@ import '../../../core/widgets/offline_notice.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/status_banner.dart';
 import '../../../l10n/l10n.dart';
+import '../../search/presentation/search_screen.dart';
 import '../application/canteen_filter_controller.dart';
 import '../application/canteen_providers.dart';
 import '../domain/canteen_filter.dart';
@@ -71,6 +72,7 @@ class _CanteenScreenState extends ConsumerState<CanteenScreen>
       appBar: AppBar(
         title: Text(l10n.canteenTitle),
         actions: <Widget>[
+          const SearchIconButton(),
           IconButton(
             tooltip: l10n.canteenPickerTooltip,
             onPressed: () => showCanteenPickerSheet(context),

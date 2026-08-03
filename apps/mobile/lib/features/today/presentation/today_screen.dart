@@ -10,6 +10,7 @@ import '../../../core/prefs/settings_controller.dart';
 import '../../../core/theme/app_density.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../l10n/l10n.dart';
+import '../../search/presentation/search_screen.dart';
 import '../domain/dashboard_card.dart';
 import '../domain/day_phase.dart';
 import 'cards/agenda_card.dart';
@@ -51,6 +52,7 @@ class TodayScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(_greeting(l10n, phase)),
         actions: <Widget>[
+          const SearchIconButton(),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: l10n.todayRefresh,

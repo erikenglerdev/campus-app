@@ -999,5 +999,29 @@
   "requestsCategoryMaterial": "Materials",
   "requestsCategoryTravel": "Travel",
   "requestsCategoryApp": "App",
-  "requestsCategoryCampus": "Campus"
+  "requestsCategoryCampus": "Campus",
+  "searchTitle": "Search",
+  "searchTooltip": "Search",
+  "searchHint": "Areas, rooms, news, contacts, dishes",
+  "searchClear": "Clear input",
+  "searchStartTyping": "Start typing to search.",
+  "searchScopeHint": "Only public content is searched. Mail, grades and Moodle are excluded and have their own search.",
+  "searchNoResults": "Nothing found",
+  "searchNoResultsHint": "Check the spelling. The search covers content already loaded.",
+  "searchOfflineHint": "Offline, the search covers the most recently loaded content.",
+  "searchCategorySection": "Areas",
+  "searchCategoryNews": "News",
+  "searchCategoryEvent": "Events",
+  "searchCategoryTimetable": "Timetable",
+  "searchCategoryRoom": "Rooms",
+  "searchCategoryContact": "Contacts",
+  "searchCategoryMeal": "Canteen",
+  "searchResultCount": "{count, plural, =1{1 result} other{{count} results}}",
+  "@searchResultCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

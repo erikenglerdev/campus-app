@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 
 import '../core/locale/locale_mode.dart';
 import '../core/locale/locale_providers.dart';
@@ -12,6 +13,7 @@ import '../core/prefs/settings_controller.dart';
 import '../core/theme/app_motion.dart';
 import '../core/theme/app_theme.dart';
 import '../features/mail/application/mail_account_controller.dart';
+import '../features/search/application/search_providers.dart';
 import '../features/mail/application/mail_sync_controller.dart';
 import '../l10n/l10n.dart';
 import 'app_router.dart';
@@ -105,6 +107,17 @@ class _CampusAppState extends ConsumerState<CampusApp>
           (List<Locale>? locales, Iterable<Locale> supported) =>
               AppLocales.resolve(locales),
       routerConfig: ref.watch(appRouterProvider),
+      builder: (BuildContext context, Widget? child) {
+        // The search index names the app's own areas, which needs the current
+        // localisations. Supplying them here keeps the index free of a
+        // BuildContext and lets tests override it with any locale.
+        return ProviderScope(
+          overrides: <Override>[
+            searchLocalizationsProvider.overrideWithValue(context.l10n),
+          ],
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

@@ -28,6 +28,7 @@ import '../features/news/presentation/news_list_screen.dart';
 import '../features/requests/domain/request_models.dart';
 import '../features/requests/presentation/request_draft_screen.dart';
 import '../features/requests/presentation/requests_screen.dart';
+import '../features/search/presentation/search_screen.dart';
 import '../features/settings/presentation/channel_settings_screen.dart';
 import '../features/settings/presentation/dashboard_settings_screen.dart';
 import '../features/settings/presentation/navigation_settings_screen.dart';
@@ -281,6 +282,11 @@ GoRouter createAppRouter({
                 builder: (BuildContext _, GoRouterState _) =>
                     const MoreScreen(),
                 routes: <RouteBase>[
+                  GoRoute(
+                    path: AppRoutes.searchPath,
+                    builder: (BuildContext _, GoRouterState _) =>
+                        const SearchScreen(),
+                  ),
                   GoRoute(
                     path: 'settings',
                     builder: (BuildContext _, GoRouterState _) =>

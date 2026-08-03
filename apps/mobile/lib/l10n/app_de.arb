@@ -1478,5 +1478,29 @@
   "requestsCategoryMaterial": "Material",
   "requestsCategoryTravel": "Fahrtkosten",
   "requestsCategoryApp": "App",
-  "requestsCategoryCampus": "Campus"
+  "requestsCategoryCampus": "Campus",
+  "searchTitle": "Suche",
+  "searchTooltip": "Suchen",
+  "searchHint": "Bereiche, Räume, News, Kontakte, Gerichte",
+  "searchClear": "Eingabe löschen",
+  "searchStartTyping": "Tippe, um zu suchen.",
+  "searchScopeHint": "Durchsucht werden nur öffentliche Inhalte. Mail, Noten und Moodle bleiben außen vor und haben ihre eigene Suche.",
+  "searchNoResults": "Nichts gefunden",
+  "searchNoResultsHint": "Prüfe die Schreibweise. Gesucht wird in den bereits geladenen Inhalten.",
+  "searchOfflineHint": "Offline wird in den zuletzt geladenen Inhalten gesucht.",
+  "searchCategorySection": "Bereiche",
+  "searchCategoryNews": "News",
+  "searchCategoryEvent": "Termine",
+  "searchCategoryTimetable": "Stundenplan",
+  "searchCategoryRoom": "Räume",
+  "searchCategoryContact": "Kontakte",
+  "searchCategoryMeal": "Mensa",
+  "searchResultCount": "{count, plural, =1{1 Treffer} other{{count} Treffer}}",
+  "@searchResultCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }
