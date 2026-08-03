@@ -42,7 +42,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
     final CalendarViewMode mode = ref.watch(calendarViewModeProvider);
-    final CalendarData data = ref.watch(calendarDataProvider);
+    final CalendarData data = ref.watch(focusedCalendarDataProvider);
 
     return Scaffold(
       appBar: AppBar(

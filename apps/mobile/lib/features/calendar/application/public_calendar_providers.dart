@@ -42,15 +42,22 @@ publicCalendarsCatalogProvider = FutureProvider<Loaded<List<PublicCalendar>>>((
   return (from: iso(from), to: iso(to));
 }
 
-/// Public-calendar events for the currently selected calendars in the focused
-/// month, already mapped to source-neutral [CalendarEntry] values.
+/// Public-calendar events for the currently selected calendars in the month
+/// around [anchor], already mapped to source-neutral [CalendarEntry] values.
+///
+/// Keyed by an explicit anchor rather than reading the calendar screen's
+/// focused day: the dashboard asks about *today* while the calendar screen may
+/// be browsing another month, and a shared focus would make one of them wrong.
 ///
 /// Returns an empty list when nothing is selected — an empty selection means
 /// "no public events", never "all". A failure here is isolated by the
 /// aggregator and never hides the timetable or Moodle.
-final FutureProvider<List<CalendarEntry>> publicCalendarMonthEntriesProvider =
-    FutureProvider<List<CalendarEntry>>((Ref ref) async {
-      final DateTime focused = ref.watch(calendarFocusedDayProvider);
+final publicCalendarMonthEntriesProvider =
+    FutureProvider.family<List<CalendarEntry>, DateTime>((
+      Ref ref,
+      DateTime anchor,
+    ) async {
+      final DateTime focused = anchor;
       final String locale = ref.watch(localeCodeProvider);
       final List<PublicCalendar> catalog =
           ref.watch(publicCalendarsCatalogProvider).value?.value ??

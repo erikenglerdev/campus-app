@@ -820,5 +820,18 @@
   "todayFindContact": "Find a contact",
   "todayCardFailed": "This section could not be loaded.",
   "todayRefresh": "Refresh",
-  "todayEmptyDashboard": "All cards are hidden. You can switch them back on in the settings."
+  "todayEmptyDashboard": "All cards are hidden. You can switch them back on in the settings.",
+  "todayNoMoreToday": "Nothing more is scheduled for today.",
+  "todayAllDayLabel": "All day",
+  "todaySourceTimetable": "Timetable",
+  "todaySourceMoodle": "Moodle",
+  "todaySourcePublic": "Calendar",
+  "todayMoreEntries": "{count, plural, =1{1 more entry} other{{count} more entries}}",
+  "@todayMoreEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

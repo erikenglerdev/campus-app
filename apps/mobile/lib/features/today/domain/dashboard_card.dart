@@ -13,10 +13,10 @@ import '../../../app/app_sections.dart';
 /// discreet status of the personal services.
 enum DashboardCard {
   /// The lecture happening now, or the next one.
-  nextClass('next-class', isImplemented: false),
+  nextClass('next-class'),
 
   /// The remaining appointments of the day, across all calendar sources.
-  todaysAgenda('todays-agenda', isImplemented: false),
+  todaysAgenda('todays-agenda'),
 
   /// Today's canteen offer.
   canteen('canteen'),

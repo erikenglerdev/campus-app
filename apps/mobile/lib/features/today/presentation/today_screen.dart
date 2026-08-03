@@ -12,6 +12,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../l10n/l10n.dart';
 import '../domain/dashboard_card.dart';
 import '../domain/day_phase.dart';
+import 'cards/agenda_card.dart';
 import 'cards/canteen_card.dart';
 import 'cards/quick_actions_card.dart';
 import 'cards/tasks_card.dart';
@@ -90,14 +91,22 @@ class TodayScreen extends ConsumerWidget {
 
   Widget _buildCard(DashboardCard card, DateTime now, DateTime focusDate) =>
       switch (card) {
+        DashboardCard.nextClass => AgendaCard(
+          now: now,
+          date: focusDate,
+          mode: AgendaMode.currentOrNext,
+        ),
+        DashboardCard.todaysAgenda => AgendaCard(
+          now: now,
+          date: focusDate,
+          mode: AgendaMode.restOfDay,
+        ),
         DashboardCard.canteen => CanteenCard(date: focusDate),
         DashboardCard.tasks => const TasksCard(),
         DashboardCard.quickActions => const QuickActionsCard(),
         // Unreachable: DashboardConfig.visible filters these out until their
         // feature lands. Kept exhaustive so adding a card is a compile error
         // here rather than a blank space at runtime.
-        DashboardCard.nextClass ||
-        DashboardCard.todaysAgenda ||
         DashboardCard.news ||
         DashboardCard.mailStatus ||
         DashboardCard.gradesStatus => const SizedBox.shrink(),

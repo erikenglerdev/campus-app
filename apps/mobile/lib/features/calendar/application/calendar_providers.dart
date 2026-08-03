@@ -119,12 +119,18 @@ List<DateTime> monthWeekStarts(DateTime day) {
   return starts;
 }
 
-/// The aggregated calendar for the focused month.
-final Provider<CalendarData> calendarDataProvider = Provider<CalendarData>((
+/// The aggregated calendar for the month around [anchor].
+///
+/// Keyed by an explicit anchor date, **not** by the calendar screen's focused
+/// day. The day dashboard asks about today while the calendar screen may be
+/// browsing March; sharing one focus would silently make one of the two show
+/// the wrong month. Callers say which day they mean.
+final calendarDataProvider = Provider.family<CalendarData, DateTime>((
   Ref ref,
+  DateTime anchor,
 ) {
   final Set<CalendarSource> enabled = ref.watch(calendarEnabledSourcesProvider);
-  final DateTime focused = ref.watch(calendarFocusedDayProvider);
+  final DateTime focused = anchor;
 
   // --- Source 1: timetable (Campus API), one week provider per visible week.
   final List<CalendarEntry> timetableEntries = <CalendarEntry>[];
@@ -170,7 +176,7 @@ final Provider<CalendarData> calendarDataProvider = Provider<CalendarData>((
   bool publicLoading = false;
   bool publicError = false;
   ref
-      .watch(publicCalendarMonthEntriesProvider)
+      .watch(publicCalendarMonthEntriesProvider(anchor))
       .when(
         data: (List<CalendarEntry> entries) => publicEntries.addAll(entries),
         loading: () => publicLoading = true,
@@ -193,3 +199,80 @@ final Provider<CalendarData> calendarDataProvider = Provider<CalendarData>((
     hasPublicCalendarError: publicError,
   );
 });
+
+/// The aggregated calendar for the day the calendar screen is focused on.
+///
+/// A thin convenience over [calendarDataProvider] so the screen does not have
+/// to repeat the lookup; everything else passes the date it actually cares
+/// about.
+final Provider<CalendarData> focusedCalendarDataProvider =
+    Provider<CalendarData>(
+      (Ref ref) => ref.watch(
+        calendarDataProvider(ref.watch(calendarFocusedDayProvider)),
+      ),
+    );
+
+/// Every entry of one day, chronologically, across all enabled sources.
+///
+/// This is what the day dashboard reads. All-day items come first, then timed
+/// ones in order — the order a person reads a day in.
+final dayAgendaProvider = Provider.family<DayAgenda, DateTime>((
+  Ref ref,
+  DateTime date,
+) {
+  final DateTime day = DateTime(date.year, date.month, date.day);
+  final CalendarData data = ref.watch(calendarDataProvider(day));
+  final List<CalendarEntry> entries = data.forDay(day);
+  return DayAgenda(date: day, entries: entries, data: data);
+});
+
+/// One day's entries plus the load state of the sources behind them.
+@immutable
+class DayAgenda {
+  const DayAgenda({
+    required this.date,
+    required this.entries,
+    required this.data,
+  });
+
+  final DateTime date;
+  final List<CalendarEntry> entries;
+  final CalendarData data;
+
+  /// Whether any source is still loading. Used to tell "nothing today" apart
+  /// from "not known yet" — showing an empty day while data is in flight would
+  /// state something false.
+  bool get isLoading => data.timetableLoading || data.publicCalendarsLoading;
+
+  /// True when every source that could contribute failed.
+  bool get allSourcesFailed =>
+      entries.isEmpty && data.hasTimetableError && data.hasPublicCalendarError;
+
+  /// The entry happening at [now], or the next one after it.
+  ///
+  /// Returns `null` once the day is over — a dashboard card then says so
+  /// rather than pointing at something that already finished.
+  CalendarEntry? currentOrNext(DateTime now) {
+    CalendarEntry? next;
+    for (final CalendarEntry entry in entries) {
+      if (entry.allDay) continue;
+      final DateTime end = entry.end ?? entry.start;
+      if (!now.isBefore(entry.start) && now.isBefore(end)) return entry;
+      if (entry.start.isAfter(now)) {
+        if (next == null || entry.start.isBefore(next.start)) next = entry;
+      }
+    }
+    return next;
+  }
+
+  /// Everything still ahead at [now], excluding [currentOrNext].
+  List<CalendarEntry> upcomingAfter(DateTime now) {
+    final CalendarEntry? lead = currentOrNext(now);
+    return entries
+        .where(
+          (CalendarEntry e) =>
+              e.id != lead?.id && (e.allDay || (e.end ?? e.start).isAfter(now)),
+        )
+        .toList(growable: false);
+  }
+}

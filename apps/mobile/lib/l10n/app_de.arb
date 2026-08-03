@@ -1299,5 +1299,18 @@
   "todayFindContact": "Kontakt finden",
   "todayCardFailed": "Dieser Bereich konnte nicht geladen werden.",
   "todayRefresh": "Aktualisieren",
-  "todayEmptyDashboard": "Alle Karten sind ausgeblendet. In den Einstellungen kannst du sie wieder einschalten."
+  "todayEmptyDashboard": "Alle Karten sind ausgeblendet. In den Einstellungen kannst du sie wieder einschalten.",
+  "todayNoMoreToday": "Für heute ist nichts mehr eingetragen.",
+  "todayAllDayLabel": "Ganztägig",
+  "todaySourceTimetable": "Stundenplan",
+  "todaySourceMoodle": "Moodle",
+  "todaySourcePublic": "Kalender",
+  "todayMoreEntries": "{count, plural, =1{1 weiterer Termin} other{{count} weitere Termine}}",
+  "@todayMoreEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }
