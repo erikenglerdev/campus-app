@@ -884,5 +884,38 @@
   "settingsResetDone": "Reset done.",
   "settingsCardMoveUp": "Move up",
   "settingsCardMoveDown": "Move down",
-  "settingsSelectExactlyThree": "Pick exactly three areas"
+  "settingsSelectExactlyThree": "Pick exactly three areas",
+  "onboardingWelcomeTitle": "Welcome",
+  "onboardingWelcomeBody": "Set the app up for yourself in a few steps. You can skip any step and change everything later in the settings.",
+  "onboardingSkip": "Skip",
+  "onboardingSkipAll": "Skip all",
+  "onboardingBack": "Back",
+  "onboardingNext": "Next",
+  "onboardingFinish": "Get started",
+  "onboardingStepOf": "Step {current} of {total}",
+  "@onboardingStepOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingAppearanceTitle": "Appearance",
+  "onboardingAppearanceBody": "Choose how the app should look.",
+  "onboardingCampusTitle": "Your campus",
+  "onboardingCampusBody": "So the canteen, timetable and map show the right thing straight away.",
+  "onboardingContentTitle": "Content",
+  "onboardingContentBody": "Which announcements and public calendars interest you.",
+  "onboardingNavigationTitle": "Your bar",
+  "onboardingNavigationBody": "The three middle entries of the bottom bar.",
+  "onboardingSourceUnavailable": "Not available right now. You can do this later in the settings.",
+  "onboardingNoCanteens": "No canteens are listed yet.",
+  "onboardingRestart": "Restart onboarding",
+  "onboardingRestartSubtitle": "Takes you through the setup again.",
+  "onboardingOpenChannels": "Choose news channels",
+  "onboardingOpenCalendars": "Choose public calendars",
+  "onboardingOpenTimetableGroup": "Choose timetable group"
 }

@@ -156,26 +156,42 @@ class DensityTile extends ConsumerWidget {
       DisplayDensity.compact => l10n.settingsDensityCompact,
     };
 
-    return ListTile(
-      leading: const Icon(Icons.format_line_spacing),
-      title: Text(l10n.settingsDensity),
-      subtitle: Text(label(current)),
-      trailing: DropdownButton<DisplayDensity>(
-        value: current,
-        underline: const SizedBox.shrink(),
-        onChanged: (DisplayDensity? density) {
-          if (density != null) {
+    // Radio rows rather than a trailing dropdown: a dropdown's label sits in
+    // the row's trailing slot, and at large text scales it pushes the row past
+    // the edge of a 320 px phone. This also matches how language and theme are
+    // presented two rows above.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.sm,
+            AppSpacing.lg,
+            0,
+          ),
+          child: Text(
+            l10n.settingsDensity,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+        ),
+        RadioGroup<DisplayDensity>(
+          groupValue: current,
+          onChanged: (DisplayDensity? density) {
+            if (density == null) return;
             ref.read(settingsProvider.notifier).setDisplayDensity(density);
-          }
-        },
-        items: <DropdownMenuItem<DisplayDensity>>[
-          for (final DisplayDensity density in DisplayDensity.values)
-            DropdownMenuItem<DisplayDensity>(
-              value: density,
-              child: Text(label(density)),
-            ),
-        ],
-      ),
+          },
+          child: Column(
+            children: <Widget>[
+              for (final DisplayDensity density in DisplayDensity.values)
+                RadioListTile<DisplayDensity>.adaptive(
+                  value: density,
+                  title: Text(label(density)),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

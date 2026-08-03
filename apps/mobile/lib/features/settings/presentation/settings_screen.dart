@@ -117,6 +117,19 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const Divider(),
           _SectionHeader(title: l10n.settingsSectionData),
+          ListTile(
+            leading: const Icon(Icons.restart_alt_outlined),
+            title: Text(l10n.onboardingRestart),
+            subtitle: Text(l10n.onboardingRestartSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () async {
+              await ref
+                  .read(settingsProvider.notifier)
+                  .setOnboardingCompleted(false);
+              if (!context.mounted) return;
+              context.go(AppRoutes.onboarding);
+            },
+          ),
           const _ResetTile(),
           const Divider(),
           _SectionHeader(title: l10n.settingsSectionLegal),

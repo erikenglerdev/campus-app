@@ -1363,5 +1363,38 @@
   "settingsResetDone": "Zurückgesetzt.",
   "settingsCardMoveUp": "Nach oben",
   "settingsCardMoveDown": "Nach unten",
-  "settingsSelectExactlyThree": "Genau drei Bereiche wählen"
+  "settingsSelectExactlyThree": "Genau drei Bereiche wählen",
+  "onboardingWelcomeTitle": "Willkommen",
+  "onboardingWelcomeBody": "Richte die App in ein paar Schritten für dich ein. Du kannst jeden Schritt überspringen und alles später in den Einstellungen ändern.",
+  "onboardingSkip": "Überspringen",
+  "onboardingSkipAll": "Alles überspringen",
+  "onboardingBack": "Zurück",
+  "onboardingNext": "Weiter",
+  "onboardingFinish": "Los geht’s",
+  "onboardingStepOf": "Schritt {current} von {total}",
+  "@onboardingStepOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingAppearanceTitle": "Aussehen",
+  "onboardingAppearanceBody": "Wähle, wie die App aussehen soll.",
+  "onboardingCampusTitle": "Dein Campus",
+  "onboardingCampusBody": "Damit Mensa, Stundenplan und Lageplan gleich das Richtige zeigen.",
+  "onboardingContentTitle": "Inhalte",
+  "onboardingContentBody": "Welche Meldungen und öffentlichen Kalender dich interessieren.",
+  "onboardingNavigationTitle": "Deine Leiste",
+  "onboardingNavigationBody": "Die drei mittleren Einträge der unteren Leiste.",
+  "onboardingSourceUnavailable": "Gerade nicht verfügbar. Du kannst das später in den Einstellungen nachholen.",
+  "onboardingNoCanteens": "Es sind noch keine Mensen hinterlegt.",
+  "onboardingRestart": "Onboarding erneut starten",
+  "onboardingRestartSubtitle": "Führt dich noch einmal durch die Einrichtung.",
+  "onboardingOpenChannels": "News-Kanäle wählen",
+  "onboardingOpenCalendars": "Öffentliche Kalender wählen",
+  "onboardingOpenTimetableGroup": "Stundenplangruppe wählen"
 }

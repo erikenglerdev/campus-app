@@ -23,6 +23,7 @@ import '../features/moodle/presentation/moodle_course_screen.dart';
 import '../features/moodle/presentation/moodle_screen.dart';
 import '../features/more/presentation/more_screen.dart';
 import '../features/news/presentation/news_detail_screen.dart';
+import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/news/presentation/news_list_screen.dart';
 import '../features/settings/presentation/channel_settings_screen.dart';
 import '../features/settings/presentation/dashboard_settings_screen.dart';
@@ -30,6 +31,7 @@ import '../features/settings/presentation/navigation_settings_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/todos/presentation/todos_screen.dart';
 import '../features/today/presentation/today_screen.dart';
+import '../core/prefs/settings_controller.dart';
 import 'app_routes.dart';
 import 'app_shell.dart';
 
@@ -47,10 +49,28 @@ import 'app_shell.dart';
 /// The personal services keep their `/more/...` paths even though they are
 /// branches of their own: the paths are deep-linked from contacts and tests,
 /// and there was no product reason to break them.
-GoRouter createAppRouter({String initialLocation = AppRoutes.today}) {
+GoRouter createAppRouter({
+  String initialLocation = AppRoutes.today,
+  bool Function()? needsOnboarding,
+}) {
   return GoRouter(
     initialLocation: initialLocation,
+    // The first launch goes to the setup instead of the dashboard. A redirect
+    // rather than a different initialLocation, because the flag is only known
+    // once the preference store has been read, which happens after the router
+    // is built.
+    redirect: (BuildContext context, GoRouterState state) {
+      final bool pending = needsOnboarding?.call() ?? false;
+      final bool onOnboarding = state.matchedLocation == AppRoutes.onboarding;
+      if (pending && !onOnboarding) return AppRoutes.onboarding;
+      if (!pending && onOnboarding) return AppRoutes.today;
+      return null;
+    },
     routes: <RouteBase>[
+      GoRoute(
+        path: AppRoutes.onboarding,
+        builder: (BuildContext _, GoRouterState _) => const OnboardingScreen(),
+      ),
       StatefulShellRoute.indexedStack(
         builder:
             (
@@ -286,7 +306,11 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.today}) {
 
 /// The router instance used by the running app.
 final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((Ref ref) {
-  final GoRouter router = createAppRouter();
+  final GoRouter router = createAppRouter(
+    // Read, not watched: the router is built once, and the redirect asks for
+    // the current answer every time it runs.
+    needsOnboarding: () => !ref.read(settingsProvider).onboardingCompleted,
+  );
   ref.onDispose(router.dispose);
   return router;
 });
