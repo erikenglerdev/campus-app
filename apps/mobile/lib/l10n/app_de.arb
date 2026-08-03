@@ -1534,5 +1534,21 @@
   },
   "requestsAddAttachment": "Datei hinzufügen",
   "requestsRemoveAttachment": "Anhang entfernen",
-  "requestsNoAttachments": "Keine Anhänge."
+  "requestsNoAttachments": "Keine Anhänge.",
+  "calendarViewWeek": "Woche",
+  "calendarWeekAllDay": "Ganztägig",
+  "calendarWeekSemantic": "{title}, {start} bis {end}",
+  "@calendarWeekSemantic": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  }
 }

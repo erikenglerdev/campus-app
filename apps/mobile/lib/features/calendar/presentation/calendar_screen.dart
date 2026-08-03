@@ -20,6 +20,7 @@ import '../application/public_calendar_providers.dart';
 import '../application/public_calendar_selection.dart';
 import '../domain/public_calendar.dart';
 import '../domain/calendar_entry.dart';
+import 'week_grid_view.dart';
 import 'week_strip.dart';
 
 /// The top-level "Kalender" tab: one calendar merged from the timetable and
@@ -97,9 +98,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             // so nothing can overflow a short viewport.
             _ViewToggle(mode: mode),
             Expanded(
-              child: mode == CalendarViewMode.day
-                  ? _DayAgendaView(data: data)
-                  : _ListView(data: data),
+              child: switch (mode) {
+                CalendarViewMode.day => _DayAgendaView(data: data),
+                CalendarViewMode.week => _WeekView(data: data),
+                CalendarViewMode.list => _ListView(data: data),
+              },
             ),
           ],
         ),
@@ -164,6 +167,12 @@ class _ViewToggle extends ConsumerWidget {
             icon: const Icon(Icons.calendar_month_outlined),
             tooltip: l10n.calendarViewDay,
             label: roomForLabels ? Text(l10n.calendarViewDay) : null,
+          ),
+          ButtonSegment<CalendarViewMode>(
+            value: CalendarViewMode.week,
+            icon: const Icon(Icons.grid_on_outlined),
+            tooltip: l10n.calendarViewWeek,
+            label: roomForLabels ? Text(l10n.calendarViewWeek) : null,
           ),
           ButtonSegment<CalendarViewMode>(
             value: CalendarViewMode.list,
@@ -363,6 +372,38 @@ class _DayAgendaView extends ConsumerWidget {
                     _EntryTile(entry: entry, locale: locale),
               ],
             ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The optional graphical week, with its filters above it.
+class _WeekView extends ConsumerWidget {
+  const _WeekView({required this.data});
+
+  final CalendarData data;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final DateTime focused = ref.watch(calendarFocusedDayProvider);
+    return Column(
+      children: <Widget>[
+        ..._calendarHeader(context, data),
+        Expanded(
+          child: WeekGridView(
+            weekStart: TimetableWeek.startOf(focused),
+            entries: data.entries,
+            today: TimetableWeek.dayOf(DateTime.now()),
+            selected: focused,
+            onSelectDay: (DateTime day) {
+              ref.read(calendarFocusedDayProvider.notifier).select(day);
+              // Picking a day in the week grid is how you get to that day.
+              ref
+                  .read(calendarViewModeProvider.notifier)
+                  .set(CalendarViewMode.day);
+            },
           ),
         ),
       ],

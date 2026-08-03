@@ -22,16 +22,21 @@ import 'public_calendar_providers.dart';
 /// spends most of the screen answering "which day?" and leaves almost none for
 /// what is actually on that day; the week strip answers the same question in a
 /// fraction of the space. A month is now only reachable as a date picker.
-enum CalendarViewMode { day, list }
+enum CalendarViewMode { day, week, list }
 
 class CalendarViewModeController extends Notifier<CalendarViewMode> {
   @override
   CalendarViewMode build() => CalendarViewMode.day;
 
   void set(CalendarViewMode mode) => state = mode;
-  void toggle() => state = state == CalendarViewMode.day
-      ? CalendarViewMode.list
-      : CalendarViewMode.day;
+
+  /// Cycles through the views. Kept for the keyboard/back affordances that
+  /// call it; the segmented control sets a mode directly.
+  void toggle() => state = switch (state) {
+    CalendarViewMode.day => CalendarViewMode.week,
+    CalendarViewMode.week => CalendarViewMode.list,
+    CalendarViewMode.list => CalendarViewMode.day,
+  };
 }
 
 final NotifierProvider<CalendarViewModeController, CalendarViewMode>

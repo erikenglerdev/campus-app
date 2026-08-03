@@ -1055,5 +1055,21 @@
   },
   "requestsAddAttachment": "Add file",
   "requestsRemoveAttachment": "Remove attachment",
-  "requestsNoAttachments": "No attachments."
+  "requestsNoAttachments": "No attachments.",
+  "calendarViewWeek": "Week",
+  "calendarWeekAllDay": "All day",
+  "calendarWeekSemantic": "{title}, {start} to {end}",
+  "@calendarWeekSemantic": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  }
 }

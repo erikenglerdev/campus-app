@@ -10,6 +10,7 @@ import 'package:campus_koethen/core/prefs/settings_controller.dart';
 import 'package:campus_koethen/features/calendar/application/calendar_providers.dart';
 import 'package:campus_koethen/features/calendar/domain/calendar_entry.dart';
 import 'package:campus_koethen/features/calendar/presentation/calendar_screen.dart';
+import 'package:campus_koethen/features/calendar/presentation/week_grid_view.dart';
 import 'package:campus_koethen/features/calendar/presentation/week_strip.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -127,6 +128,8 @@ void main() {
     expect(find.byType(DatePickerDialog), findsOneWidget);
   });
 
+  group('week view', _weekViewTests);
+
   group('source filters', () {
     testWidgets('every source is on for a fresh install', (
       WidgetTester tester,
@@ -221,6 +224,85 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(tester.takeException(), isNull);
+  });
+}
+
+/// The optional graphical week view.
+void _weekViewTests() {
+  testWidgets('the week view is offered as a third mode', (
+    WidgetTester tester,
+  ) async {
+    final ProviderContainer container = await pumpCalendar(tester);
+    expect(container.read(calendarViewModeProvider), CalendarViewMode.day);
+
+    container
+        .read(calendarViewModeProvider.notifier)
+        .set(CalendarViewMode.week);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(WeekGridView), findsOneWidget);
+    expect(find.byType(WeekStrip), findsNothing);
+  });
+
+  testWidgets('the grid shows all seven days', (WidgetTester tester) async {
+    final ProviderContainer container = await pumpCalendar(tester);
+    container
+        .read(calendarViewModeProvider.notifier)
+        .set(CalendarViewMode.week);
+    await tester.pumpAndSettle();
+
+    final WeekGridView grid = tester.widget<WeekGridView>(
+      find.byType(WeekGridView),
+    );
+    expect(grid.weekStart.weekday, DateTime.monday);
+  });
+
+  testWidgets('picking a day in the grid opens that day', (
+    WidgetTester tester,
+  ) async {
+    // The week answers "how is my week shaped"; the day answers "what is on".
+    final ProviderContainer container = await pumpCalendar(tester);
+    container
+        .read(calendarViewModeProvider.notifier)
+        .set(CalendarViewMode.week);
+    await tester.pumpAndSettle();
+
+    final WeekGridView grid = tester.widget<WeekGridView>(
+      find.byType(WeekGridView),
+    );
+    final DateTime target = grid.weekStart.add(const Duration(days: 3));
+    grid.onSelectDay(target);
+    await tester.pumpAndSettle();
+
+    expect(container.read(calendarViewModeProvider), CalendarViewMode.day);
+    expect(container.read(calendarFocusedDayProvider).day, target.day);
+  });
+
+  testWidgets('the week survives a narrow phone with doubled text', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final ProviderContainer container = await pumpScreen(
+      tester,
+      const CalendarScreen(),
+      textScaler: const TextScaler.linear(2),
+      overrides: <Override>[apiClientProvider.overrideWithValue(_emptyApi())],
+    );
+    await tester.pumpAndSettle();
+    container
+        .read(calendarViewModeProvider.notifier)
+        .set(CalendarViewMode.week);
+    await tester.pumpAndSettle();
+
+    // Seven columns do not fit a 320 px phone, so the grid scrolls sideways
+    // rather than overflowing.
     expect(tester.takeException(), isNull);
   });
 }
