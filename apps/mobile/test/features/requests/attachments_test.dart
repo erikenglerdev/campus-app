@@ -4,6 +4,7 @@
 import 'package:campus_koethen/core/locale/locale_mode.dart';
 import 'package:campus_koethen/features/requests/application/requests_controller.dart';
 import 'package:campus_koethen/features/requests/data/attachment_picker.dart';
+import 'package:campus_koethen/features/requests/domain/application_files.dart';
 import 'package:campus_koethen/features/requests/domain/request_models.dart';
 import 'package:campus_koethen/features/requests/domain/request_store.dart';
 import 'package:campus_koethen/features/requests/presentation/request_draft_screen.dart';
@@ -32,10 +33,22 @@ class _FakePicker implements AttachmentPicker {
       discarded.add(attachment);
 }
 
-const RequestAttachment _file = RequestAttachment(
+const RequestAttachment _pdf = RequestAttachment(
   fileName: 'kostenplan.pdf',
   path: '/documents/request_attachments/1-kostenplan.pdf',
   sizeBytes: 2048,
+);
+
+const RequestAttachment _png = RequestAttachment(
+  fileName: 'ausweis.png',
+  path: '/documents/request_attachments/2-ausweis.png',
+  sizeBytes: 4096,
+);
+
+const RequestAttachment _huge = RequestAttachment(
+  fileName: 'riesig.pdf',
+  path: '/documents/request_attachments/3-riesig.pdf',
+  sizeBytes: ApplicationFileSlot.maxBytes + 1,
 );
 
 Future<void> pumpEditor(
@@ -44,7 +57,7 @@ Future<void> pumpEditor(
   RequestStore? store,
   Locale locale = AppLocales.german,
 }) async {
-  tester.view.physicalSize = const Size(390, 2000);
+  tester.view.physicalSize = const Size(390, 3200);
   tester.view.devicePixelRatio = 1;
   addTearDown(() {
     tester.view.resetPhysicalSize();
@@ -66,48 +79,111 @@ Future<void> pumpEditor(
   await tester.pumpAndSettle();
 }
 
+/// The "choose file" button belonging to one slot.
+/// The tile of one slot. Found by key, because a slot label legitimately
+/// repeats elsewhere on the screen — "Finanzantrag" is also the form's title.
+Finder slotTile(ApplicationFileSlot slot) =>
+    find.byKey(ValueKey<String>('slot-${slot.field}'));
+
+/// The "choose file" button belonging to one slot.
+Finder chooseFor(ApplicationFileSlot slot) =>
+    find.descendant(of: slotTile(slot), matching: find.text('Datei wählen'));
+
 void main() {
-  testWidgets('an empty draft says it has no attachments', (
+  testWidgets('all four slots are offered, mandatory ones marked as such', (
     WidgetTester tester,
   ) async {
     await pumpEditor(tester, picker: _FakePicker(const <RequestAttachment>[]));
-    expect(find.text('Keine Anhänge.'), findsOneWidget);
+
+    expect(slotTile(ApplicationFileSlot.financeRequest), findsOneWidget);
+    expect(find.text('Studierendenausweis'), findsOneWidget);
+    expect(find.text('Anlage A'), findsOneWidget);
+    expect(find.text('Anlage B'), findsOneWidget);
+    // Two mandatory, two optional — stated in words, never by colour alone.
+    expect(find.text('Pflicht'), findsNWidgets(2));
+    expect(find.text('Optional'), findsNWidgets(2));
   });
 
-  testWidgets('a picked file is listed with its size', (
+  testWidgets('the student card slot states what happens to the document', (
+    WidgetTester tester,
+  ) async {
+    // It is an identity document; saying where it goes is the least the form
+    // owes the person uploading it.
+    await pumpEditor(tester, picker: _FakePicker(const <RequestAttachment>[]));
+    expect(find.textContaining('nur intern verarbeitet'), findsOneWidget);
+  });
+
+  testWidgets('a picked PDF lands in the slot it was chosen for', (
     WidgetTester tester,
   ) async {
     await pumpEditor(
       tester,
-      picker: _FakePicker(const <RequestAttachment>[_file]),
+      picker: _FakePicker(const <RequestAttachment>[_pdf]),
     );
 
-    await tester.tap(find.text('Datei hinzufügen'));
+    await tester.tap(chooseFor(ApplicationFileSlot.financeRequest));
     await tester.pumpAndSettle();
 
     expect(find.text('kostenplan.pdf'), findsOneWidget);
     expect(find.text('2 KB'), findsOneWidget);
-    expect(find.text('Keine Anhänge.'), findsNothing);
   });
 
-  testWidgets('a picked file is persisted immediately', (
-    WidgetTester tester,
-  ) async {
-    // The copy already exists on disk; losing the reference to it would leave
-    // an orphaned file behind.
+  testWidgets('it is persisted immediately', (WidgetTester tester) async {
     final InMemoryRequestStore store = InMemoryRequestStore();
     await pumpEditor(
       tester,
-      picker: _FakePicker(const <RequestAttachment>[_file]),
+      picker: _FakePicker(const <RequestAttachment>[_pdf]),
       store: store,
     );
 
-    await tester.tap(find.text('Datei hinzufügen'));
+    await tester.tap(chooseFor(ApplicationFileSlot.financeRequest));
     await tester.pumpAndSettle();
 
     final List<RequestDraft> saved = await store.readDrafts();
     expect(saved, hasLength(1));
-    expect(saved.single.attachments, contains(_file));
+    expect(saved.single.fileFor(ApplicationFileSlot.financeRequest), _pdf);
+  });
+
+  testWidgets('a file the slot does not accept is refused and discarded', (
+    WidgetTester tester,
+  ) async {
+    // The finance request is PDF only. Keeping a PNG here would guarantee a
+    // 400 later, and leave a copy on disk that nothing references.
+    final _FakePicker picker = _FakePicker(const <RequestAttachment>[_png]);
+    final InMemoryRequestStore store = InMemoryRequestStore();
+    await pumpEditor(tester, picker: picker, store: store);
+
+    await tester.tap(chooseFor(ApplicationFileSlot.financeRequest));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ausweis.png'), findsNothing);
+    expect(picker.discarded, <RequestAttachment>[_png]);
+    expect(await store.readDrafts(), isEmpty);
+  });
+
+  testWidgets('a PNG is accepted for the student card', (
+    WidgetTester tester,
+  ) async {
+    await pumpEditor(
+      tester,
+      picker: _FakePicker(const <RequestAttachment>[_png]),
+    );
+
+    await tester.tap(chooseFor(ApplicationFileSlot.studentCard));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ausweis.png'), findsOneWidget);
+  });
+
+  testWidgets('a file over 25 MB is refused', (WidgetTester tester) async {
+    final _FakePicker picker = _FakePicker(const <RequestAttachment>[_huge]);
+    await pumpEditor(tester, picker: picker);
+
+    await tester.tap(chooseFor(ApplicationFileSlot.financeRequest));
+    await tester.pumpAndSettle();
+
+    expect(find.text('riesig.pdf'), findsNothing);
+    expect(picker.discarded, <RequestAttachment>[_huge]);
   });
 
   testWidgets('cancelling the picker changes nothing', (
@@ -117,46 +193,48 @@ void main() {
     final InMemoryRequestStore store = InMemoryRequestStore();
     await pumpEditor(tester, picker: picker, store: store);
 
-    await tester.tap(find.text('Datei hinzufügen'));
+    await tester.tap(chooseFor(ApplicationFileSlot.financeRequest));
     await tester.pumpAndSettle();
 
     expect(picker.pickCalls, 1);
-    expect(find.text('Keine Anhänge.'), findsOneWidget);
     expect(await store.readDrafts(), isEmpty);
   });
 
-  testWidgets('removing an attachment also discards the copy', (
+  testWidgets('removing a file also discards the copy', (
     WidgetTester tester,
   ) async {
-    // Otherwise the app would accumulate files nobody can see or delete.
-    final _FakePicker picker = _FakePicker(const <RequestAttachment>[_file]);
+    final _FakePicker picker = _FakePicker(const <RequestAttachment>[_pdf]);
     await pumpEditor(tester, picker: picker);
 
-    await tester.tap(find.text('Datei hinzufügen'));
+    await tester.tap(chooseFor(ApplicationFileSlot.financeRequest));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Anhang entfernen'));
+    await tester.tap(find.byTooltip('Anhang entfernen').first);
     await tester.pumpAndSettle();
 
     expect(find.text('kostenplan.pdf'), findsNothing);
-    expect(picker.discarded, <RequestAttachment>[_file]);
+    expect(picker.discarded, <RequestAttachment>[_pdf]);
   });
 
-  testWidgets('attachments survive a round trip through storage', (
+  testWidgets('files survive a round trip through storage', (
     WidgetTester tester,
   ) async {
     final InMemoryRequestStore store = InMemoryRequestStore();
     await pumpEditor(
       tester,
-      picker: _FakePicker(const <RequestAttachment>[_file]),
+      picker: _FakePicker(const <RequestAttachment>[_pdf]),
       store: store,
     );
-    await tester.tap(find.text('Datei hinzufügen'));
+    await tester.tap(chooseFor(ApplicationFileSlot.financeRequest));
     await tester.pumpAndSettle();
 
     final RequestDraft stored = (await store.readDrafts()).single;
     final RequestDraft? reloaded = RequestDraft.fromJson(stored.toJson());
-    expect(reloaded?.attachments.single.fileName, 'kostenplan.pdf');
-    expect(reloaded?.attachments.single.sizeBytes, 2048);
+    expect(
+      reloaded?.fileFor(ApplicationFileSlot.financeRequest)?.fileName,
+      'kostenplan.pdf',
+    );
+    // And the key survives too, or a retry would file a second application.
+    expect(reloaded?.idempotencyKey, stored.idempotencyKey);
   });
 
   testWidgets('renders in English', (WidgetTester tester) async {
@@ -165,7 +243,8 @@ void main() {
       picker: _FakePicker(const <RequestAttachment>[]),
       locale: AppLocales.english,
     );
-    expect(find.text('Add file'), findsOneWidget);
-    expect(find.text('No attachments.'), findsOneWidget);
+    expect(slotTile(ApplicationFileSlot.financeRequest), findsOneWidget);
+    expect(find.text('Student card'), findsOneWidget);
+    expect(find.text('Choose file'), findsNWidgets(4));
   });
 }

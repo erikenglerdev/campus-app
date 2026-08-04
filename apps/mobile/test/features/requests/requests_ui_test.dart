@@ -20,7 +20,8 @@ Future<ProviderContainer> pumpRequests(
   RequestStore? store,
   Locale locale = AppLocales.german,
   TextScaler textScaler = TextScaler.noScaling,
-  Size surface = const Size(390, 1800),
+  Size surface = const Size(390, 3600),
+  List<Override> extraOverrides = const <Override>[],
 }) async {
   tester.view.physicalSize = surface;
   tester.view.devicePixelRatio = 1;
@@ -36,6 +37,7 @@ Future<ProviderContainer> pumpRequests(
     textScaler: textScaler,
     overrides: <Override>[
       requestStoreProvider.overrideWithValue(store ?? InMemoryRequestStore()),
+      ...extraOverrides,
     ],
   );
   await tester.pumpAndSettle();
@@ -43,6 +45,8 @@ Future<ProviderContainer> pumpRequests(
 }
 
 void main() {
+  group('endpoint notice', _endpointNoticeTests);
+
   group('overview', () {
     testWidgets('says up front that nothing can be submitted yet', (
       WidgetTester tester,
@@ -79,6 +83,7 @@ void main() {
           kind: RequestKind.feedback,
           createdAt: DateTime(2026, 1, 1),
           updatedAt: DateTime(2026, 1, 1),
+          idempotencyKey: 'test-key-0000000000',
           title: 'Älterer Entwurf',
           description: 'x',
         ),
@@ -87,6 +92,7 @@ void main() {
           kind: RequestKind.financeApplication,
           createdAt: DateTime(2026, 5, 1),
           updatedAt: DateTime(2026, 5, 1),
+          idempotencyKey: 'test-key-0000000000',
           title: 'Neuerer Entwurf',
           description: 'y',
         ),
@@ -184,6 +190,7 @@ void main() {
           kind: RequestKind.feedback,
           createdAt: DateTime(2026, 5, 1),
           updatedAt: DateTime(2026, 5, 1),
+          idempotencyKey: 'test-key-0000000000',
           title: 'Vollständig',
           category: 'general',
           description: 'Eine ausreichend lange Beschreibung.',
@@ -204,7 +211,8 @@ void main() {
 
       expect(
         find.text(
-          'Einreichen ist in dieser Entwicklungsfassung noch nicht möglich.',
+          'Für diese Fassung ist keine Empfangsstelle hinterlegt. '
+          'Es wurde nichts übermittelt.',
         ),
         findsOneWidget,
       );
@@ -250,6 +258,7 @@ void main() {
           kind: RequestKind.feedback,
           createdAt: DateTime(2026, 5, 1),
           updatedAt: DateTime(2026, 5, 1),
+          idempotencyKey: 'test-key-0000000000',
           title: 'Wegwerfentwurf',
           description: 'x',
         ),
@@ -292,5 +301,36 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
+  });
+}
+
+void _endpointNoticeTests() {
+  testWidgets('the "not connected" notice disappears once it is untrue', (
+    WidgetTester tester,
+  ) async {
+    // The notice is a factual claim about this build. A build that can submit
+    // must not keep making it.
+    await pumpRequests(
+      tester,
+      const RequestsScreen(),
+      extraOverrides: <Override>[
+        requestsEndpointConfiguredProvider.overrideWithValue(true),
+      ],
+    );
+
+    expect(find.text('Übermittlung noch nicht angebunden'), findsNothing);
+    expect(find.text('Finanzantrag'), findsOneWidget);
+  });
+
+  testWidgets('and is shown while it is true', (WidgetTester tester) async {
+    await pumpRequests(
+      tester,
+      const RequestsScreen(),
+      extraOverrides: <Override>[
+        requestsEndpointConfiguredProvider.overrideWithValue(false),
+      ],
+    );
+
+    expect(find.text('Übermittlung noch nicht angebunden'), findsOneWidget);
   });
 }

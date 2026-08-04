@@ -36,13 +36,17 @@ class RequestsScreen extends ConsumerWidget {
         padding: EdgeInsets.all(metrics.screenPadding),
         children: <Widget>[
           // Said once, prominently, before anything can be typed.
-          StatusBanner(
-            tone: StatusTone.warning,
-            icon: Icons.construction_outlined,
-            title: l10n.requestsDevNoticeTitle,
-            message: l10n.requestsDevNoticeBody,
-          ),
-          SizedBox(height: metrics.sectionGap),
+          // Only while there is genuinely nowhere to submit. A build that can
+          // submit must not keep claiming it cannot.
+          if (!ref.watch(requestsEndpointConfiguredProvider)) ...<Widget>[
+            StatusBanner(
+              tone: StatusTone.warning,
+              icon: Icons.construction_outlined,
+              title: l10n.requestsDevNoticeTitle,
+              message: l10n.requestsDevNoticeBody,
+            ),
+            SizedBox(height: metrics.sectionGap),
+          ],
 
           _KindTile(
             kind: RequestKind.financeApplication,

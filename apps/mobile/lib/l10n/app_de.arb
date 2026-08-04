@@ -1457,7 +1457,67 @@
   "requestsSaved": "Entwurf gespeichert.",
   "requestsDeleted": "Entwurf gelöscht.",
   "requestsSubmit": "Einreichen",
-  "requestsSubmitUnavailable": "Einreichen ist in dieser Entwicklungsfassung noch nicht möglich.",
+  "requestsSubmitUnavailable": "Für diese Fassung ist keine Empfangsstelle hinterlegt. Es wurde nichts übermittelt.",
+  "requestsFieldApplicant": "Name der antragstellenden Person",
+  "requestsFieldLocation": "Standort",
+  "@requestsFieldLocation": {
+    "description": "Auswahl des Gremiums, an das der Antrag geht."
+  },
+  "requestsLocationsLoading": "Standorte werden geladen …",
+  "requestsLocationsUnavailable": "Die Standorte konnten nicht geladen werden.",
+  "requestsLocationsEmpty": "Zurzeit steht kein Standort zur Auswahl.",
+  "requestsErrorLocationMissing": "Bitte einen Standort wählen.",
+  "requestsErrorApplicantMissing": "Bitte einen Namen angeben.",
+  "requestsFilesTitle": "Dateien",
+  "requestsFilesHint": "Finanzantrag und Studierendenausweis sind Pflicht. Höchstens 25 MB je Datei.",
+  "requestsSlotFinanceRequest": "Finanzantrag",
+  "requestsSlotStudentCard": "Studierendenausweis",
+  "requestsSlotAnnexA": "Anlage A",
+  "requestsSlotAnnexB": "Anlage B",
+  "requestsSlotRequired": "Pflicht",
+  "requestsSlotOptional": "Optional",
+  "requestsSlotFormats": "Erlaubt: {formats}",
+  "@requestsSlotFormats": {
+    "placeholders": {
+      "formats": {
+        "type": "String",
+        "example": "PDF"
+      }
+    }
+  },
+  "requestsSlotChoose": "Datei wählen",
+  "requestsSlotReplace": "Ersetzen",
+  "requestsSlotWrongType": "Dieser Dateityp passt nicht in dieses Feld.",
+  "requestsSlotTooLarge": "Die Datei ist größer als 25 MB.",
+  "requestsStudentCardPrivacy": "Der Ausweis wird nur intern verarbeitet und erscheint nicht auf der öffentlichen Statusseite.",
+  "requestsSubmitting": "Wird übermittelt …",
+  "requestsSubmitIncomplete": "Der Antrag ist noch nicht vollständig.",
+  "requestsSubmitConflict": "Dieser Entwurf wurde bereits mit anderen Daten eingereicht. Für eine neue Einreichung bitte einen neuen Entwurf anlegen.",
+  "requestsSubmitTooLarge": "Die Dateien sind zu groß. Höchstens 25 MB je Datei.",
+  "requestsSubmitRateLimited": "Zu viele Einreichungen in kurzer Zeit. Bitte später erneut versuchen.",
+  "requestsSubmitUnreachable": "Die Einreichung konnte nicht zugestellt werden. Der Entwurf bleibt erhalten — ein erneuter Versuch legt keinen zweiten Antrag an.",
+  "@requestsSubmitUnreachable": {
+    "description": "Netzwerkfehler. Der Hinweis auf den Idempotenzschlüssel ist wichtig, damit niemand aus Sorge vor Doppeleinreichung aufgibt."
+  },
+  "requestsSubmitFailed": "Die Einreichung ist fehlgeschlagen.",
+  "requestsResultTitle": "Antrag eingereicht",
+  "requestsResultReplayed": "Dieser Antrag lag bereits vor. Es wurde nichts doppelt eingereicht.",
+  "requestsResultNumber": "Antragsnummer {number}",
+  "@requestsResultNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String",
+        "example": "A_0042_2026"
+      }
+    }
+  },
+  "requestsResultNoNumber": "Für dieses Gremium wird keine Antragsnummer vergeben.",
+  "requestsResultSecretHint": "Der Statuslink ist der einzige Zugang zu diesem Antrag. Bewahre ihn sicher auf und gib ihn nicht weiter.",
+  "requestsResultOpenStatus": "Status öffnen",
+  "requestsResultOpenReceipt": "Eingangsbestätigung (PDF)",
+  "requestsResultDone": "Fertig",
+  "commonCopy": "Kopieren",
+  "commonCopied": "In die Zwischenablage kopiert.",
   "requestsFieldTitle": "Titel",
   "requestsFieldCategory": "Kategorie",
   "requestsFieldAmount": "Beantragter Betrag",
