@@ -44,8 +44,8 @@ enum AppSection {
   moodle(
     storageValue: 'moodle',
     route: AppRoutes.moodle,
-    icon: Icons.school_outlined,
-    selectedIcon: Icons.school,
+    icon: Icons.cast_for_education_outlined,
+    selectedIcon: Icons.cast_for_education,
   ),
   mail(
     storageValue: 'mail',
@@ -74,8 +74,10 @@ enum AppSection {
   grades(
     storageValue: 'grades',
     route: AppRoutes.grades,
-    icon: Icons.grade_outlined,
-    selectedIcon: Icons.grade,
+    // A graduation cap, not `grade` — that one is a star, which reads as
+    // "favourite" everywhere else in the app.
+    icon: Icons.school_outlined,
+    selectedIcon: Icons.school,
   ),
   requests(
     storageValue: 'requests',
@@ -136,6 +138,21 @@ enum AppSection {
     AppSection.grades => l10n.gradesTitle,
     AppSection.requests => l10n.requestsTitle,
     AppSection.more => l10n.navMore,
+  };
+
+  /// One line explaining the area, or `null` where the name says it all.
+  ///
+  /// Lives next to [label] so the "More" hub can describe any section it has to
+  /// show without keeping a second list of its own.
+  String? subtitle(AppLocalizations l10n) => switch (this) {
+    AppSection.mail => l10n.moreMailSubtitle,
+    AppSection.grades => l10n.moreGradesSubtitle,
+    AppSection.moodle => l10n.moreMoodleSubtitle,
+    AppSection.todos => l10n.moreTodosSubtitle,
+    AppSection.campusMap => l10n.moreCampusMapSubtitle,
+    AppSection.contacts => l10n.moreContactsSubtitle,
+    AppSection.requests => l10n.requestsSubtitle,
+    _ => null,
   };
 
   /// Whether this area is a personal service that talks to an official system

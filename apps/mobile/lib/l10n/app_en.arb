@@ -603,6 +603,7 @@
     "description": "Eintrag „Lageplan\" im Mehr-Bereich."
   },
   "moreCampusMapSubtitle": "Fictional demo floor plan with room search",
+  "moreContactsSubtitle": "Points of contact and advisory services",
   "@moreCampusMapSubtitle": {
     "description": "Untertitel des Lageplan-Eintrags im Mehr-Bereich."
   },

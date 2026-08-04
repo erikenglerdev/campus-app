@@ -1085,6 +1085,10 @@
   "@moreCampusMapSubtitle": {
     "description": "Untertitel des Lageplan-Eintrags im Mehr-Bereich."
   },
+  "moreContactsSubtitle": "Ansprechstellen und Beratungsangebote",
+  "@moreContactsSubtitle": {
+    "description": "Untertitel des Kontakte-Eintrags im Mehr-Bereich."
+  },
   "campusMapTitle": "Lageplan",
   "@campusMapTitle": {
     "description": "Titel des Lageplan-Bildschirms."
