@@ -67,6 +67,12 @@ class StatusBanner extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  // Sized by its text, never by the space around it. In a
+                  // scrolling list the height is unbounded and the default
+                  // `max` happens to hug the children anyway — but inside a
+                  // box that has a height, a centred empty state for example,
+                  // the banner stretched to fill all of it.
+                  mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Text(
                       title,
