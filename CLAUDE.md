@@ -27,9 +27,9 @@ Diese Datei ist für automatisierte und menschliche Beiträge gleichermaßen ver
    Campus API unter `/v1`. Kein direkter Zugriff auf Strapi oder `meine-mensa.de` aus der App.
 
    **Eng begrenzte, ausdrücklich beschlossene Ausnahme (nur diese):** Persönliche, besonders
-   sensible, nutzerauthentifizierte Dienste dürfen aus Datenschutzgründen **direkt** vom Gerät
-   an den jeweiligen offiziellen Anbieter angebunden werden, damit weder Campus-Backend noch
-   Strapi Zugangsdaten oder personenbezogene Inhalte erhalten. Aktuell sind das **genau drei**:
+   sensible Dienste dürfen aus Datenschutzgründen **direkt** vom Gerät an den jeweiligen
+   offiziellen Anbieter angebunden werden, damit weder Campus-Backend noch Strapi Zugangsdaten
+   oder personenbezogene Inhalte erhalten. Aktuell sind das **genau vier**:
    - der **Studenten-Mailclient** → direkt zu `mail.hs-anhalt.de` (IMAPS/SMTP);
    - der **HIS-QIS-Notenspiegel** → direkt und **nur** zu `https://service.ssc.hs-anhalt.de`;
    - die **Moodle-Integration** (Kurse, Materialien, Aufgaben, Ankündigungen, Deadlines) →
@@ -37,6 +37,16 @@ Diese Datei ist für automatisierte und menschliche Beiträge gleichermaßen ver
      Aufgaben-, Abgabe-, Ankündigungs- oder Deadline-Daten dürfen ein Campus-Köthen-Backend
      erreichen. Der quellenübergreifende Kalender führt Stundenplan (Campus API) und
      Moodle-Deadlines **ausschließlich lokal auf dem Gerät** zusammen.
+   - die **Antragstellung** (Finanzanträge an das Gremiensystem des Studierendenrats) → direkt
+     an dessen öffentliche API. Anders als die drei anderen ist dieser Dienst **nicht**
+     nutzerauthentifiziert; ausschlaggebend ist der Inhalt: Eine Einreichung trägt den Namen
+     der antragstellenden Person und eine **Kopie des Studierendenausweises**. Genau solche
+     Daten sollen kein Campus-Köthen-Backend erreichen, weshalb hier dieselbe Begründung greift
+     wie bei den übrigen drei. Die Adresse ist **nie** eine Quellcode-Konstante, sondern kommt
+     als `REQUESTS_BASE_URL` aus dem Build-Environment. Der zurückgegebene **Statuslink ist ein
+     Geheimnis** — er ist der einzige Zugang zum Vorgang, wird nur lokal gespeichert und
+     **niemals** geloggt, gemeldet oder an Dritte weitergegeben. Entwürfe, Anhänge und Ergebnis
+     bleiben auf dem Gerät.
 
    Für diese Ausnahmen gilt: **kein** Backend-Proxy, **keine** serverseitige Speicherung, **kein**
    Analytics-/Logging-Umweg. Zugangsdaten nur im Keychain/Keystore, sensible Inhalte nur
