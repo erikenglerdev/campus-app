@@ -1,0 +1,162 @@
+// Campus Köthen App · AGPL-3.0-only
+// Copyright © 2026 Erik Engler and Jona Loreen Sommer
+
+import 'package:campus_koethen/features/calendar/domain/calendar_entry.dart';
+import 'package:campus_koethen/features/calendar/domain/week_layout.dart';
+import 'package:campus_koethen/features/calendar/presentation/week_grid_view.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/pump_app.dart';
+
+final DateTime _monday = DateTime(2026, 5, 11);
+
+CalendarEntry _entry({
+  required String title,
+  required int dayOffset,
+  required int fromH,
+  int fromM = 0,
+  required int toH,
+  int toM = 0,
+}) {
+  final DateTime day = _monday.add(Duration(days: dayOffset));
+  return CalendarEntry(
+    id: title,
+    source: CalendarSource.publicCalendar,
+    title: title,
+    start: DateTime(day.year, day.month, day.day, fromH, fromM),
+    end: DateTime(day.year, day.month, day.day, toH, toM),
+  );
+}
+
+Future<void> pumpGrid(
+  WidgetTester tester,
+  List<CalendarEntry> entries, {
+  TextScaler textScaler = TextScaler.noScaling,
+}) async {
+  tester.view.physicalSize = const Size(390, 844);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
+
+  await pumpScreen(
+    tester,
+    Scaffold(
+      body: WeekGridView(
+        weekStart: _monday,
+        entries: entries,
+        today: _monday,
+        selected: _monday,
+        onSelectDay: (DateTime _) {},
+      ),
+    ),
+    textScaler: textScaler,
+  );
+  await tester.pumpAndSettle();
+}
+
+/// The height one line of this text needs at the width it was actually given.
+double _neededHeight(WidgetTester tester, String title) {
+  final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(
+    find.text(title),
+  );
+  return paragraph.getMinIntrinsicHeight(paragraph.size.width);
+}
+
+void main() {
+  testWidgets('a short entry still shows its title in full', (
+    WidgetTester tester,
+  ) async {
+    // A 15-minute slot is drawn at the 30-minute minimum — barely 28 px tall.
+    // Squeezing an icon and a line of text into a column that small cuts the
+    // glyphs in half, which is worse than showing no icon at all.
+    await pumpGrid(tester, <CalendarEntry>[
+      _entry(
+        title: 'Kurzbesprechung',
+        dayOffset: 2,
+        fromH: 17,
+        toH: 17,
+        toM: 15,
+      ),
+    ]);
+
+    final RenderBox box = tester.renderObject<RenderBox>(
+      find.text('Kurzbesprechung'),
+    );
+    expect(
+      box.size.height,
+      greaterThanOrEqualTo(_neededHeight(tester, 'Kurzbesprechung')),
+      reason: 'the title is squeezed below the height one line needs',
+    );
+  });
+
+  testWidgets('a short entry keeps its source icon', (
+    WidgetTester tester,
+  ) async {
+    // Accessibility: the source must never be carried by colour alone, so
+    // making room for the title may not simply drop the icon.
+    await pumpGrid(tester, <CalendarEntry>[
+      _entry(
+        title: 'Kurzbesprechung',
+        dayOffset: 2,
+        fromH: 17,
+        toH: 17,
+        toM: 15,
+      ),
+    ]);
+
+    expect(
+      find.descendant(of: find.byType(Card), matching: find.byType(Icon)),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a long entry shows its title in full too', (
+    WidgetTester tester,
+  ) async {
+    await pumpGrid(tester, <CalendarEntry>[
+      _entry(title: 'Vorlesung', dayOffset: 1, fromH: 10, toH: 12),
+    ]);
+
+    final RenderBox box = tester.renderObject<RenderBox>(
+      find.text('Vorlesung'),
+    );
+    expect(
+      box.size.height,
+      greaterThanOrEqualTo(_neededHeight(tester, 'Vorlesung')),
+    );
+  });
+
+  testWidgets('doubled text does not clip a short entry either', (
+    WidgetTester tester,
+  ) async {
+    await pumpGrid(tester, <CalendarEntry>[
+      _entry(title: 'Kurz', dayOffset: 0, fromH: 9, toH: 9, toM: 20),
+    ], textScaler: const TextScaler.linear(2));
+
+    final RenderBox box = tester.renderObject<RenderBox>(find.text('Kurz'));
+    expect(
+      box.size.height,
+      greaterThanOrEqualTo(_neededHeight(tester, 'Kurz')),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the minimum box is tall enough for one line of text', (
+    WidgetTester tester,
+  ) async {
+    // Guards the arithmetic the fix depends on: whatever layout the box uses,
+    // the shortest entry must have room for a readable line.
+    await pumpGrid(tester, <CalendarEntry>[
+      _entry(title: 'Kurz', dayOffset: 0, fromH: 9, toH: 9, toM: 5),
+    ]);
+
+    const double minimumBoxHeight =
+        WeekLayout.minimumVisibleMinutes * WeekGridView.hourHeight / 60;
+    final RenderBox text = tester.renderObject<RenderBox>(find.text('Kurz'));
+    expect(text.size.height, lessThanOrEqualTo(minimumBoxHeight));
+  });
+}

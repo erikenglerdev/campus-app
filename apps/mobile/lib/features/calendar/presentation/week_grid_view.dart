@@ -40,11 +40,26 @@ class WeekGridView extends StatefulWidget {
   /// Minimum width of one day column.
   static const double columnWidth = 96;
 
-  /// Height of one hour row.
+  /// Height of one hour row at the default text size.
   static const double hourHeight = 56;
+
+  /// Height of the day-header row at the default text size.
+  static const double headerHeight = 32;
 
   /// Width of the fixed hour gutter.
   static const double gutterWidth = 44;
+
+  /// The row heights actually used, grown with the reader's text size.
+  ///
+  /// A row is the only thing standing between an entry and its label: at twice
+  /// the text size a fixed 56 px hour leaves a half-hour box shorter than a
+  /// single line, and the title would be cut mid-glyph. Growing the grid keeps
+  /// the layout honest instead — the week simply becomes taller and scrolls.
+  static double hourHeightOf(BuildContext context) =>
+      MediaQuery.textScalerOf(context).scale(hourHeight);
+
+  static double headerHeightOf(BuildContext context) =>
+      MediaQuery.textScalerOf(context).scale(headerHeight);
 
   @override
   State<WeekGridView> createState() => _WeekGridViewState();
@@ -76,6 +91,8 @@ class _WeekGridViewState extends State<WeekGridView> {
         TimetableWeek.shift(widget.weekStart, i),
     ];
     final GridRange range = WeekLayout.rangeFor(widget.entries);
+    final double hourHeight = WeekGridView.hourHeightOf(context);
+    final double headerHeight = WeekGridView.headerHeightOf(context);
 
     List<CalendarEntry> entriesOn(DateTime day) => widget.entries
         .where((CalendarEntry e) => _sameDay(e.start, day))
@@ -127,7 +144,7 @@ class _WeekGridViewState extends State<WeekGridView> {
                 width: WeekGridView.gutterWidth,
                 child: Column(
                   children: <Widget>[
-                    const SizedBox(height: 32),
+                    SizedBox(height: headerHeight),
                     Expanded(
                       child: SingleChildScrollView(
                         controller: _vertical,
@@ -140,7 +157,7 @@ class _WeekGridViewState extends State<WeekGridView> {
                               h++
                             )
                               SizedBox(
-                                height: WeekGridView.hourHeight,
+                                height: hourHeight,
                                 child: Align(
                                   alignment: Alignment.topRight,
                                   child: Padding(
@@ -173,7 +190,7 @@ class _WeekGridViewState extends State<WeekGridView> {
                     child: Column(
                       children: <Widget>[
                         SizedBox(
-                          height: 32,
+                          height: headerHeight,
                           child: Row(
                             children: <Widget>[
                               for (final DateTime day in days)
@@ -191,7 +208,7 @@ class _WeekGridViewState extends State<WeekGridView> {
                           child: SingleChildScrollView(
                             controller: _vertical,
                             child: SizedBox(
-                              height: WeekGridView.hourHeight * range.hourCount,
+                              height: hourHeight * range.hourCount,
                               child: Row(
                                 children: <Widget>[
                                   for (final DateTime day in days)
@@ -201,6 +218,7 @@ class _WeekGridViewState extends State<WeekGridView> {
                                       ),
                                       range: range,
                                       locale: locale,
+                                      hourHeight: hourHeight,
                                       isToday: _sameDay(day, widget.today),
                                     ),
                                 ],
@@ -281,12 +299,14 @@ class _DayColumn extends StatelessWidget {
     required this.placed,
     required this.range,
     required this.locale,
+    required this.hourHeight,
     required this.isToday,
   });
 
   final List<PlacedEntry> placed;
   final GridRange range;
   final String locale;
+  final double hourHeight;
   final bool isToday;
 
   static IconData _iconFor(CalendarSource source) => switch (source) {
@@ -299,8 +319,21 @@ class _DayColumn extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
     final ColorScheme colors = Theme.of(context).colorScheme;
-    const double pxPerMinute = WeekGridView.hourHeight / 60;
+    final double pxPerMinute = hourHeight / 60;
     final int gridStart = range.startHour * 60;
+    final TextStyle? titleStyle = Theme.of(context).textTheme.labelSmall;
+
+    // Measured once per column rather than per entry: how tall one line of the
+    // title actually is at the reader's text size decides how many lines fit
+    // into a box, and guessing from `fontSize` alone is wrong as soon as a
+    // font, a locale or a text scaler disagrees.
+    final TextPainter probe = TextPainter(
+      text: TextSpan(text: 'Hg', style: titleStyle),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final double lineHeight = probe.height;
+    probe.dispose();
 
     return SizedBox(
       width: WeekGridView.columnWidth,
@@ -349,23 +382,42 @@ class _DayColumn extends StatelessWidget {
                     color: colors.surfaceContainerHighest,
                     child: Padding(
                       padding: const EdgeInsets.all(AppSpacing.xxs),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          // Icon and text, never colour alone.
-                          Icon(
-                            _iconFor(item.entry.source),
-                            size: 12,
-                            color: colors.onSurfaceVariant,
-                          ),
-                          Flexible(
-                            child: Text(
-                              item.entry.title,
-                              style: Theme.of(context).textTheme.labelSmall,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
+                      child: LayoutBuilder(
+                        builder:
+                            (BuildContext context, BoxConstraints constraints) {
+                              // A box is only as tall as its entry is long, and
+                              // the shortest is barely one line. Work out how
+                              // many whole lines fit and ellipsise the rest —
+                              // stacking the icon above the title would leave
+                              // the text a few pixels and cut the glyphs in
+                              // half, which reads as a rendering fault rather
+                              // than as a short appointment.
+                              final int lines = lineHeight <= 0
+                                  ? 1
+                                  : (constraints.maxHeight / lineHeight)
+                                        .floor()
+                                        .clamp(1, 4);
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  // Icon and text, never colour alone.
+                                  Icon(
+                                    _iconFor(item.entry.source),
+                                    size: 12,
+                                    color: colors.onSurfaceVariant,
+                                  ),
+                                  const SizedBox(width: AppSpacing.xxs),
+                                  Expanded(
+                                    child: Text(
+                                      item.entry.title,
+                                      style: titleStyle,
+                                      maxLines: lines,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                       ),
                     ),
                   ),
