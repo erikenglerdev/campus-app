@@ -4,53 +4,92 @@
 import 'request_models.dart';
 
 /// What came back from an attempt to submit.
+///
+/// One case per outcome the endpoint documents, because they call for different
+/// things from the user: a rejected field can be corrected, a conflict cannot,
+/// a rate limit only needs patience, and a network failure should be retried
+/// with the *same* key.
 sealed class SubmissionResult {
   const SubmissionResult();
 }
 
 /// The submission was accepted and became a case.
-///
-/// Nothing produces this yet. It exists so the call site is already written
-/// against the shape the real endpoint will return, rather than being changed
-/// once it does.
 class SubmissionAccepted extends SubmissionResult {
   const SubmissionAccepted(this.request);
 
   final SubmittedRequest request;
 }
 
-/// There is no endpoint to submit to.
+/// No endpoint is configured in this build.
 ///
-/// The honest answer in this version — **not** an error, and emphatically not
-/// a fake success. The UI states it plainly instead of pretending something
-/// was sent.
+/// The honest answer when `REQUESTS_BASE_URL` is empty — **not** an error, and
+/// emphatically not a fake success.
 class SubmissionNotConnected extends SubmissionResult {
   const SubmissionNotConnected();
 }
 
-/// The endpoint exists but refused or failed.
+/// The draft is incomplete or the endpoint refused a field (400 / 422).
+class SubmissionRejected extends SubmissionResult {
+  const SubmissionRejected({
+    required this.message,
+    this.issues = const <String>[],
+  });
+
+  /// The endpoint's own wording. It is written for the applicant and is more
+  /// specific than anything the app could say from the status code alone.
+  final String message;
+
+  /// Field-level hints, already flattened to text.
+  final List<String> issues;
+}
+
+/// The same key was used for a different application (409).
+///
+/// Not retryable: sending again cannot help, and sending with a fresh key
+/// would file a second application. Needs a decision from the user.
+class SubmissionConflict extends SubmissionResult {
+  const SubmissionConflict();
+}
+
+/// A file, or the whole request, exceeded the size limit (413).
+class SubmissionTooLarge extends SubmissionResult {
+  const SubmissionTooLarge();
+}
+
+/// Rate limited (429).
+class SubmissionRateLimited extends SubmissionResult {
+  const SubmissionRateLimited({this.retryAfter});
+
+  final Duration? retryAfter;
+}
+
+/// Reached nobody: no network, DNS failure, timeout.
+///
+/// Distinct from [SubmissionFailed] because it is the case the idempotency key
+/// exists for — the application may or may not have been filed, and retrying
+/// with the same key is exactly the right move.
+class SubmissionUnreachable extends SubmissionResult {
+  const SubmissionUnreachable();
+}
+
+/// The endpoint answered, but with something unusable.
 class SubmissionFailed extends SubmissionResult {
   const SubmissionFailed(this.reason);
 
   /// A short technical reason for logging. Never rendered raw to the user and
-  /// never carrying the submission's contents.
+  /// never carrying the submission's contents or the status link.
   final String reason;
 }
 
-/// Port: whatever eventually accepts an application or a piece of feedback.
-///
-/// The boundary exists now, with exactly one implementation that declines to
-/// pretend. When a real endpoint is specified, it becomes a second
-/// implementation and nothing above this line changes.
+/// Port: whatever accepts an application.
 abstract interface class RequestGateway {
   Future<SubmissionResult> submit(RequestDraft draft);
 }
 
-/// The only implementation there can honestly be today.
+/// Used when no endpoint is configured for this build.
 ///
-/// No endpoint has been agreed, so this reports exactly that. Inventing a URL
-/// or simulating a success would produce an app that tells students their
-/// application was filed when nobody received it.
+/// Inventing a URL or simulating a success would produce an app that tells
+/// students their application was filed when nobody received it.
 class NotConnectedRequestGateway implements RequestGateway {
   const NotConnectedRequestGateway();
 

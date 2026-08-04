@@ -1,6 +1,7 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
+import 'application_files.dart';
 import 'request_models.dart';
 
 /// Which field failed, and why.
@@ -19,6 +20,9 @@ enum RequestFieldError {
   descriptionMissing,
   descriptionTooLong,
   contactEmailInvalid,
+  locationMissing,
+  applicantMissing,
+  requiredFileMissing,
 }
 
 /// Which field an error belongs to.
@@ -29,6 +33,9 @@ enum RequestField {
   purpose,
   description,
   contactEmail,
+  location,
+  applicant,
+  files,
 }
 
 /// The result of validating a draft.
@@ -84,6 +91,21 @@ class RequestValidation {
 
       if (draft.purpose.trim().isEmpty) {
         errors[RequestField.purpose] = RequestFieldError.purposeMissing;
+      }
+
+      // What the endpoint itself requires. Checked here so the form can point
+      // at the field, rather than surfacing a server message with no anchor.
+      if (draft.locationId == null) {
+        errors[RequestField.location] = RequestFieldError.locationMissing;
+      }
+      if (draft.applicant.trim().isEmpty) {
+        errors[RequestField.applicant] = RequestFieldError.applicantMissing;
+      }
+      final bool missingFile = ApplicationFileSlot.required.any(
+        (ApplicationFileSlot slot) => draft.fileFor(slot) == null,
+      );
+      if (missingFile) {
+        errors[RequestField.files] = RequestFieldError.requiredFileMissing;
       }
     }
 

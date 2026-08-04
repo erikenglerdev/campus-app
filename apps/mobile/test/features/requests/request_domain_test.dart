@@ -2,6 +2,7 @@
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
 import 'package:campus_koethen/features/requests/domain/request_gateway.dart';
+import 'package:campus_koethen/features/requests/domain/application_files.dart';
 import 'package:campus_koethen/features/requests/domain/request_models.dart';
 import 'package:campus_koethen/features/requests/domain/request_validation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,11 +15,28 @@ RequestDraft _draft({
   String purpose = '',
   String description = 'Eine Beschreibung.',
   String? contactEmail,
+  String applicant = 'A. Person',
+  int? locationId = 1,
+  Map<ApplicationFileSlot, RequestAttachment> files =
+      const <ApplicationFileSlot, RequestAttachment>{
+        ApplicationFileSlot.financeRequest: RequestAttachment(
+          fileName: 'antrag.pdf',
+          path: '/tmp/antrag.pdf',
+        ),
+        ApplicationFileSlot.studentCard: RequestAttachment(
+          fileName: 'ausweis.pdf',
+          path: '/tmp/ausweis.pdf',
+        ),
+      },
 }) => RequestDraft(
   id: 'draft-1',
   kind: kind,
   createdAt: DateTime(2026, 5, 12),
   updatedAt: DateTime(2026, 5, 12),
+  idempotencyKey: 'test-key-0000000000',
+  applicant: applicant,
+  locationId: locationId,
+  files: files,
   title: title,
   category: category,
   amount: amount,
@@ -186,6 +204,7 @@ void main() {
         kind: RequestKind.feedback,
         createdAt: DateTime(2026),
         updatedAt: DateTime(2026),
+        idempotencyKey: 'test-key-0000000000',
       );
       expect(blank.isEmpty, isTrue);
       expect(_draft().isEmpty, isFalse);

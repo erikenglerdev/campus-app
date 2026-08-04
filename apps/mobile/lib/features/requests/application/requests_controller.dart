@@ -1,9 +1,15 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/gremio_request_gateway.dart';
 import '../data/hive_request_store.dart';
+import '../data/locations_repository.dart';
+import '../data/requests_api_config.dart';
+import '../domain/application_location.dart';
+import '../domain/idempotency_key.dart';
 import '../domain/request_gateway.dart';
 import '../domain/request_models.dart';
 import '../domain/request_store.dart';
@@ -13,12 +19,57 @@ final Provider<RequestStore> requestStoreProvider = Provider<RequestStore>(
   (Ref ref) => HiveRequestStore(),
 );
 
+/// A `dio` of its own, deliberately not the Campus API client.
+///
+/// Different host, different timeouts, and — the reason that matters — no
+/// shared interceptors: nothing that logs or reports may ever see this traffic
+/// (CLAUDE.md §2).
+final Provider<Dio> requestsDioProvider = Provider<Dio>(
+  (Ref ref) => Dio(
+    BaseOptions(
+      connectTimeout: RequestsApiConfig.connectTimeout,
+      receiveTimeout: RequestsApiConfig.receiveTimeout,
+      validateStatus: (int? status) => status != null && status < 500,
+    ),
+  ),
+);
+
 /// The submission boundary.
 ///
-/// One implementation today, which declines to pretend. When an endpoint is
-/// agreed, this override is the only line that changes.
+/// Falls back to the honest "not connected" implementation when the build was
+/// not given an address, rather than guessing one.
 final Provider<RequestGateway> requestGatewayProvider =
-    Provider<RequestGateway>((Ref ref) => const NotConnectedRequestGateway());
+    Provider<RequestGateway>(
+      (Ref ref) => RequestsApiConfig.isConfigured
+          ? GremioRequestGateway(
+              dio: ref.watch(requestsDioProvider),
+              baseUrl: RequestsApiConfig.baseUrl,
+            )
+          : const NotConnectedRequestGateway(),
+    );
+
+/// Whether this build knows where to submit.
+///
+/// A provider rather than a direct read of the compile-time constant, so the
+/// screens can be tested in both states — and so the notice that says "nothing
+/// can be submitted yet" cannot outlive the day it stopped being true.
+final Provider<bool> requestsEndpointConfiguredProvider = Provider<bool>(
+  (Ref ref) => RequestsApiConfig.isConfigured,
+);
+
+final Provider<LocationsRepository> locationsRepositoryProvider =
+    Provider<LocationsRepository>(
+      (Ref ref) => LocationsRepository(
+        dio: ref.watch(requestsDioProvider),
+        baseUrl: RequestsApiConfig.baseUrl,
+      ),
+    );
+
+/// The selectable locations, fetched on demand.
+final FutureProvider<List<ApplicationLocation>> applicationLocationsProvider =
+    FutureProvider<List<ApplicationLocation>>(
+      (Ref ref) => ref.watch(locationsRepositoryProvider).fetch(),
+    );
 
 /// Locally stored drafts, newest first.
 class RequestsController extends AsyncNotifier<List<RequestDraft>> {
@@ -50,6 +101,9 @@ class RequestsController extends AsyncNotifier<List<RequestDraft>> {
         kind: kind,
         createdAt: now,
         updatedAt: now,
+        // Once, here — so a retry after a timeout carries the same key and the
+        // receiving system replays instead of filing a second application.
+        idempotencyKey: IdempotencyKey.generate(),
       );
 
   /// Inserts or replaces a draft.

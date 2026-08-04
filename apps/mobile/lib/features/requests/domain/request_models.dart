@@ -3,6 +3,9 @@
 
 import 'package:flutter/foundation.dart';
 
+import 'application_files.dart';
+import 'idempotency_key.dart';
+
 /// The two kinds of submission this area handles.
 enum RequestKind {
   /// A request for money from the student body's budget.
@@ -79,8 +82,8 @@ class Money {
 
 /// A file the user picked to send along.
 ///
-/// Only a reference: the bytes stay where they are until there is something to
-/// send them to. Nothing is uploaded anywhere in this version.
+/// Only a reference — the bytes live in the app's documents directory, where
+/// the picker copied them, and are read once at the moment of submission.
 @immutable
 class RequestAttachment {
   const RequestAttachment({
@@ -123,8 +126,8 @@ class RequestAttachment {
 
 /// A locally stored, editable draft.
 ///
-/// Drafts never leave the device in this version. They are user-authored data
-/// rather than a cache, so nothing here is ever discarded to make room.
+/// Drafts are user-authored data rather than a cache, so nothing here is ever
+/// discarded to make room. They stay on the device until the user submits one.
 @immutable
 class RequestDraft {
   const RequestDraft({
@@ -132,20 +135,31 @@ class RequestDraft {
     required this.kind,
     required this.createdAt,
     required this.updatedAt,
+    required this.idempotencyKey,
     this.title = '',
     this.category,
     this.amount,
     this.purpose = '',
     this.description = '',
+    this.applicant = '',
+    this.locationId,
     this.contactName,
     this.contactEmail,
-    this.attachments = const <RequestAttachment>[],
+    this.files = const <ApplicationFileSlot, RequestAttachment>{},
   });
 
   final String id;
   final RequestKind kind;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  /// Generated once, when the draft is created, and kept for its whole life.
+  ///
+  /// This is what makes a retry safe: resending the same draft after a timeout
+  /// carries the same key, so the receiving system replays its original answer
+  /// instead of filing a second application. Generating it at send time would
+  /// break exactly the case it exists for.
+  final String idempotencyKey;
 
   final String title;
   final String? category;
@@ -158,19 +172,31 @@ class RequestDraft {
 
   final String description;
 
+  /// Name of the person applying. Sent as `applicant`.
+  final String applicant;
+
+  /// Which board the application is addressed to. Comes from the endpoint's
+  /// own list; never invented here.
+  final int? locationId;
+
   /// Optional — a submission may be anonymous.
   final String? contactName;
   final String? contactEmail;
 
-  final List<RequestAttachment> attachments;
+  /// The picked file per multipart slot.
+  final Map<ApplicationFileSlot, RequestAttachment> files;
+
+  RequestAttachment? fileFor(ApplicationFileSlot slot) => files[slot];
 
   /// Whether this draft has anything in it worth keeping.
   bool get isEmpty =>
       title.trim().isEmpty &&
       description.trim().isEmpty &&
       purpose.trim().isEmpty &&
+      applicant.trim().isEmpty &&
       amount == null &&
-      attachments.isEmpty;
+      locationId == null &&
+      files.isEmpty;
 
   RequestDraft copyWith({
     String? title,
@@ -180,41 +206,65 @@ class RequestDraft {
     bool clearAmount = false,
     String? purpose,
     String? description,
+    String? applicant,
+    int? locationId,
+    bool clearLocation = false,
     String? contactName,
     String? contactEmail,
-    List<RequestAttachment>? attachments,
+    Map<ApplicationFileSlot, RequestAttachment>? files,
     DateTime? updatedAt,
   }) => RequestDraft(
     id: id,
     kind: kind,
     createdAt: createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    // Never replaced: a new key would turn a retry into a second application.
+    idempotencyKey: idempotencyKey,
     title: title ?? this.title,
     category: clearCategory ? null : (category ?? this.category),
     amount: clearAmount ? null : (amount ?? this.amount),
     purpose: purpose ?? this.purpose,
     description: description ?? this.description,
+    applicant: applicant ?? this.applicant,
+    locationId: clearLocation ? null : (locationId ?? this.locationId),
     contactName: contactName ?? this.contactName,
     contactEmail: contactEmail ?? this.contactEmail,
-    attachments: attachments ?? this.attachments,
+    files: files ?? this.files,
   );
+
+  /// Replaces or clears one slot.
+  RequestDraft withFile(ApplicationFileSlot slot, RequestAttachment? file) {
+    final Map<ApplicationFileSlot, RequestAttachment> next =
+        Map<ApplicationFileSlot, RequestAttachment>.of(files);
+    if (file == null) {
+      next.remove(slot);
+    } else {
+      next[slot] = file;
+    }
+    return copyWith(files: next);
+  }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'id': id,
     'kind': kind.storageValue,
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
+    'idempotencyKey': idempotencyKey,
     'title': title,
     if (category != null) 'category': category,
     if (amount != null) 'amount': amount!.amount,
     if (amount != null) 'currency': amount!.currency,
     'purpose': purpose,
     'description': description,
+    'applicant': applicant,
+    if (locationId != null) 'locationId': locationId,
     if (contactName != null) 'contactName': contactName,
     if (contactEmail != null) 'contactEmail': contactEmail,
-    'attachments': attachments
-        .map((RequestAttachment a) => a.toJson())
-        .toList(),
+    'files': <String, dynamic>{
+      for (final MapEntry<ApplicationFileSlot, RequestAttachment> entry
+          in files.entries)
+        entry.key.field: entry.value.toJson(),
+    },
   };
 
   static RequestDraft? fromJson(Object? json) {
@@ -227,11 +277,33 @@ class RequestDraft {
     DateTime parseDate(Object? value) =>
         DateTime.tryParse(value is String ? value : '') ?? DateTime(2026);
     final Object? rawAmount = json['amount'];
+    final Object? storedKey = json['idempotencyKey'];
+    final Map<ApplicationFileSlot, RequestAttachment> files =
+        <ApplicationFileSlot, RequestAttachment>{};
+    if (json['files'] is Map) {
+      (json['files'] as Map<Object?, Object?>).forEach((Object? k, Object? v) {
+        final ApplicationFileSlot? slot = ApplicationFileSlot.fromStorage(
+          k is String ? k : null,
+        );
+        final RequestAttachment? file = RequestAttachment.fromJson(v);
+        if (slot != null && file != null) files[slot] = file;
+      });
+    }
     return RequestDraft(
       id: id,
       kind: kind,
       createdAt: parseDate(json['createdAt']),
       updatedAt: parseDate(json['updatedAt']),
+      // A draft stored before keys existed, or with a hand-edited one, gets a
+      // fresh valid key rather than failing to load. It has demonstrably never
+      // been submitted, so there is nothing for it to replay.
+      idempotencyKey:
+          IdempotencyKey.isValid(storedKey is String ? storedKey : null)
+          ? storedKey! as String
+          : IdempotencyKey.generate(),
+      applicant: json['applicant'] is String ? json['applicant'] as String : '',
+      locationId: json['locationId'] is int ? json['locationId'] as int : null,
+      files: files,
       title: json['title'] is String ? json['title'] as String : '',
       category: json['category'] is String ? json['category'] as String : null,
       amount: rawAmount is String
@@ -252,13 +324,6 @@ class RequestDraft {
       contactEmail: json['contactEmail'] is String
           ? json['contactEmail'] as String
           : null,
-      attachments:
-          (json['attachments'] is List
-                  ? (json['attachments'] as List<Object?>)
-                  : const <Object?>[])
-              .map(RequestAttachment.fromJson)
-              .whereType<RequestAttachment>()
-              .toList(),
     );
   }
 }
@@ -286,11 +351,12 @@ enum RequestStatus {
   }
 }
 
-/// A case that has been submitted.
+/// A case that has been submitted, as the receiving system described it.
 ///
-/// Nothing produces one of these yet — there is no endpoint. The type exists
-/// so the local store, the list and the link handling are already shaped for
-/// the real thing instead of being retrofitted later.
+/// **[trackingUrl] is a secret.** It is the only way anyone reaches this
+/// application, it authenticates nobody, and possessing it is possessing the
+/// case. It is stored locally, shown to the user, and never logged, never
+/// reported, never attached to diagnostics.
 @immutable
 class SubmittedRequest {
   const SubmittedRequest({
@@ -299,7 +365,10 @@ class SubmittedRequest {
     required this.title,
     required this.submittedAt,
     required this.status,
+    this.number,
     this.trackingUrl,
+    this.receiptPdfUrl,
+    this.wasReplay = false,
   });
 
   final String id;
@@ -308,17 +377,77 @@ class SubmittedRequest {
   final DateTime submittedAt;
   final RequestStatus status;
 
-  /// A link the backend may return.
+  /// Assigned by the receiving board, or `null` where numbering is off.
+  final String? number;
+
+  /// The secret status link.
   ///
   /// Opened through the app's safe launcher, which only accepts `https` — a
   /// link that arrives from a server is untrusted input, and handing an
   /// arbitrary scheme to the operating system is how those become an attack.
   final String? trackingUrl;
 
-  bool get hasSafeTrackingUrl {
-    final String? url = trackingUrl;
+  /// Receipt as PDF. Carries the same token, so it is equally secret.
+  final String? receiptPdfUrl;
+
+  /// True when the endpoint replayed an earlier submission because the same
+  /// key was sent again. Nothing was filed twice — worth saying so plainly.
+  final bool wasReplay;
+
+  static bool _isSafe(String? url) {
     if (url == null) return false;
     final Uri? parsed = Uri.tryParse(url);
     return parsed != null && parsed.scheme == 'https' && parsed.host.isNotEmpty;
   }
+
+  bool get hasSafeTrackingUrl => _isSafe(trackingUrl);
+
+  bool get hasSafeReceiptUrl => _isSafe(receiptPdfUrl);
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'kind': kind.storageValue,
+    'title': title,
+    'submittedAt': submittedAt.toIso8601String(),
+    'status': status.storageValue,
+    if (number != null) 'number': number,
+    if (trackingUrl != null) 'trackingUrl': trackingUrl,
+    if (receiptPdfUrl != null) 'receiptPdfUrl': receiptPdfUrl,
+  };
+
+  static SubmittedRequest? fromJson(Object? json) {
+    if (json is! Map<String, dynamic>) return null;
+    final Object? id = json['id'];
+    final RequestKind? kind = RequestKind.fromStorage(
+      json['kind'] is String ? json['kind'] as String : null,
+    );
+    if (id is! String || kind == null) return null;
+    return SubmittedRequest(
+      id: id,
+      kind: kind,
+      title: json['title'] is String ? json['title'] as String : '',
+      submittedAt:
+          DateTime.tryParse(
+            json['submittedAt'] is String ? json['submittedAt'] as String : '',
+          ) ??
+          DateTime(2026),
+      status:
+          RequestStatus.fromStorage(
+            json['status'] is String ? json['status'] as String : null,
+          ) ??
+          RequestStatus.submitted,
+      number: json['number'] is String ? json['number'] as String : null,
+      trackingUrl: json['trackingUrl'] is String
+          ? json['trackingUrl'] as String
+          : null,
+      receiptPdfUrl: json['receiptPdfUrl'] is String
+          ? json['receiptPdfUrl'] as String
+          : null,
+    );
+  }
+
+  /// Deliberately does **not** include the links: this is what ends up in log
+  /// lines and error reports.
+  @override
+  String toString() => 'SubmittedRequest($id, number: $number)';
 }
