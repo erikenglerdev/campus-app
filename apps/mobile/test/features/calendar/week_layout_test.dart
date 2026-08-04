@@ -24,7 +24,88 @@ CalendarEntry _e(
 Map<String, PlacedEntry> _byId(List<PlacedEntry> placed) =>
     <String, PlacedEntry>{for (final PlacedEntry p in placed) p.entry.id: p};
 
+CalendarEntry _utc(
+  String id, {
+  required int fromH,
+  int fromM = 0,
+  required int durationMinutes,
+}) {
+  final DateTime start = DateTime.utc(2026, 5, 12, fromH, fromM);
+  return CalendarEntry(
+    id: id,
+    source: CalendarSource.timetable,
+    title: id,
+    start: start,
+    end: start.add(Duration(minutes: durationMinutes)),
+  );
+}
+
 void main() {
+  group('time zones', () {
+    // The API sends absolute instants: `2026-08-04T07:15:00.000Z` is a lecture
+    // that starts at 09:15 in Köthen. Every other view runs the value through
+    // `toLocal()` before showing it, so the grid has to agree — otherwise the
+    // week says 07:15 while the day agenda, the dashboard and the wall clock
+    // all say 09:15.
+    //
+    // Written against `toLocal()` rather than a fixed offset so the expectation
+    // holds wherever the suite runs. On a machine in UTC the two coincide and
+    // the assertion is trivially true; on any other machine it is the real
+    // check, and the device this was found on runs Europe/Berlin.
+    test('an entry is placed at its local wall clock, not at UTC', () {
+      final CalendarEntry entry = _utc(
+        'lecture',
+        fromH: 7,
+        fromM: 15,
+        durationMinutes: 90,
+      );
+      final DateTime local = entry.start.toLocal();
+
+      final PlacedEntry placed = WeekLayout.placeDay(<CalendarEntry>[
+        entry,
+      ]).single;
+
+      expect(placed.startMinute, local.hour * 60 + local.minute);
+      expect(placed.endMinute, placed.startMinute + 90);
+    });
+
+    test('the same instant places identically however it is expressed', () {
+      final DateTime instant = DateTime.utc(2026, 5, 12, 7, 15);
+      final CalendarEntry asUtc = _utc(
+        'a',
+        fromH: 7,
+        fromM: 15,
+        durationMinutes: 60,
+      );
+      final CalendarEntry asLocal = CalendarEntry(
+        id: 'a',
+        source: CalendarSource.timetable,
+        title: 'a',
+        start: instant.toLocal(),
+        end: instant.toLocal().add(const Duration(minutes: 60)),
+      );
+
+      expect(
+        WeekLayout.placeDay(<CalendarEntry>[asUtc]).single.startMinute,
+        WeekLayout.placeDay(<CalendarEntry>[asLocal]).single.startMinute,
+      );
+    });
+
+    test('the grid spans the local hours of its entries', () {
+      final CalendarEntry entry = _utc(
+        'lecture',
+        fromH: 7,
+        fromM: 15,
+        durationMinutes: 90,
+      );
+      final DateTime local = entry.start.toLocal();
+
+      final GridRange range = WeekLayout.rangeFor(<CalendarEntry>[entry]);
+
+      expect(range.startHour, local.hour);
+    });
+  });
+
   group('grid range', () {
     test('an empty week still looks like a calendar', () {
       final GridRange range = WeekLayout.rangeFor(const <CalendarEntry>[]);

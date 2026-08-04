@@ -48,7 +48,15 @@ class GridRange {
 /// widget: overlap handling is the only genuinely tricky part of a week grid,
 /// and it is far easier to get right — and to keep right — as a pure function
 /// with tests than as a layout side effect.
+///
+/// **Every reading of a clock here goes through [_local] first.** The API sends
+/// absolute instants, so `entry.start.hour` is the hour in UTC — two hours off
+/// in a German summer, one in winter, arbitrary abroad. Every other view
+/// formats via `toLocal()`, and a grid that disagreed with the day agenda about
+/// when a lecture starts would be worse than no grid.
 abstract final class WeekLayout {
+  static DateTime _local(DateTime value) => value.toLocal();
+
   /// A lecture shorter than this is still drawn this tall, so a 15-minute slot
   /// stays readable and tappable instead of collapsing to a line.
   static const int minimumVisibleMinutes = 30;
@@ -75,8 +83,8 @@ abstract final class WeekLayout {
     int earliest = 24;
     int latest = 0;
     for (final CalendarEntry entry in timed) {
-      final int start = entry.start.hour;
-      final DateTime end = entry.end ?? entry.start;
+      final int start = _local(entry.start).hour;
+      final DateTime end = _local(entry.end ?? entry.start);
       // An entry ending exactly on the hour does not need the next row.
       final int endHour = end.minute == 0 ? end.hour : end.hour + 1;
       if (start < earliest) earliest = start;
@@ -108,9 +116,13 @@ abstract final class WeekLayout {
           });
     if (timed.isEmpty) return const <PlacedEntry>[];
 
-    int startOf(CalendarEntry e) => e.start.hour * 60 + e.start.minute;
+    int startOf(CalendarEntry e) {
+      final DateTime start = _local(e.start);
+      return start.hour * 60 + start.minute;
+    }
+
     int endOf(CalendarEntry e) {
-      final DateTime end = e.end ?? e.start;
+      final DateTime end = _local(e.end ?? e.start);
       final int minutes = end.hour * 60 + end.minute;
       return minutes < startOf(e) + minimumVisibleMinutes
           ? startOf(e) + minimumVisibleMinutes

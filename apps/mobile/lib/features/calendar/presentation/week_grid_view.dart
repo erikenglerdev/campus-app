@@ -76,8 +76,13 @@ class _WeekGridViewState extends State<WeekGridView> {
     super.dispose();
   }
 
-  bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
+  bool _sameDay(DateTime a, DateTime b) {
+    // Local, for the same reason WeekLayout converts: an entry at 00:30 in
+    // Köthen is the previous day in UTC and would land in the wrong column.
+    final DateTime x = a.toLocal();
+    final DateTime y = b.toLocal();
+    return x.year == y.year && x.month == y.month && x.day == y.day;
+  }
 
   @override
   Widget build(BuildContext context) {
