@@ -6,6 +6,7 @@ import 'package:campus_koethen/core/cache/content_cache.dart';
 import 'package:campus_koethen/core/network/network_providers.dart';
 import 'package:campus_koethen/core/prefs/key_value_store.dart';
 import 'package:campus_koethen/core/prefs/settings_controller.dart';
+import 'package:campus_koethen/features/news/application/channel_subscriptions.dart';
 import 'package:campus_koethen/features/news/application/news_feed_controller.dart';
 import 'package:campus_koethen/features/news/data/news_models.dart';
 import 'package:dio/dio.dart';
@@ -221,6 +222,28 @@ void main() {
         .value!;
     expect(_slugs(state), <String>['a']);
     expect(state.page, 1);
+  });
+
+  test('changing the channel selection starts over at page one', () async {
+    // Page three of the old selection says nothing about the new one.
+    final _Feed feed = _Feed(<int, List<String>?>{
+      1: <String>['a'],
+      2: <String>['b'],
+    });
+    final ProviderContainer container = _container(feed);
+    await container.read(newsFeedControllerProvider.future);
+    await container.read(newsFeedControllerProvider.notifier).loadMore();
+    expect(feed.requestedPages, <int>[1, 2]);
+
+    await container
+        .read(channelSubscriptionProvider.notifier)
+        .setSubscribed('campus-news', subscribed: false);
+    final NewsFeedState state = await container.read(
+      newsFeedControllerProvider.future,
+    );
+
+    expect(state.page, 1);
+    expect(feed.requestedPages, <int>[1, 2, 1]);
   });
 
   test('each article carries the content the list endpoint delivers', () async {
