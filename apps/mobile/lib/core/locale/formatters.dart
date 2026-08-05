@@ -33,6 +33,11 @@ abstract final class AppDateFormats {
   static String dayOfMonth(DateTime value, String locale) =>
       DateFormat.d(locale).format(value.toLocal());
 
+  /// e.g. `20.07.2026` · `Jul 20, 2026` — compact, for a timestamp that is too
+  /// old for a relative form to help.
+  static String shortDate(DateTime value, String locale) =>
+      DateFormat.yMd(locale).format(value.toLocal());
+
   /// e.g. `20. Juli` · `Jul 20` — one end of a week range.
   static String dayAndMonth(DateTime value, String locale) =>
       DateFormat.MMMd(locale).format(value.toLocal());
