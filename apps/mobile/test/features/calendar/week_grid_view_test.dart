@@ -35,8 +35,9 @@ Future<void> pumpGrid(
   List<CalendarEntry> entries, {
   TextScaler textScaler = TextScaler.noScaling,
   int dayCount = 5,
+  Size size = const Size(390, 844),
 }) async {
-  tester.view.physicalSize = const Size(390, 844);
+  tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(() {
     tester.view.resetPhysicalSize();
@@ -117,6 +118,77 @@ void main() {
       ], dayCount: 7);
 
       expect(find.text('Samstagstermin'), findsOneWidget);
+    });
+  });
+
+  group('the width the week is given', () {
+    /// The horizontal extent of the scrollable grid area, and of its content.
+    (double viewport, double content) widthsOf(WidgetTester tester) {
+      final Finder scroller = find.byWidgetPredicate(
+        (Widget widget) =>
+            widget is Scrollable && widget.axisDirection == AxisDirection.right,
+      );
+      expect(scroller, findsOneWidget);
+      final ScrollableState state = tester.state<ScrollableState>(scroller);
+      final ScrollPosition position = state.position;
+      return (
+        position.viewportDimension,
+        position.viewportDimension + position.maxScrollExtent,
+      );
+    }
+
+    testWidgets('fits Monday to Friday without scrolling sideways', (
+      WidgetTester tester,
+    ) async {
+      // "The whole teaching week at a glance" is the point of this view. A
+      // fixed column width made every phone scroll to reach Friday.
+      await pumpGrid(tester, <CalendarEntry>[]);
+
+      final (double viewport, double content) = widthsOf(tester);
+      expect(content, lessThanOrEqualTo(viewport + 0.5));
+      expect(_headers(tester), hasLength(5));
+    });
+
+    testWidgets('still fits on a narrow phone', (WidgetTester tester) async {
+      await pumpGrid(tester, <CalendarEntry>[], size: const Size(320, 800));
+
+      final (double viewport, double content) = widthsOf(tester);
+      expect(content, lessThanOrEqualTo(viewport + 0.5));
+    });
+
+    testWidgets('columns share the width evenly', (WidgetTester tester) async {
+      await pumpGrid(tester, <CalendarEntry>[]);
+
+      final List<double> headerWidths = tester
+          .renderObjectList<RenderBox>(
+            find.ancestor(
+              of: find.textContaining('11'),
+              matching: find.byType(InkWell),
+            ),
+          )
+          .map((RenderBox box) => box.size.width)
+          .toList(growable: false);
+      final (double viewport, _) = widthsOf(tester);
+
+      expect(headerWidths, isNotEmpty);
+      expect(headerWidths.first, closeTo(viewport / 5, 0.5));
+    });
+
+    testWidgets('never squeezes a column below a touch target', (
+      WidgetTester tester,
+    ) async {
+      // Seven columns on a 320 px phone would be narrower than a finger, so
+      // that is where the sideways scroll comes back instead of shrinking on.
+      await pumpGrid(
+        tester,
+        <CalendarEntry>[],
+        dayCount: 7,
+        size: const Size(320, 800),
+      );
+
+      final (double viewport, double content) = widthsOf(tester);
+      expect(content, greaterThan(viewport));
+      expect(content / 7, closeTo(WeekGridView.minColumnWidth, 0.5));
     });
   });
 

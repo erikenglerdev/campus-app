@@ -12,11 +12,12 @@ import '../domain/week_layout.dart';
 
 /// A week as a time grid: one column per drawn day over an hour axis.
 ///
-/// The grid scrolls **horizontally**. Five or seven columns squeezed into a
-/// 320 px phone would be far narrower than a touch target and too narrow for a
-/// single word — so each column keeps a usable minimum width and the week
-/// scrolls, the way phone calendars have solved this for years. The hour
-/// gutter stays put so you never lose the time while scrolling sideways.
+/// The drawn days **share the available width**, so the teaching week is on
+/// screen at a glance — a week you have to scroll sideways to finish is not a
+/// week you can see. Only when a column would fall below a touch target does
+/// the grid stop shrinking and scroll horizontally instead, which on a narrow
+/// phone is what the weekend does. The hour gutter stays put either way, so
+/// the time is never scrolled off.
 ///
 /// Offered as an option, not as the default: the day agenda answers "what is
 /// on" in far less space. This view answers "how is my week shaped", which is
@@ -43,8 +44,17 @@ class WeekGridView extends StatefulWidget {
 
   final ValueChanged<DateTime> onSelectDay;
 
-  /// Minimum width of one day column.
-  static const double columnWidth = 96;
+  /// The narrowest a day column may get before the grid scrolls instead.
+  ///
+  /// A column is the tap target of its day header, so it does not go below one.
+  static const double minColumnWidth = AppSizes.minTouchTarget;
+
+  /// The width of one column when [dayCount] days share [available] pixels.
+  static double columnWidthFor(double available, int dayCount) {
+    if (dayCount <= 0) return minColumnWidth;
+    final double shared = available / dayCount;
+    return shared >= minColumnWidth ? shared : minColumnWidth;
+  }
 
   /// Height of one hour row at the default text size.
   static const double hourHeight = 56;
@@ -202,53 +212,66 @@ class _WeekGridViewState extends State<WeekGridView> {
               ),
 
               Expanded(
-                child: SingleChildScrollView(
-                  controller: _horizontal,
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    width: WeekGridView.columnWidth * days.length,
-                    child: Column(
-                      children: <Widget>[
-                        SizedBox(
-                          height: headerHeight,
-                          child: Row(
-                            children: <Widget>[
-                              for (final DateTime day in days)
-                                _DayHeader(
-                                  day: day,
-                                  locale: locale,
-                                  isToday: _sameDay(day, widget.today),
-                                  isSelected: _sameDay(day, widget.selected),
-                                  onTap: () => widget.onSelectDay(day),
-                                ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            controller: _vertical,
-                            child: SizedBox(
-                              height: hourHeight * range.hourCount,
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    final double columnWidth = WeekGridView.columnWidthFor(
+                      constraints.maxWidth,
+                      days.length,
+                    );
+                    return SingleChildScrollView(
+                      controller: _horizontal,
+                      scrollDirection: Axis.horizontal,
+                      child: SizedBox(
+                        width: columnWidth * days.length,
+                        child: Column(
+                          children: <Widget>[
+                            SizedBox(
+                              height: headerHeight,
                               child: Row(
                                 children: <Widget>[
                                   for (final DateTime day in days)
-                                    _DayColumn(
-                                      placed: WeekLayout.placeDay(
-                                        entriesOn(day),
-                                      ),
-                                      range: range,
+                                    _DayHeader(
+                                      day: day,
                                       locale: locale,
-                                      hourHeight: hourHeight,
+                                      width: columnWidth,
                                       isToday: _sameDay(day, widget.today),
+                                      isSelected: _sameDay(
+                                        day,
+                                        widget.selected,
+                                      ),
+                                      onTap: () => widget.onSelectDay(day),
                                     ),
                                 ],
                               ),
                             ),
-                          ),
+                            Expanded(
+                              child: SingleChildScrollView(
+                                controller: _vertical,
+                                child: SizedBox(
+                                  height: hourHeight * range.hourCount,
+                                  child: Row(
+                                    children: <Widget>[
+                                      for (final DateTime day in days)
+                                        _DayColumn(
+                                          placed: WeekLayout.placeDay(
+                                            entriesOn(day),
+                                          ),
+                                          range: range,
+                                          locale: locale,
+                                          width: columnWidth,
+                                          hourHeight: hourHeight,
+                                          isToday: _sameDay(day, widget.today),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -263,6 +286,7 @@ class _DayHeader extends StatelessWidget {
   const _DayHeader({
     required this.day,
     required this.locale,
+    required this.width,
     required this.isToday,
     required this.isSelected,
     required this.onTap,
@@ -270,6 +294,7 @@ class _DayHeader extends StatelessWidget {
 
   final DateTime day;
   final String locale;
+  final double width;
   final bool isToday;
   final bool isSelected;
   final VoidCallback onTap;
@@ -278,7 +303,7 @@ class _DayHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
     return SizedBox(
-      width: WeekGridView.columnWidth,
+      width: width,
       child: Semantics(
         button: true,
         selected: isSelected,
@@ -319,6 +344,7 @@ class _DayColumn extends StatelessWidget {
     required this.placed,
     required this.range,
     required this.locale,
+    required this.width,
     required this.hourHeight,
     required this.isToday,
   });
@@ -326,6 +352,7 @@ class _DayColumn extends StatelessWidget {
   final List<PlacedEntry> placed;
   final GridRange range;
   final String locale;
+  final double width;
   final double hourHeight;
   final bool isToday;
 
@@ -356,7 +383,7 @@ class _DayColumn extends StatelessWidget {
     probe.dispose();
 
     return SizedBox(
-      width: WeekGridView.columnWidth,
+      width: width,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: isToday
@@ -386,9 +413,8 @@ class _DayColumn extends StatelessWidget {
               Positioned(
                 top: (item.startMinute - gridStart) * pxPerMinute,
                 height: item.durationMinutes * pxPerMinute,
-                left:
-                    (WeekGridView.columnWidth / item.laneCount) * item.lane + 1,
-                width: WeekGridView.columnWidth / item.laneCount - 2,
+                left: (width / item.laneCount) * item.lane + 1,
+                width: width / item.laneCount - 2,
                 child: Semantics(
                   label: l10n.calendarWeekSemantic(
                     item.entry.title,

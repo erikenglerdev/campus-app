@@ -51,10 +51,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       body: SafeArea(
         child: Column(
           children: <Widget>[
-            // View selection and source controls stay put; everything else
-            // scrolls with the view, so nothing can overflow a short viewport.
-            _ViewToggle(mode: mode),
+            // Sources first, view second: which calendars you are looking at
+            // is the question you answer once, how you look at them the one
+            // you change all day. Both stay put; everything else scrolls with
+            // the view, so nothing can overflow a short viewport.
             _SourceControls(data: data),
+            _ViewToggle(mode: mode),
             Expanded(
               child: switch (mode) {
                 CalendarViewMode.day => _DayAgendaView(data: data),
@@ -116,7 +118,7 @@ class _ViewToggle extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.lg,
-        AppSpacing.sm,
+        0,
         AppSpacing.lg,
         AppSpacing.xs,
       ),
@@ -176,28 +178,37 @@ class _SourceControls extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.lg,
-        0,
+        AppSpacing.sm,
         AppSpacing.lg,
         AppSpacing.xs,
       ),
-      // A Wrap, not a Row: three labels plus their state do not share one line
-      // on a narrow phone at a large text size, and a button that has to
-      // truncate its own state is worse than one on the next line.
-      child: Wrap(
-        spacing: AppSpacing.sm,
-        runSpacing: AppSpacing.xs,
-        children: <Widget>[
-          for (final CalendarSource source in CalendarSource.values)
-            _SourceButton(
-              icon: calendarSourceIcon(source),
-              label: calendarSourceLabel(l10n, source),
-              state: stateOf(source),
-              active:
-                  data.enabledSources.contains(source) &&
-                  (source != CalendarSource.moodle || data.moodleConnected),
-              onPressed: () => showCalendarSourceSheet(context, source),
-            ),
-        ],
+      // One row, three equal shares. The buttons stack their own label over
+      // their own state so a third of a phone is enough for both, and each one
+      // takes exactly the same width whatever its label says. IntrinsicHeight
+      // is what keeps the row even when one label needs a second line, instead
+      // of leaving one button taller than its neighbours.
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            for (final CalendarSource source
+                in CalendarSource.values) ...<Widget>[
+              if (source != CalendarSource.values.first)
+                const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _SourceButton(
+                  icon: calendarSourceIcon(source),
+                  label: calendarSourceLabel(l10n, source),
+                  state: stateOf(source),
+                  active:
+                      data.enabledSources.contains(source) &&
+                      (source != CalendarSource.moodle || data.moodleConnected),
+                  onPressed: () => showCalendarSourceSheet(context, source),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -231,34 +242,46 @@ class _SourceButton extends StatelessWidget {
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
+            horizontal: AppSpacing.xs,
             vertical: AppSpacing.sm,
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+        // Stacked, not side by side: a third of a phone's width is not enough
+        // for an icon, a name and a state on one line, and the name is the
+        // part that must never be cut. Filling the height rather than hugging
+        // it is what keeps the three buttons reading as one row when a longer
+        // name takes a second line.
+        child: Column(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            Icon(icon, size: AppSizes.iconSmall),
-            const SizedBox(width: AppSpacing.xs),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(label, style: text.labelLarge),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Icon(
-                        active ? Icons.visibility : Icons.visibility_off,
-                        size: AppSizes.iconSmall,
-                      ),
-                      const SizedBox(width: AppSpacing.xxs),
-                      Flexible(child: Text(state, style: text.labelSmall)),
-                    ],
-                  ),
-                ],
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Icon(icon, size: AppSizes.iconSmall),
+                const SizedBox(width: AppSpacing.xxs),
+                // The eye is the second, redundant carrier of the state: it
+                // says the same as the word below it, so neither the colour
+                // nor a single glyph has to do the job alone.
+                Icon(
+                  active ? Icons.visibility : Icons.visibility_off,
+                  size: AppSizes.iconSmall,
+                ),
+              ],
+            ),
+            Text(
+              label,
+              style: text.labelMedium,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              state,
+              style: text.labelSmall,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

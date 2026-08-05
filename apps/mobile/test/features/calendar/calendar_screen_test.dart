@@ -63,6 +63,23 @@ void main() {
     expect(find.text('Liste'), findsOneWidget);
   });
 
+  testWidgets('puts the sources above the view selection, on one line', (
+    WidgetTester tester,
+  ) async {
+    // Which calendars you are looking at comes first; how you look at them
+    // second. The three sources are one row, not a block of stacked buttons.
+    await pumpCalendar(tester);
+
+    final double sources = tester.getTopLeft(find.text('Stundenplan')).dy;
+    final double views = tester
+        .getTopLeft(find.byType(SegmentedButton<CalendarViewMode>))
+        .dy;
+
+    expect(sources, lessThan(views));
+    expect(tester.getTopLeft(find.text('Moodle')).dy, closeTo(sources, 0.5));
+    expect(tester.getTopLeft(find.text('Events')).dy, closeTo(sources, 0.5));
+  });
+
   testWidgets('opens on the day agenda, not on a month grid', (
     WidgetTester tester,
   ) async {
@@ -467,8 +484,7 @@ void _weekViewTests() {
         .set(CalendarViewMode.week);
     await tester.pumpAndSettle();
 
-    // Five columns do not fit a 320 px phone, so the grid scrolls sideways
-    // rather than overflowing.
+    // The columns share whatever width is left rather than overflowing.
     expect(tester.takeException(), isNull);
   });
 }
