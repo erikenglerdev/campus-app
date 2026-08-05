@@ -4,6 +4,7 @@ import { LocaleResolution } from '../../common/locale/locale';
 import { ENV } from '../../config/app-config.module';
 import { Env } from '../../config/env.schema';
 import { PrismaService } from '../../prisma/prisma.service';
+import { classifyMeal } from './meal-semantics';
 import { PRICE_GROUP_LABELS, PriceGroup } from './meine-mensa.schema';
 import {
   CanteenListItemDto,
@@ -107,6 +108,10 @@ export class CanteenService {
 
     const definitions = await this.prisma.ingredientDefinition.findMany();
     const definitionByCode = new Map(definitions.map((d) => [d.code, d]));
+    // The label is the mapping's fallback when a code is not one of the known
+    // ones, so the classifier gets the same dictionary the markers are built
+    // from — never a second, drifting copy.
+    const labelByCode = new Map(definitions.map((d) => [d.code, d.labelDe]));
 
     // Every day in the requested range is present, so the client can tell a
     // genuinely empty day apart from a loading error.
@@ -144,6 +149,12 @@ export class CanteenService {
         }))
         .sort((a, b) => PRICE_GROUP_ORDER.indexOf(a.group) - PRICE_GROUP_ORDER.indexOf(b.group));
 
+      const semantics = classifyMeal({
+        ingredientCodes: meal.ingredientCodes,
+        isSprint: meal.isSprint,
+        labelByCode,
+      });
+
       byDate.get(date)?.push({
         id: String(meal.sourcePlanId),
         name: meal.name,
@@ -154,6 +165,8 @@ export class CanteenService {
         isSprint: meal.isSprint,
         extras: meal.extras,
         markers,
+        traits: semantics.traits,
+        allergens: semantics.allergens,
         prices,
       });
     }

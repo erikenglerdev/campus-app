@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ResponseMetaDto } from '../../common/dto/meta.dto';
 import { PriceGroup } from './meine-mensa.schema';
+import { MEAL_ALLERGENS, MEAL_TRAITS, MealAllergen, MealTrait } from './meal-semantics';
 
 /**
  * Public shapes for /v1/canteens*.
@@ -82,7 +83,28 @@ export class MealDto {
   @ApiProperty({ type: Number, nullable: true }) counterId!: number | null;
   @ApiProperty() isSprint!: boolean;
   @ApiProperty({ type: [String] }) extras!: string[];
-  @ApiProperty({ type: [MealMarkerDto] }) markers!: MealMarkerDto[];
+  @ApiProperty({
+    type: [MealMarkerDto],
+    description:
+      'Everything the source declared, including codes with no semantic meaning to this API.',
+  })
+  markers!: MealMarkerDto[];
+
+  @ApiProperty({
+    enum: MEAL_TRAITS,
+    isArray: true,
+    description:
+      'Stable semantic properties of the dish, derived from the source. Filter on these, never on marker codes or labels.',
+  })
+  traits!: MealTrait[];
+
+  @ApiProperty({
+    enum: MEAL_ALLERGENS,
+    isArray: true,
+    description:
+      'Declared allergens as stable keys. A subtype (e.g. "gluten_wheat") always comes with its parent ("gluten"). A marker the API cannot classify appears in `markers` only and never gets an invented key.',
+  })
+  allergens!: MealAllergen[];
 
   @ApiProperty({
     type: [MealPriceDto],

@@ -1700,9 +1700,58 @@
             }
           },
           "markers": {
+            "description": "Everything the source declared, including codes with no semantic meaning to this API.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/MealMarkerDto"
+            }
+          },
+          "traits": {
+            "type": "array",
+            "description": "Stable semantic properties of the dish, derived from the source. Filter on these, never on marker codes or labels.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "vegetarian",
+                "vegan",
+                "meatless",
+                "sprint"
+              ]
+            }
+          },
+          "allergens": {
+            "type": "array",
+            "description": "Declared allergens as stable keys. A subtype (e.g. \"gluten_wheat\") always comes with its parent (\"gluten\"). A marker the API cannot classify appears in `markers` only and never gets an invented key.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "gluten",
+                "gluten_wheat",
+                "gluten_rye",
+                "gluten_oats",
+                "gluten_barley",
+                "gluten_spelt",
+                "crustaceans",
+                "egg",
+                "peanuts",
+                "soy",
+                "milk",
+                "nuts",
+                "nuts_hazelnut",
+                "nuts_almond",
+                "nuts_walnut",
+                "nuts_cashew",
+                "nuts_pecan",
+                "nuts_pistachio",
+                "nuts_macadamia",
+                "celery",
+                "mustard",
+                "sesame",
+                "sulphites",
+                "lupin",
+                "molluscs",
+                "fish"
+              ]
             }
           },
           "prices": {
@@ -1722,6 +1771,8 @@
           "isSprint",
           "extras",
           "markers",
+          "traits",
+          "allergens",
           "prices"
         ]
       },

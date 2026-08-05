@@ -143,7 +143,41 @@ Diese Punkte sind der Grund für die strikte Schema-Validierung:
    niemals bestehende Daten.
 6. `extra_1` bis `extra_4` sind häufig leere Strings und werden vor dem Speichern gefiltert.
 
-### 3.5 Preisgruppen
+### 3.5 Semantische Zuordnung (Traits und Allergene)
+
+Die App filtert **nie** über die Codes der Quelle. Sie sind nirgends dokumentiert, mischen zwei
+Namensräume und können sich ändern. Stattdessen ordnet
+`apps/backend/src/modules/canteen/meal-semantics.ts` sie einmalig stabilen Schlüsseln zu, die die
+API in `traits` und `allergens` ausliefert (siehe [api.md](api.md)).
+
+Zwei Regeln gelten für jeden Eintrag dieser Tabelle:
+
+- **Nichts wird erfunden.** Ein Schlüssel entsteht nur dort, wo die Quelle die Eigenschaft
+  tatsächlich erklärt. Ein unbekannter Code bleibt ein normaler Marker ohne Schlüssel.
+- **Nichts wird über die deklarierte Hierarchie hinaus abgeleitet.** Die beiden Elternfacetten
+  (`gluten`, `nuts`) folgen aus ihren Untertypen, weil die Quelle sie selbst so modelliert. Ein
+  veganes Gericht wird **nicht** stillschweigend zu einem vegetarischen: die Küche markiert beides,
+  wenn sie beides meint.
+
+| Quelle                                             | Schlüssel                                                                                                               |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `50`, `51`, `52`                                   | `meatless`, `vegetarian`, `vegan`                                                                                       |
+| `is_sprint` des Planeintrags                       | `sprint` (**nicht** Marker `53`)                                                                                        |
+| `A!` / `A1`–`A5`                                   | `gluten` / `gluten_wheat`, `gluten_rye`, `gluten_oats`, `gluten_barley`, `gluten_spelt`                                 |
+| `G!` / `G1`–`G7`                                   | `nuts` / `nuts_hazelnut`, `nuts_almond`, `nuts_walnut`, `nuts_cashew`, `nuts_pecan`, `nuts_pistachio`, `nuts_macadamia` |
+| `B`, `C`, `D`, `E`, `F`                            | `crustaceans`, `egg`, `peanuts`, `soy`, `milk`                                                                          |
+| `H`, `I`, `J`, `K`, `L`, `M`, `N`                  | `celery`, `mustard`, `sesame`, `sulphites`, `lupin`, `molluscs`, `fish`                                                 |
+| `45`–`49`, `56` (Fleischarten), Zusatzstoffnummern | **kein** Schlüssel — bleiben reine Marker                                                                               |
+
+Der Code ist der primäre Schlüssel. Zusätzlich greift eine geprüfte **Label-Normalisierung**
+(Kleinschreibung, Umlaute ausgeschrieben, Diakritika entfernt, Satzzeichen zu Leerzeichen): Wird ein
+Code umnummeriert, heißt aber weiterhin „enthält Erdnüsse", bleibt die Zuordnung erhalten. Beide
+Wege sind in `meal-semantics.spec.ts` gegen das reale Wörterbuch der Quelle abgesichert.
+
+Bewusst **nicht** zugeordnet ist `48` „Fisch": das ist die Fleischart, nicht die Allergendeklaration
+`N` „enthält Fisch".
+
+### 3.6 Preisgruppen
 
 | Feld      | Slug       | Label DE    | Label EN  |
 | --------- | ---------- | ----------- | --------- |
@@ -155,7 +189,7 @@ Diese Punkte sind der Grund für die strikte Schema-Validierung:
 Feld → Bedeutung ist Backend-Wissen; die Labels sind API-eigene, zweisprachige Texte.
 Der Studierendenpreis wird in der App hervorgehoben.
 
-### 3.6 Abrufregeln
+### 3.7 Abrufregeln
 
 | Regel             | Wert                                                                                        |
 | ----------------- | ------------------------------------------------------------------------------------------- |
@@ -166,7 +200,7 @@ Der Studierendenpreis wird in der App hervorgehoben.
 | Manueller Sync    | administratives CLI-Kommando — **kein** öffentlicher Sync-Endpunkt                          |
 | Tests             | ausschließlich gegen anonymisierte Fixtures unter `apps/backend/test/fixtures/meine-mensa/` |
 
-### 3.7 Rechtliches
+### 3.8 Rechtliches
 
 - Daten werden inhaltlich unverändert übernommen und der Quelle zugeordnet.
 - **Keine Mensabilder.** `food.image_url` wird nicht persistiert und nicht ausgeliefert.
