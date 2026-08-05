@@ -43,7 +43,8 @@ Studierende am Campus Köthen erhalten in einer App:
 1. **News** aus mehreren, frei wählbaren redaktionellen Kanälen.
 2. **Kalender**, der Stundenplan, öffentliche Campus-Kalender und Moodle-Deadlines in einer
    Ansicht zusammenführt — die Zusammenführung geschieht ausschließlich auf dem Gerät.
-3. **Mensapläne** beider Köthener Mensen mit allen Preisgruppen.
+3. **Mensapläne** beider Köthener Mensen mit fester Filtertaxonomie für Ernährungsweise und
+   Allergene.
 4. **Kontakte** zu Anlaufstellen, funktional statt personenzentriert.
 5. **Persönliche Dienste** — Studentenpostfach, Notenspiegel und Moodle — jeweils direkt vom Gerät
    zum offiziellen Anbieter, ohne dass ein Server dieses Projekts beteiligt ist.
@@ -58,9 +59,13 @@ Zugangsdaten verlassen das Gerät nur in Richtung des offiziellen Anbieters.
 
 **Öffentliche Inhalte über die Campus API**
 
-- News-Liste, News-Detail, dynamische News-Kanal-Auswahl
-- Mensa-Auswahl und Speiseplan mit Tagesnavigation
-- Kontaktbereiche und Kontaktdetail
+- News als endlos nachladender Inline-Feed mit dynamischer Kanal-Auswahl — die Artikel klappen
+  in der Liste auf, es gibt **keine** Detailseite
+- Mensa-Auswahl und Speiseplan mit Tagesnavigation, festem Trait-/Allergenfilter und dem Preis
+  **einer** gewählten Personengruppe
+- Kontaktbereiche und Kontaktdetail sowie eine **lokale Kontaktsuche** über einen einmal geladenen
+  Suchindex (`/v1/contact-areas/search-index`) — kein Request pro Tastendruck, kein Nachladen pro
+  Bereich
 - **Gruppenstundenplan** aus der öffentlichen WebUntis-Ansicht — vollständig umgesetzt, aber
   serverseitig über `WEBUNTIS_ENABLED` **standardmäßig deaktiviert**, bis die Nutzung
   organisatorisch freigegeben ist (siehe Release-Gates)
@@ -70,7 +75,8 @@ Zugangsdaten verlassen das Gerät nur in Richtung des offiziellen Anbieters.
 
 **Quellenübergreifender Kalender**
 
-- Eigener Tab mit expliziter Umschaltung **Monatsraster ↔ Liste**
+- Explizite Umschaltung **Tag ↔ Woche ↔ Liste**; die Wochenansicht zeigt standardmäßig Montag
+  bis Freitag, das Wochenende ist ein lokaler Schalter
 - Quellen: Stundenplan (Campus API), öffentliche Kalender (Campus API), Moodle-Deadlines (direkt)
 - Zusammenführung **ausschließlich lokal auf dem Gerät**; Quellen sind isoliert — ein Fehler einer
   Quelle blendet die anderen nicht aus, sondern erscheint als eigenes Banner
@@ -85,6 +91,12 @@ Zugangsdaten verlassen das Gerät nur in Richtung des offiziellen Anbieters.
   24-Stunden-Regel mit manueller Übersteuerung
 - **Moodle**: Kurse, Materialien, Aufgaben mit Abgabestatus, Ankündigungen und Deadlines —
   **ausschließlich lesend**, verschlüsselter lokaler Cache, 24-Stunden-Regel
+- **Anträge & Feedback**: Finanzanträge gehen **direkt** an die öffentliche API des
+  Gremiensystems des Studierendenrats. Der Dienst ist als einziger der vier nicht
+  nutzerauthentifiziert; ausschlaggebend ist der Inhalt — eine Einreichung trägt den Namen der
+  antragstellenden Person und eine Kopie des Studierendenausweises. Entwürfe, Anhänge und
+  Ergebnis bleiben auf dem Gerät; der zurückgegebene Statuslink ist ein Geheimnis und wird
+  niemals geloggt.
 
 **Lageplan (fiktive Demonstration)**
 
@@ -93,6 +105,8 @@ Zugangsdaten verlassen das Gerät nur in Richtung des offiziellen Anbieters.
   Gebäude- und Etagenbezeichnung
 - Ein Treffer öffnet die Etage, rückt den Raum in den Blick und hebt ihn hervor —
   **nie** allein über Farbe
+- **Räume sind auf dem Plan antippbar**; ein Tap wählt denselben Raum über denselben Weg aus wie
+  ein Suchtreffer. Getroffen wird die gebündelte Geometrie, nicht ein SVG-Pfad
 - Räume sind mit Kontaktpersonen und Kontaktbereichen verknüpfbar; ein Tippen öffnet den Plan
 - Geometrie ist ein selbst erstelltes, gebündeltes Asset; Bezeichnungen kommen über die Campus API
 - Der Democharakter ist in der App sichtbar und in DE/EN formuliert
@@ -113,7 +127,8 @@ mehrere Mail- oder Moodle-Konten · serverseitige Synchronisierung der lokalen A
 
 **Lageplan:** Indoor-Navigation und Wegberechnung · Live-Position · Raumbelegung und Buchung ·
 **reale** Gebäude, Räume und Grundrisse · SVG-Upload nach oder -Abruf aus Strapi ·
-CMS-Schreibzugang in der App · Auswahl von Räumen durch Tippen auf beliebige SVG-Pfade
+CMS-Schreibzugang in der App · Auswertung des SVG zur Laufzeit (ein Tap trifft die Geometrie aus
+dem Katalog, nicht das Bild)
 
 **Stundenplan:** persönlicher WebUntis-Login · Stundenpläne für Lehrpersonen oder Räume ·
 Raumverfügbarkeit („freie Räume") · Zusammenführen mehrerer Gruppen in einen Plan ·
@@ -155,8 +170,16 @@ gebaut.
   (Quelle `location_id=22`).
 - Die Mensenliste kommt **ausschließlich** aus der Campus API. Flutter kennt keine Location-IDs.
   Eine weitere Mensa erfordert höchstens eine Backend-Konfigurationsänderung, **kein App-Release**.
-- Angezeigt werden Datum, Name, Zusatztext, Beilagen, Sprint-Kennzeichen, Zutaten/Marker und
-  **alle** verfügbaren Preisgruppen; der Studierendenpreis wird hervorgehoben.
+- Angezeigt werden Datum, Name, Zusatztext, Beilagen, Sprint-Kennzeichen, Zutaten/Marker und der
+  Preis **einer** Personengruppe — der, die im Filter gewählt ist; Standard ist `student`. Fehlt
+  dieser Preis, sagt die Karte das, statt den Preis einer anderen Gruppe zu zeigen.
+- Gefiltert wird über die **stabilen semantischen Schlüssel** der Campus API (`traits`,
+  `allergens`), nie über die Marker-Codes der Quelle. Die Taxonomie ist fest, nicht aus dem
+  sichtbaren Tag abgeleitet: „keine Erdnüsse" muss dienstags dasselbe heißen wie freitags.
+  Die Auswahl bleibt **ausschließlich lokal** — Allergiepräferenzen erreichen kein Backend und
+  werden nirgends geloggt.
+- Gerichte können als Favorit markiert werden. Favoriten filtern **nicht** und ändern die
+  Reihenfolge **nicht**: Die Thekenreihenfolge ist die Reihenfolge, in der ausgegeben wird.
 - **Keine Mensabilder.** `food.image_url` wird weder gespeichert noch ausgeliefert.
 - Der Worker synchronisiert alle zwei Stunden (`CANTEEN_SYNC_CRON="0 */2 * * *"`).
 - Eine leere, ungültige oder fehlgeschlagene Quellantwort **löscht niemals** den letzten
@@ -176,6 +199,11 @@ gebaut.
 - Fehlende Felder werden ausgeblendet statt als leere Zeile dargestellt.
 - **Keine erfundenen Personen, Telefonnummern, E-Mail-Adressen oder offiziellen Aussagen.**
   Startdaten sind als Demo gekennzeichnet.
+- Die **Suche** durchsucht Bereiche _und_ Personen: Namen, Rollen, Beschreibungen, Kontaktkanäle,
+  Adresse, Öffnungszeiten sowie zugeordnete Räume (Nummer, Name, Gebäude, Etage). Personen sind
+  eigene Treffer und nennen ihren Bereich; jeder Treffer zeigt die Fundstelle. Groß-/Kleinschreibung,
+  Umlaute in beiden Schreibweisen (`pruefungsamt` und `prufungsamt`) sowie Raumnummern mit und ohne
+  Satzzeichen (`B.201` = `B201`) matchen gleichermaßen. Ein leeres Suchfeld ist **kein** Filter.
 
 ### 4.4 Kalender
 
@@ -185,7 +213,8 @@ gebaut.
 - **Quellen sind isoliert.** Ein Moodle-Fehler beeinträchtigt den Stundenplan nicht; ein
   Campus-API-Fehler entfernt die lokal gecachten Moodle-Deadlines nicht. Jeder Fehler erscheint als
   eigenes Banner pro Quelle.
-- Explizite Umschaltung zwischen **Monatsraster** und **Liste**.
+- Explizite Umschaltung zwischen **Tag**, **Woche** und **Liste**. Die Wochenansicht zeigt
+  standardmäßig Montag bis Freitag; das Wochenende ist ein lokaler, versionierter Schalter.
 - Öffentliche Termine tragen einen Farbpunkt **plus** Kalendername und Icon — Farbe ist nie das
   alleinige Unterscheidungsmerkmal.
 - Eine neue Quelle bedeutet: ein Wert in `CalendarSource`, ein Mapper und eine Verdrahtung im
@@ -292,7 +321,7 @@ Touch-Ziele >= 48dp · keine reine Farbcodierung · Light/Dark/System-Theme.
 | A6  | Inaktiver Kanal verschwindet ohne App-Fehler.                                                           |
 | A7  | Alle Kanäle deaktiviert ⇒ Empty State, kein Request für alle Kanäle.                                    |
 | A8  | Beide Startmensen erscheinen über Backend-Daten; Flutter kennt keine Location-IDs.                      |
-| A9  | Alle Preisgruppen werden angezeigt; keine Mensabilder.                                                  |
+| A9  | Nur der Preis der gewählten Personengruppe wird angezeigt; keine Mensabilder.                           |
 | A10 | Leere/ungültige Quellantwort löscht bestehende Mensadaten nicht.                                        |
 | A11 | Wiederholter Import erzeugt keine Duplikate.                                                            |
 | A12 | Neuer Kontaktbereich erscheint ohne Codeänderung; Bereich ohne Person funktioniert.                     |

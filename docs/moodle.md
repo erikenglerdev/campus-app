@@ -6,8 +6,9 @@ Zwei zusammenhängende Funktionen der mobilen App:
 
 - **Moodle** (unter „Mehr → Moodle") — native, **lesende** Ansicht von Kursen, Materialien,
   Aufgaben mit Abgabestatus und Ankündigungen.
-- **Kalender** (oberster Tab, ersetzt den bisherigen Stundenplan-Tab) — führt Stundenplan und
-  Moodle-Deadlines **lokal auf dem Gerät** zu einer Ansicht zusammen (Monatsraster **oder** Liste).
+- **Kalender** (eigenes Modul, ersetzt den bisherigen Stundenplan-Tab) — führt Stundenplan,
+  öffentliche Kalender und Moodle-Deadlines **lokal auf dem Gerät** zu einer Ansicht zusammen
+  (Tag, Woche **oder** Liste).
 
 Beide sind bewusst restriktiv gebaut. Maßgeblich ist die Ausnahmeregel in
 [`../CLAUDE.md`](../CLAUDE.md) §2.
@@ -97,8 +98,11 @@ Cache-Schlüssel, Sync-Zeitstempel und alle zugehörigen Riverpod-Zustände.
   trägt unabhängig bei; Fehler werden pro Quelle als Banner angezeigt.
 - **Erweiterbar:** Eine neue Quelle = ein Wert in `CalendarSource`, ein Mapper nach `CalendarEntry`
   und eine Verdrahtung im Aggregator.
-- Explizite Umschaltung **Kalender** (Monatsraster) ↔ **Liste**. Moodle-`timestart` sind absolute
-  Unixzeiten und werden ohne doppelte Zeitzonen-Konvertierung umgerechnet.
+- Explizite Umschaltung **Tag ↔ Woche ↔ Liste**. Moodle-`timestart` sind absolute Unixzeiten und
+  werden ohne doppelte Zeitzonen-Konvertierung umgerechnet.
+- Die Moodle-Quelle wird über das Quellen-Control „Moodle" ein- und ausgeblendet. Ohne Anmeldung
+  erklärt dessen Sheet das und führt zum Moodle-Login; es werden **keine** Moodle-Daten an ein
+  Campus-Köthen-Backend gesendet.
 
 ## 6a. Kurssuche und Kursansicht
 

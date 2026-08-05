@@ -27,24 +27,25 @@ Dieses Projekt verwendet **keine** Logos, Wappen, Markenassets oder Designsystem
 
 ## Umfang des MVP
 
-| Enthalten                                             | Nicht enthalten                                 |
-| ----------------------------------------------------- | ----------------------------------------------- |
-| News mit dynamischer Kanal-Auswahl                    | Nutzerkonten für die App selbst                 |
-| Quellenübergreifender Kalender (Monatsraster/Liste)   | Push-Nachrichten                                |
-| Gruppenstundenplan (WebUntis, serverseitig schaltbar) | Persönlicher WebUntis-Login                     |
-| Öffentliche Google-Kalender (öffentlicher ICS-Feed)   | Reale Gebäudepläne und Grundrisse               |
-| Mensapläne (alle Preisgruppen)                        | Analytics, Tracking, Crash-Reporting            |
-| Kontakte und Kontaktbereiche                          | Redis, SMTP                                     |
-| Studenten-E-Mail (IMAP/SMTP, direkt vom Gerät)        | Automatisches Deployment                        |
-| Notenspiegel HIS-QIS (direkt vom Gerät)               | Globale Volltextsuche                           |
-| Moodle: Kurse, Materialien, Aufgaben, Ankündigungen   | Schreibzugriffe auf Moodle                      |
-| Lokale Aufgabenliste (rein auf dem Gerät)             | Serverseitige Synchronisierung der Aufgaben     |
-| Lageplan: fiktiver Demo-Etagenplan mit Raumsuche      | Indoor-Navigation, Wegberechnung, Live-Position |
-| Räume mit Kontaktbezug und Deep-Link in den Plan      | Raumbelegung und Buchung                        |
-| Lokale Einstellungen (Sprache, Theme, Abos)           | Mehrere Mail- oder Moodle-Konten                |
-| Offline-/Cache-Verhalten                              |                                                 |
-| About, Impressums- und Datenschutz-Platzhalter        |                                                 |
-| Deutsch und Englisch                                  |                                                 |
+| Enthalten                                              | Nicht enthalten                                 |
+| ------------------------------------------------------ | ----------------------------------------------- |
+| News als endloser Inline-Feed, Kanäle frei wählbar     | Nutzerkonten für die App selbst                 |
+| Quellenübergreifender Kalender (Tag/Woche/Liste)       | Push-Nachrichten                                |
+| Gruppenstundenplan (WebUntis, serverseitig schaltbar)  | Persönlicher WebUntis-Login                     |
+| Öffentliche Google-Kalender (öffentlicher ICS-Feed)    | Reale Gebäudepläne und Grundrisse               |
+| Mensapläne (Trait-/Allergenfilter, eine Preisgruppe)   | Analytics, Tracking, Crash-Reporting            |
+| Kontakte und Kontaktbereiche                           | Redis, SMTP                                     |
+| Studenten-E-Mail (IMAP/SMTP, direkt vom Gerät)         | Automatisches Deployment                        |
+| Notenspiegel HIS-QIS (direkt vom Gerät)                | Globale Volltextsuche                           |
+| Moodle: Kurse, Materialien, Aufgaben, Ankündigungen    | Schreibzugriffe auf Moodle                      |
+| Lokale Aufgabenliste (rein auf dem Gerät)              | Serverseitige Synchronisierung der Aufgaben     |
+| Anträge & Feedback (direkt an das Gremiensystem)       | Serverseitige Ablage von Anträgen               |
+| Lageplan: Demo-Etagenplan, Räume antippbar und suchbar | Indoor-Navigation, Wegberechnung, Live-Position |
+| Räume mit Kontaktbezug und Deep-Link in den Plan       | Raumbelegung und Buchung                        |
+| Lokale Einstellungen (Sprache, Theme, Abos)            | Mehrere Mail- oder Moodle-Konten                |
+| Offline-/Cache-Verhalten                               |                                                 |
+| About, Impressums- und Datenschutz-Platzhalter         |                                                 |
+| Deutsch und Englisch                                   |                                                 |
 
 Details: [docs/product/mvp.md](docs/product/mvp.md)
 

@@ -64,9 +64,6 @@ dependencies:
   dio_cookie_manager: ^3.5.0
   cookie_jar: ^4.0.9
 
-  # Month-grid view for the cross-source calendar (Apache-2.0). List view is
-  # built from plain widgets; only the month grid uses this package.
-
   # Renders the bundled, generated campus map (MIT). Only ever used with local
   # assets from packages/campus-map — never with SVG from a network source.
   flutter_svg: ^2.0.10

@@ -8,19 +8,13 @@ Moodle-Integration und den quellenübergreifenden Kalender neu hinzukommt. Das P
 
 ## 1. Neu hinzugefügte Abhängigkeiten
 
-Für den quellenübergreifenden Kalender wird genau **eine** direkte Abhängigkeit neu eingeführt
-(`table_calendar`), die genau **eine** transitive Abhängigkeit nachzieht
-(`simple_gesture_detector`). Die Moodle-Integration führt **keine** neue Abhängigkeit ein.
+**Keine.** Weder die Moodle-Integration noch der quellenübergreifende Kalender führen eine neue
+Abhängigkeit ein.
 
-| Paket                     | Version | Lizenz       | Quelle                                                                              | Verwendungszweck                                 | Kompatibilitätsbewertung                                                                                         |
-| ------------------------- | ------- | ------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `table_calendar`          | 3.2.0   | `Apache-2.0` | `LICENSE` im Paket · <https://github.com/aleksanderwozniak/table_calendar>          | Monatsraster (Kalenderansicht) des Kalender-Tabs | **Kompatibel.** Apache-2.0 ist einseitig mit (A)GPLv3 verträglich; darf in ein AGPL-3.0-Werk aufgenommen werden. |
-| `simple_gesture_detector` | 0.2.1   | `Apache-2.0` | `LICENSE` im Paket · <https://github.com/aleksanderwozniak/simple_gesture_detector> | Wisch-Gesten für `table_calendar` (transitiv)    | **Kompatibel.** Apache-2.0, siehe oben. Einzige transitive Neu-Abhängigkeit von `table_calendar`.                |
-
-Beide Pakete stammen vom selben Autor, enthalten je eine unveränderte `Apache License, Version 2.0`
-als `LICENSE`-Datei, ziehen keine weiteren Nicht-Flutter-Pakete nach und bündeln **keine** Schriften,
-kein eingebettetes JavaScript und keine sonstigen Assets mit abweichender Lizenz. Es liegt **keine**
-`Commons-Clause`-, `BSL`-, `SSPL`-, `PolyForm`-, `NC`- oder `ND`-Klausel vor.
+Der Kalender nutzte zwischenzeitlich `table_calendar` (Apache-2.0) samt dessen transitiver
+`simple_gesture_detector` für das Monatsraster. Beide sind mit dem Wegfall des Monatsrasters
+**entfernt** worden: Tag-, Wochen- und Listenansicht bestehen aus gewöhnlichen Flutter-Widgets.
+Die Bewertung entfällt damit, sie ist nur noch Historie.
 
 ## 2. Bereits vorhandene, von Moodle wiederverwendete Abhängigkeiten
 
@@ -42,15 +36,14 @@ in [`../../NOTICE.md`](../../NOTICE.md) dokumentiert sind:
 - Lizenztyp je Paket aus der `LICENSE`-Datei im pub-cache-Verzeichnis **und** aus den pub.dev-
   Metadaten gelesen.
 - Exakt eingebundene Versionen stammen aus [`../../apps/mobile/pubspec.lock`](../../apps/mobile/pubspec.lock).
-- Transitiver Abhängigkeitsbaum über `flutter pub deps` geprüft: `table_calendar` zieht nur
-  `simple_gesture_detector` (Flutter/Dart) nach.
+- Transitiver Abhängigkeitsbaum über `flutter pub deps` geprüft.
 - Eingebettete Schriften/JS/Assets, sowie `Commons-Clause`/`BSL`/`SSPL`/`PolyForm`/`NC`/`ND`
   ausgeschlossen.
 
 ## 4. Ergebnis (Moodle/Kalender)
 
-Alle neuen direkten und transitiven Abhängigkeiten sind mit `AGPL-3.0-only` **verträglich**. Das
-Lizenz-Gate für diese Arbeit ist erfüllt.
+Es kommt für Moodle und Kalender keine Abhängigkeit hinzu; die wiederverwendeten sind mit
+`AGPL-3.0-only` **verträglich**. Das Lizenz-Gate für diese Arbeit ist erfüllt.
 
 ---
 
