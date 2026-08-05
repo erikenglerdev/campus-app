@@ -232,8 +232,7 @@ Inhalt, kein Vorschaubild zwischen Formularfeldern.
   Ort, danach deterministisch nach `sortOrder` und `roomKey`.
 - **Demo-Badge** dauerhaft sichtbar; ein Tippen zeigt den vollständigen
   Hinweistext im Dialog. Der Democharakter ist damit nie verborgen.
-- **Untere Leiste** im Ruhezustand: Anzahl der Räume und „Alle anzeigen", das
-  die vollständige Liste als ziehbares Sheet öffnet.
+- **Antippbare Räume**: siehe §7b.
 - **Detail-Sheet** unten, sobald ein Raum gewählt ist: Auswahl im Klartext,
   Gebäude/Etage/Raum, Raumart, optionale Beschreibung und „Gesamte Etage
   anzeigen".
@@ -270,9 +269,8 @@ Inhalt, kein Vorschaubild zwischen Formularfeldern.
 - Eine leere Raumliste rendert **nichts** — ein Kontakt ohne Raum sieht aus wie
   zuvor.
 
-Räume sind bewusst **nicht** durch Tippen auf beliebige SVG-Pfade auswählbar:
-Das gebündelte Asset wird zur Laufzeit nicht analysiert, und Suche plus
-Deep-Link decken den Bedarf vollständig ab.
+Das gebündelte SVG wird zur Laufzeit **nicht** analysiert. Ein Tap trifft die
+**Geometrie aus `map_catalog.json`**, nicht einen SVG-Pfad — siehe §7b.
 
 ## 7a. Bedienung der Kartenansicht
 
@@ -291,6 +289,36 @@ Leiste reserviert, die es nicht mehr gibt; der Zurücksetzen-Knopf rückt entspr
 
 Enthält der Katalog **gar keine Räume**, sagt ein kurzer Hinweis unter dem Plan-Abzeichen
 genau das. Ohne ihn wäre ein durchsuchbarer Plan ohne Suchtreffer stumm darüber, warum.
+
+## 7b. Antippbare Räume
+
+Ein Tap auf einen Raum wählt ihn aus — über **denselben** Weg wie ein Suchtreffer und mit
+derselben Detailanzeige. Getroffen wird die **Geometrie aus `map_catalog.json`**, nicht ein
+SVG-Pfad: Das Asset ist ein Bild, und es zur Laufzeit wie ein Dokument abzufragen würde die
+App daran binden, wie der Generator es gerade ausgibt.
+
+Die Regeln stehen als reine Funktion in `map_hit_test.dart` und sind dort einzeln getestet:
+
+| Fall                                 | Ergebnis                                                          |
+| ------------------------------------ | ----------------------------------------------------------------- |
+| Tap **in** einem Raum                | dieser Raum — Enthaltensein schlägt jede Nähe                     |
+| Tap in mehreren (Raum im Raum)       | der **kleinere**, sonst wäre eine Kammer in einer Halle unwählbar |
+| Tap knapp daneben                    | der **nächste** Raum innerhalb der Toleranz                       |
+| Tap auf freier Fläche                | **nichts** — leerer Boden ist eine echte Antwort, kein Ratefall   |
+| Raum ohne passenden `/v1/rooms`-Satz | **nicht** auswählbar; es gäbe weder Namen noch Details zu zeigen  |
+
+Zwei Punkte, die leicht falsch werden:
+
+- **Koordinaten.** Der `GestureDetector` sitzt **innerhalb** des Kindes des
+  `InteractiveViewer`. Flutter bildet den Zeiger damit selbst durch Pan und Zoom ab; es gibt
+  keine eigene Umkehrrechnung, die bei Skalierung 1 stimmt und sonst nicht.
+- **Toleranz.** Eine Fingerkuppe ist rund 24 logische Pixel breit. Hineingezoomt decken diese
+  Pixel weniger Plan-Einheiten ab, also schrumpft die Toleranz mit dem Zoom — sonst würde ein
+  vergrößerter Plan ungenauer, je näher man hinsieht.
+
+Die **Raumsuche** bleibt die barrierefreie Bedienung: Der Plan selbst ist für Screenreader
+weiterhin dekorativ (`excludeFromSemantics`), die Auswahl wird im Detail-Sheet im Klartext
+genannt.
 
 ## 8. Release-Gate: reale Gebäudepläne
 

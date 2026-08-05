@@ -371,6 +371,90 @@ void main() {
     expect(find.textContaining('Ausgewählt: Großer Hörsaal'), findsOneWidget);
   });
 
+  group('tapping a room on the plan', () {
+    /// Where a point of the PLAN currently sits on screen.
+    Offset planPointOnScreen(WidgetTester tester, Offset planPoint) {
+      final FloorMapViewState state = tester.state<FloorMapViewState>(
+        find.byType(FloorMapView),
+      );
+      final FloorMapView view = tester.widget<FloorMapView>(
+        find.byType(FloorMapView),
+      );
+      final Rect box = tester.getRect(find.byType(FloorMapView));
+      final double scale = state.planScale;
+      final Size planSize = Size(
+        view.floor.viewBox.width * scale,
+        view.floor.viewBox.height * scale,
+      );
+      // The plan is centred inside the view before the transform applies.
+      final Offset inChild =
+          Offset(
+            (box.width - planSize.width) / 2,
+            (box.height - planSize.height) / 2,
+          ) +
+          planPoint * scale;
+      return box.topLeft +
+          MatrixUtils.transformPoint(state.currentTransform, inChild);
+    }
+
+    testWidgets('selects it exactly as the search would', (
+      WidgetTester tester,
+    ) async {
+      await pumpMap(tester);
+
+      // The centre of B.201 in plan coordinates, from the bundled catalogue.
+      await tester.tapAt(planPointOnScreen(tester, const Offset(195, 310)));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Ausgewählt: Großer Hörsaal'), findsOneWidget);
+      expect(find.byIcon(Icons.place), findsWidgets);
+    });
+
+    testWidgets('a tap on empty floor changes nothing', (
+      WidgetTester tester,
+    ) async {
+      await pumpMap(tester);
+
+      // The far corner of the plan: no room is anywhere near it.
+      await tester.tapAt(planPointOnScreen(tester, Offset.zero));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Ausgewählt:'), findsNothing);
+    });
+
+    testWidgets('a room the API does not serve is not selectable', (
+      WidgetTester tester,
+    ) async {
+      // The bundled map knows B.203; the fixture does not. Without a room
+      // record there is no name and no detail to show, so the tap does
+      // nothing rather than opening an empty sheet.
+      await pumpMap(tester);
+
+      await tester.tapAt(planPointOnScreen(tester, const Offset(500, 310)));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Ausgewählt:'), findsNothing);
+    });
+
+    testWidgets('still hits the right room after the plan has moved', (
+      WidgetTester tester,
+    ) async {
+      // Selecting zooms and pans; a second tap has to keep working.
+      await pumpMap(tester);
+      await tester.tapAt(planPointOnScreen(tester, const Offset(195, 310)));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Ausgewählt: Großer Hörsaal'), findsOneWidget);
+
+      // B.202 sits next door. Zoomed in, its centre is off screen, so the
+      // target is the part of it that is actually visible — which is exactly
+      // the situation this has to survive.
+      await tester.tapAt(planPointOnScreen(tester, const Offset(310, 310)));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Ausgewählt: B.202'), findsOneWidget);
+    });
+  });
+
   testWidgets('survives doubled text size without overflow', (
     WidgetTester tester,
   ) async {

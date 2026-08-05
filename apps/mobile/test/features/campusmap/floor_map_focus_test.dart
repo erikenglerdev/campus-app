@@ -40,6 +40,8 @@ Future<GlobalKey<FloorMapViewState>> pumpMap(
   WidgetTester tester, {
   MapRoomGeometry? selected,
   Size viewport = const Size(1200, 400),
+  List<MapRoomGeometry> rooms = const <MapRoomGeometry>[],
+  ValueChanged<String>? onRoomTap,
 }) async {
   // The default 800x600 test surface would silently shrink the requested
   // viewport and make the expectations below measure something else.
@@ -61,7 +63,13 @@ Future<GlobalKey<FloorMapViewState>> pumpMap(
           child: SizedBox(
             width: viewport.width,
             height: viewport.height,
-            child: FloorMapView(key: key, floor: _floor, selected: selected),
+            child: FloorMapView(
+              key: key,
+              floor: _floor,
+              rooms: rooms,
+              selected: selected,
+              onRoomTap: onRoomTap,
+            ),
           ),
         ),
       ),

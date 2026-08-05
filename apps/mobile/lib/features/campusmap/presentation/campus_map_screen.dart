@@ -204,9 +204,29 @@ class _MapSurface extends ConsumerWidget {
               ? FloorMapView(
                   key: mapKey,
                   floor: floor,
+                  // Only this floor's rooms, so a room one storey up can never
+                  // answer a tap.
+                  rooms: map == null
+                      ? const <MapRoomGeometry>[]
+                      : map.rooms
+                            .where(
+                              (MapRoomGeometry room) =>
+                                  room.floorKey == floor.floorKey,
+                            )
+                            .toList(growable: false),
                   selected: geometry?.floorKey == floor.floorKey
                       ? geometry
                       : null,
+                  onRoomTap: (String roomKey) {
+                    // Exactly the flow a search result takes. A geometry the
+                    // API knows nothing about is not selectable: there would be
+                    // no name and no details to show.
+                    final Room? room = _firstWhereOrNull(
+                      allRooms,
+                      (Room candidate) => candidate.roomKey == roomKey,
+                    );
+                    if (room != null) onSelect(room);
+                  },
                   visiblePadding: covered,
                 )
               : _MapUnavailable(versionMismatch: versionMismatch),

@@ -9,6 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../l10n/l10n.dart';
 import '../domain/map_catalog.dart';
+import '../domain/map_hit_test.dart';
 
 /// The zoomable floor plan.
 ///
@@ -20,16 +21,31 @@ import '../domain/map_catalog.dart';
 /// The highlight deliberately uses THREE cues, not just colour: a thick
 /// outline, a marker above the room, and a textual statement of the selection
 /// outside the map (see [CampusMapScreen]).
+///
+/// Rooms are tappable. The hit test runs against the bundled geometry, not
+/// against the SVG: the asset is a picture, and treating it as a document to
+/// query would tie the app to how the generator happens to emit it.
 class FloorMapView extends StatefulWidget {
   const FloorMapView({
     required this.floor,
+    required this.rooms,
     required this.selected,
+    this.onRoomTap,
     this.visiblePadding = EdgeInsets.zero,
     super.key,
   });
 
   final MapFloor floor;
+
+  /// The geometry of **this floor**. The caller filters; a room one storey up
+  /// must never answer a tap.
+  final List<MapRoomGeometry> rooms;
+
   final MapRoomGeometry? selected;
+
+  /// Called with the room key when a room is tapped. A tap on empty floor does
+  /// nothing at all.
+  final ValueChanged<String>? onRoomTap;
 
   /// How much of the view is covered by overlays — the search bar above and the
   /// detail sheet below.
@@ -151,6 +167,32 @@ class FloorMapViewState extends State<FloorMapView> {
     setState(() => _controller.value = Matrix4.identity());
   }
 
+  /// Turns a tap into a room, or into nothing.
+  ///
+  /// [local] arrives in the coordinates of the plan **child**, because the
+  /// detector sits inside the [InteractiveViewer]'s child: Flutter has already
+  /// mapped the pointer through the current pan and zoom. That is why this
+  /// keeps working after zooming and dragging, and why it needs no arithmetic
+  /// of its own to undo the transform.
+  void _handleTap(Offset local) {
+    final ValueChanged<String>? onRoomTap = widget.onRoomTap;
+    if (onRoomTap == null || _planScale <= 0) return;
+
+    // A fingertip is roughly 24 logical pixels across. Zoomed in, those pixels
+    // cover fewer plan units, so the reach around a small room has to shrink
+    // with the zoom — otherwise a magnified plan would get less precise the
+    // closer you looked.
+    final double zoom = _controller.value.getMaxScaleOnAxis();
+    final double tolerance = 12 / (_planScale * (zoom <= 0 ? 1 : zoom));
+
+    final MapRoomGeometry? room = hitTestRoom(
+      widget.rooms,
+      local / _planScale,
+      tolerance: tolerance,
+    );
+    if (room != null) onRoomTap(room.roomKey);
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
@@ -187,26 +229,34 @@ class FloorMapViewState extends State<FloorMapView> {
                 child: SizedBox(
                   width: planSize.width,
                   height: planSize.height,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: <Widget>[
-                      SvgPicture.asset(
-                        widget.floor.svgAsset,
-                        fit: BoxFit.fill,
-                        // The plan is decorative here; the textual room details
-                        // outside the map carry the information.
-                        excludeFromSemantics: true,
-                      ),
-                      if (widget.selected != null)
-                        CustomPaint(
-                          painter: _SelectionPainter(
-                            room: widget.selected!,
-                            planScale: scale,
-                            color: Theme.of(context).colorScheme.primary,
-                            onColor: Theme.of(context).colorScheme.onPrimary,
-                          ),
+                  // Inside the transformed child on purpose: the tap arrives in
+                  // plan coordinates whatever the pan and zoom are.
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTapUp: (TapUpDetails details) =>
+                        _handleTap(details.localPosition),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: <Widget>[
+                        SvgPicture.asset(
+                          widget.floor.svgAsset,
+                          fit: BoxFit.fill,
+                          // The plan is decorative here; the textual room
+                          // details outside the map carry the information, and
+                          // the accessible way to pick a room is the search.
+                          excludeFromSemantics: true,
                         ),
-                    ],
+                        if (widget.selected != null)
+                          CustomPaint(
+                            painter: _SelectionPainter(
+                              room: widget.selected!,
+                              planScale: scale,
+                              color: Theme.of(context).colorScheme.primary,
+                              onColor: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
