@@ -79,7 +79,7 @@
     },
     "/v1/news": {
       "get": {
-        "description": "An absent `channels` parameter means all active channels. A present but empty `channels=` means the user deselected everything and yields an empty list.",
+        "description": "An absent `channels` parameter means all active channels. A present but empty `channels=` means the user deselected everything and yields an empty list. Each entry carries its sanitised `content`, so a feed can render articles inline without a request per card; unknown block types are removed server-side and reported once in `meta.droppedBlockTypes`.",
         "operationId": "NewsController_list_v1",
         "parameters": [
           {
@@ -1109,6 +1109,14 @@
             "type": "string",
             "nullable": true,
             "description": "Validated https URL of the original source, or null."
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "description": "Sanitised content blocks, delivered with the LIST entry so a feed can render the article inline without a request per card. Only paragraph, heading, list, quote and image survive; anything else is removed server-side and reported in meta.droppedBlockTypes."
           }
         },
         "required": [
@@ -1121,7 +1129,8 @@
           "channels",
           "authors",
           "sourceName",
-          "sourceUrl"
+          "sourceUrl",
+          "content"
         ]
       },
       "NewsListResponseDto": {
@@ -1199,7 +1208,7 @@
               "type": "object",
               "additionalProperties": true
             },
-            "description": "Sanitised content blocks. Only paragraph, heading, list, quote and image survive; anything else is removed server-side and reported in meta.droppedBlockTypes."
+            "description": "Sanitised content blocks, delivered with the LIST entry so a feed can render the article inline without a request per card. Only paragraph, heading, list, quote and image survive; anything else is removed server-side and reported in meta.droppedBlockTypes."
           }
         },
         "required": [

@@ -246,6 +246,103 @@ describe('NewsService', () => {
     });
   });
 
+  describe('getNews content delivery', () => {
+    it('delivers each article with its sanitised content', async () => {
+      // The feed renders articles inline. Without content in the list, every
+      // visible card would need a detail request of its own.
+      const { client, calls } = makeClient(() => ({
+        data: [
+          article('a', {
+            content: [{ type: 'paragraph', children: [{ type: 'text', text: 'Hallo' }] }],
+          }),
+        ],
+      }));
+
+      const result = await new NewsService(client).getNews(de, {
+        channels: [],
+        channelsParamPresent: false,
+        page: 1,
+        pageSize: 20,
+      });
+
+      expect(result.data[0]?.content).toEqual([
+        { type: 'paragraph', children: [{ type: 'text', text: 'Hallo' }] },
+      ]);
+      // One request for the page, not one per article.
+      expect(calls).toHaveLength(1);
+    });
+
+    it('removes unknown block types and reports them once per response', async () => {
+      const { client } = makeClient(() => ({
+        data: [
+          article('a', { content: [{ type: 'future-embed' }] }),
+          article('b', { content: [{ type: 'future-embed' }, { type: 'other-embed' }] }),
+        ],
+      }));
+
+      const result = await new NewsService(client).getNews(de, {
+        channels: [],
+        channelsParamPresent: false,
+        page: 1,
+        pageSize: 20,
+      });
+
+      expect(result.data.every((entry) => entry.content.length === 0)).toBe(true);
+      // Deduplicated and sorted: a new CMS block type is a fact about the
+      // response, not about each article that happens to use it.
+      expect(result.droppedBlockTypes).toEqual(['future-embed', 'other-embed']);
+    });
+
+    it('reports nothing dropped when every block is known', async () => {
+      const { client } = makeClient(() => ({
+        data: [article('a', { content: [{ type: 'paragraph', children: [] }] })],
+      }));
+
+      const result = await new NewsService(client).getNews(de, {
+        channels: [],
+        channelsParamPresent: false,
+        page: 1,
+        pageSize: 20,
+      });
+      expect(result.droppedBlockTypes).toEqual([]);
+    });
+
+    it('an English overlay keeps the English content', async () => {
+      // Content is localised text, so the translation must win over the German
+      // original — unlike relations and media, which are shared.
+      const { client } = makeClient((call) =>
+        call.query['locale'] === 'en'
+          ? {
+              data: [
+                article('a', {
+                  title: 'English',
+                  content: [{ type: 'paragraph', children: [{ type: 'text', text: 'Hello' }] }],
+                }),
+              ],
+            }
+          : {
+              data: [
+                article('a', {
+                  content: [{ type: 'paragraph', children: [{ type: 'text', text: 'Hallo' }] }],
+                }),
+              ],
+            },
+      );
+
+      const result = await new NewsService(client).getNews(en, {
+        channels: [],
+        channelsParamPresent: false,
+        page: 1,
+        pageSize: 20,
+      });
+
+      expect(result.data[0]?.content).toEqual([
+        { type: 'paragraph', children: [{ type: 'text', text: 'Hello' }] },
+      ]);
+      expect(result.translationFallback).toBe(false);
+    });
+  });
+
   describe('getNewsBySlug', () => {
     it('returns the sanitised detail article', async () => {
       const { client } = makeClient(() => ({

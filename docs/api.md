@@ -184,6 +184,7 @@ Sortierung: `isPinned` DESC, dann `publishedAt` DESC, dann `slug` ASC (determini
       "authors": [{ "name": "Redaktion Campus News", "role": "Redaktion" }],
       "sourceName": "Hochschule Anhalt",
       "sourceUrl": "https://www.hs-anhalt.de/…",
+      "content": [{ "type": "paragraph", "children": [{ "type": "text", "text": "…" }] }],
     },
   ],
   "meta": {
@@ -198,9 +199,22 @@ Sortierung: `isPinned` DESC, dann `publishedAt` DESC, dann `slug` ASC (determini
 `heroImage` ist `null`, wenn kein freigegebenes Bild hinterlegt ist.
 `sourceUrl` ist immer eine validierte **HTTPS**-URL oder `null`.
 
+**`content` in der Liste.** Jeder Listeneintrag trägt seinen **serverseitig bereinigten**
+Inhalt. Die App stellt Artikel im Feed direkt dar; ohne Content in der Liste bräuchte jede
+sichtbare Karte einen eigenen Detailrequest. Die Bereinigung passiert an derselben Stelle wie
+beim Detail — unbereinigte Strapi-Blocks erreichen nie einen Client. Unbekannte Blocktypen
+werden entfernt und **einmal pro Antwort** in `meta.droppedBlockTypes` gemeldet, dedupliziert
+und sortiert; ein neuer CMS-Blocktyp ist eine Eigenschaft der Antwort, nicht jedes einzelnen
+Artikels, der ihn zufällig verwendet.
+
+`teaser` und `authors` bleiben im Vertrag, damit CMS und API kompatibel bleiben. Die mobile
+App stellt beide **nicht** dar.
+
 ### `GET /v1/news/:slug`
 
-Wie ein Listeneintrag, zusätzlich `content`. Unbekannter Slug ⇒ `404 NEWS_ARTICLE_NOT_FOUND`.
+Liefert genau denselben Aufbau wie ein Listeneintrag. Der Endpunkt bleibt aus
+Kompatibilitätsgründen bestehen, enthält aber nichts mehr, was die Liste nicht auch hat.
+Unbekannter Slug ⇒ `404 NEWS_ARTICLE_NOT_FOUND`.
 
 ```jsonc
 {
