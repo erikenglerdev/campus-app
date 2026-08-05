@@ -18,12 +18,7 @@ const List<MoodleCourse> _courses = <MoodleCourse>[
     shortName: 'RN-2026',
     summary: 'Schichtenmodelle, Routing, Prüfung am Semesterende.',
   ),
-  MoodleCourse(
-    id: 3,
-    fullName: 'Mathematik II',
-    shortName: 'MA2',
-    summary: '',
-  ),
+  MoodleCourse(id: 3, fullName: 'Mathematik II', shortName: 'MA2', summary: ''),
 ];
 
 List<int> _ids(List<MoodleCourse> courses) =>

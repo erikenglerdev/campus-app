@@ -118,6 +118,8 @@ Future<void> pumpMap(
 }
 
 void main() {
+  group('map controls', _controlPositionTests);
+
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     testCatalog = await const MapAssetLoader().load();
@@ -276,8 +278,8 @@ void main() {
       find.textContaining('passt nicht zur aktuellen Raumliste'),
       findsOneWidget,
     );
-    // The plan is withheld, but the rooms stay browsable through the list.
-    await tester.tap(find.text('Alle anzeigen'));
+    // The plan is withheld, but the rooms stay reachable through the search.
+    await tester.enterText(find.byType(TextField), 'B201');
     await tester.pumpAndSettle();
     expect(find.text('B.201'), findsWidgets);
   });
@@ -304,7 +306,6 @@ void main() {
     await pumpMap(tester, locale: AppLocales.english);
     expect(find.text('Fictional demo plan'), findsOneWidget);
     expect(find.text('Search rooms'), findsOneWidget);
-    expect(find.text('Show all'), findsOneWidget);
 
     await tester.tap(find.text('Fictional demo plan'));
     await tester.pumpAndSettle();
@@ -334,8 +335,8 @@ void main() {
   ) async {
     await pumpMap(tester);
 
-    // The map is the resting state now, so the rows live in the room list.
-    await tester.tap(find.text('Alle anzeigen'));
+    // The map is the resting state, so the rows live in the search results.
+    await tester.enterText(find.byType(TextField), 'B2');
     await tester.pumpAndSettle();
 
     final Iterable<ListTile> tiles = tester.widgetList<ListTile>(
@@ -347,14 +348,22 @@ void main() {
     }
   });
 
-  testWidgets('the room list opens from the bottom bar and selects a room', (
+  testWidgets('no room count and no "show all" bar at the bottom', (
+    WidgetTester tester,
+  ) async {
+    // The bar took a strip of the map to say something the map already shows.
+    await pumpMap(tester);
+
+    expect(find.text('3 Räume'), findsNothing);
+    expect(find.text('Alle anzeigen'), findsNothing);
+  });
+
+  testWidgets('a room is selected through the search', (
     WidgetTester tester,
   ) async {
     await pumpMap(tester);
-    expect(find.text('30 Räume'), findsNothing, reason: 'fixture has 3 rooms');
-    expect(find.text('3 Räume'), findsOneWidget);
 
-    await tester.tap(find.text('Alle anzeigen'));
+    await tester.enterText(find.byType(TextField), 'Großer');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Großer Hörsaal').last);
     await tester.pumpAndSettle();
@@ -698,5 +707,33 @@ void _selectionTests() {
 
     expect(tester.takeException(), isNull);
     expect(find.byType(FloorMapView), findsOneWidget);
+  });
+}
+
+/// The building and floor controls sit on the left and stay inside the screen.
+void _controlPositionTests() {
+  testWidgets('the controls are left-aligned', (WidgetTester tester) async {
+    await pumpMap(tester);
+
+    final Finder controls = find.byType(PositionedDirectional).first;
+    final PositionedDirectional positioned = tester
+        .widget<PositionedDirectional>(controls);
+    expect(positioned.start, isNotNull);
+    expect(positioned.end, isNull);
+  });
+
+  testWidgets('the label ellipsises instead of growing', (
+    WidgetTester tester,
+  ) async {
+    // The preferred label width is wider than a narrow phone can spare, so a
+    // long building name must be cut rather than push the control across the
+    // map. The width itself is clamped to what the screen actually offers.
+    await pumpMap(tester);
+
+    final Text label = tester.widget<Text>(
+      find.textContaining('Obergeschoss').first,
+    );
+    expect(label.overflow, TextOverflow.ellipsis);
+    expect(label.maxLines, 1);
   });
 }

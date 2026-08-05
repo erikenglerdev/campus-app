@@ -46,7 +46,6 @@ class CampusMapScreen extends ConsumerStatefulWidget {
 const double kSearchBarHeight = 56;
 const double kDemoBadgeHeight = 40;
 const double kDetailSheetHeight = 236;
-const double kResultsBarHeight = 76;
 
 class _CampusMapScreenState extends ConsumerState<CampusMapScreen> {
   final TextEditingController _search = TextEditingController();
@@ -193,9 +192,9 @@ class _MapSurface extends ConsumerWidget {
     // plan that is actually visible rather than behind a panel.
     final EdgeInsets covered = EdgeInsets.only(
       top: safe.top + kSearchBarHeight + kDemoBadgeHeight + AppSpacing.xl,
-      bottom:
-          safe.bottom +
-          (selectedRoom != null ? kDetailSheetHeight : kResultsBarHeight),
+      // Nothing is drawn at the bottom unless a room is selected, so no space
+      // is reserved for a bar that no longer exists.
+      bottom: safe.bottom + (selectedRoom != null ? kDetailSheetHeight : 0),
     );
 
     return Stack(
@@ -235,7 +234,7 @@ class _MapSurface extends ConsumerWidget {
 
         if (mapUsable && selectedRoom == null && query.isEmpty)
           _ResetButton(
-            bottom: safe.bottom + kResultsBarHeight + AppSpacing.lg,
+            bottom: safe.bottom + AppSpacing.lg,
             onPressed: () => mapKey.currentState?.resetView(),
           ),
 
@@ -244,9 +243,7 @@ class _MapSurface extends ConsumerWidget {
             room: selectedRoom,
             onMap: geometry != null,
             onClose: onClearSelection,
-          )
-        else if (query.isEmpty)
-          _ResultsBar(rooms: allRooms, onSelect: onSelect),
+          ),
       ],
     );
   }
@@ -374,6 +371,29 @@ class _TopOverlay extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             _PlanBadge(kind: planKind),
+            // Without the old bottom bar this is the only place left to say
+            // that the catalogue has no rooms at all — a plan the user cannot
+            // search is otherwise silent about why.
+            if (loaded.value.isEmpty) ...<Widget>[
+              const SizedBox(height: AppSpacing.sm),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Material(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    child: Text(
+                      l10n.campusMapEmpty,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ),
+              ),
+            ],
             if (loaded.fromCache) ...<Widget>[
               const SizedBox(height: AppSpacing.sm),
               OfflineNotice(cachedAt: loaded.cachedAt),
@@ -589,118 +609,6 @@ class _ResultsOverlay extends StatelessWidget {
   }
 }
 
-/// Resting state at the bottom: how many rooms exist, and a way into the list.
-class _ResultsBar extends StatelessWidget {
-  const _ResultsBar({required this.rooms, required this.onSelect});
-
-  final List<Room> rooms;
-  final ValueChanged<Room> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l10n = context.l10n;
-    final TextTheme text = Theme.of(context).textTheme;
-
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Material(
-        elevation: 8,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppRadius.lg),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: kResultsBarHeight,
-            child: rooms.isEmpty
-                ? Center(
-                    child: Text(l10n.campusMapEmpty, style: text.bodyMedium),
-                  )
-                : InkWell(
-                    onTap: () => showAllRooms(context, rooms, onSelect),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg,
-                      ),
-                      child: Row(
-                        children: <Widget>[
-                          const Icon(Icons.list),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: Text(
-                              l10n.campusMapRoomCount(rooms.length),
-                              style: text.titleSmall,
-                            ),
-                          ),
-                          Text(
-                            l10n.campusMapShowAllRooms,
-                            style: text.labelLarge,
-                          ),
-                          const Icon(Icons.expand_less),
-                        ],
-                      ),
-                    ),
-                  ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The full room list as a draggable sheet.
-Future<void> showAllRooms(
-  BuildContext context,
-  List<Room> rooms,
-  ValueChanged<Room> onSelect,
-) {
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    useSafeArea: true,
-    builder: (BuildContext sheetContext) => DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.7,
-      builder: (BuildContext context, ScrollController controller) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              0,
-              AppSpacing.lg,
-              AppSpacing.sm,
-            ),
-            child: Semantics(
-              header: true,
-              child: Text(
-                context.l10n.campusMapRoomCount(rooms.length),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              controller: controller,
-              itemCount: rooms.length,
-              itemBuilder: (BuildContext context, int index) => _RoomTile(
-                room: rooms[index],
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  onSelect(rooms[index]);
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-/// Details of the selected room, anchored at the bottom like a map app.
 class _RoomDetailSheet extends StatelessWidget {
   const _RoomDetailSheet({
     required this.room,
@@ -832,7 +740,19 @@ class _MapControls extends ConsumerWidget {
 
   /// Long names must not push the control across the map, and the map is
   /// narrow on a phone — so the label ellipsises instead of growing.
-  static const double _maxLabelWidth = 168;
+  ///
+  /// Wider than it used to be, because a building name is rarely short. The
+  /// ceiling is still bounded by the screen: on a 320 px phone the controls may
+  /// not run off the edge, so the available width wins over the preferred one.
+  static const double _preferredLabelWidth = 224;
+
+  static double _maxLabelWidthFor(BuildContext context) {
+    final double available =
+        MediaQuery.sizeOf(context).width -
+        2 * AppSpacing.lg -
+        AppSizes.icon * 3;
+    return available < _preferredLabelWidth ? available : _preferredLabelWidth;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -847,11 +767,15 @@ class _MapControls extends ConsumerWidget {
             orElse: () => floors.first,
           );
 
+    final double maxLabelWidth = _maxLabelWidthFor(context);
+
+    // Left-aligned: the controls describe what is drawn below them, and a
+    // left-to-right reader looks there first.
     return PositionedDirectional(
-      end: AppSpacing.lg,
+      start: AppSpacing.lg,
       top: top,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           // Only worth a control when there is something to choose.
@@ -873,7 +797,7 @@ class _MapControls extends ConsumerWidget {
               ],
               onSelected: (String key) =>
                   ref.read(visibleBuildingProvider.notifier).show(key),
-              maxLabelWidth: _maxLabelWidth,
+              maxLabelWidth: maxLabelWidth,
             ),
             const SizedBox(height: AppSpacing.sm),
           ],
@@ -900,7 +824,7 @@ class _MapControls extends ConsumerWidget {
               ],
               onSelected: (String key) =>
                   ref.read(visibleFloorProvider.notifier).show(key),
-              maxLabelWidth: _maxLabelWidth,
+              maxLabelWidth: maxLabelWidth,
             ),
         ],
       ),

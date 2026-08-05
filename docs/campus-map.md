@@ -274,6 +274,24 @@ Räume sind bewusst **nicht** durch Tippen auf beliebige SVG-Pfade auswählbar:
 Das gebündelte Asset wird zur Laufzeit nicht analysiert, und Suche plus
 Deep-Link decken den Bedarf vollständig ab.
 
+## 7a. Bedienung der Kartenansicht
+
+Die Steuerung für **Gebäude** und **Etage** steht **links** über dem Plan, Gebäude über
+Etage. Sie beschreibt, was darunter gezeichnet wird, und ein von links nach rechts lesender
+Blick sucht sie dort. Die Beschriftungen sind breiter als früher, weil Gebäudenamen selten
+kurz sind; die Höchstbreite ist aber an die tatsächlich verfügbare Bildschirmbreite gebunden
+und nie größer. Lange Namen werden weiterhin mit Auslassungszeichen gekürzt, statt das
+Bedienelement über die Karte zu schieben.
+
+Die frühere untere Leiste mit der **Raumanzahl** und **„Alle anzeigen"** samt vollständiger
+Raumliste ist entfallen. Sie belegte einen Streifen der Karte, um zu sagen, was die Karte
+ohnehin zeigt. Räume werden über die **Raumsuche** gefunden — die weiterhin die
+barrierefreie Bedienung ist. Ohne ausgewählten Raum wird unten kein Platz mehr für eine
+Leiste reserviert, die es nicht mehr gibt; der Zurücksetzen-Knopf rückt entsprechend nach.
+
+Enthält der Katalog **gar keine Räume**, sagt ein kurzer Hinweis unter dem Plan-Abzeichen
+genau das. Ohne ihn wäre ein durchsuchbarer Plan ohne Suchtreffer stumm darüber, warum.
+
 ## 8. Release-Gate: reale Gebäudepläne
 
 Der aktuelle Plan ist erfunden und damit unbedenklich. **Bevor** ein realer Gebäudeplan aufgenommen

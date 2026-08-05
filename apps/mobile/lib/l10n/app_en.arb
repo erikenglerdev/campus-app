@@ -635,15 +635,6 @@
   "@campusMapNoResultsHint": {
     "description": "Hilfetext im Leerzustand der Suche."
   },
-  "campusMapRoomCount": "{count, plural, =0{No rooms} =1{1 room} other{{count} rooms}}",
-  "@campusMapRoomCount": {
-    "description": "Anzahl der gefundenen Räume.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "campusMapBuildingLabel": "Building",
   "@campusMapBuildingLabel": {
     "description": "Feldbeschriftung Gebäude."
@@ -765,7 +756,6 @@
   "@campusMapDemoBadge": {
     "description": "Immer sichtbarer Kurzhinweis auf der Karte; der vollständige Text erscheint beim Antippen."
   },
-  "campusMapShowAllRooms": "Show all",
   "campusMapSchematicBadge": "Schematic overview",
   "campusMapSchematicNotice": "Simplified campus overview, not to scale. It is not a fire, escape or official site plan. Independent, unofficial project.",
   "campusMapBuildingSelectorSemantic": "Select building, currently {building}",
@@ -794,9 +784,6 @@
         "example": "Name of the only available level"
       }
     }
-  },
-  "@campusMapShowAllRooms": {
-    "description": "Aktion in der unteren Leiste, die die vollständige Raumliste öffnet."
   },
   "todayGreetingMorning": "Good morning",
   "todayGreetingDay": "Hello",
