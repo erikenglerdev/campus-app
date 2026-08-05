@@ -60,48 +60,58 @@ class NewsCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // The meta line sits above the title rather than beside it, so a
-            // long headline and a doubled text size never squeeze each other.
-            if (article.isPinned || age != null)
+            // The pin keeps its own line above the headline. It is rare, and
+            // beside a headline it would be the thing that squeezes it.
+            if (article.isPinned)
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    // The pin wraps rather than pushing the timestamp off the
-                    // card at a large text size.
-                    Expanded(
-                      child: Wrap(
-                        spacing: AppSpacing.sm,
-                        runSpacing: AppSpacing.xxs,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: <Widget>[
-                          if (article.isPinned)
-                            _MetaLabel(
-                              icon: Icons.push_pin_outlined,
-                              label: l10n.newsPinnedLabel,
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (age != null)
-                      Text(
-                        newsAgeText(l10n, locale, age),
-                        textAlign: TextAlign.end,
-                        style: text.labelMedium?.copyWith(
-                          color: colors.textSecondary,
-                        ),
-                      ),
-                  ],
+                child: _MetaLabel(
+                  icon: Icons.push_pin_outlined,
+                  label: l10n.newsPinnedLabel,
                 ),
               ),
 
-            Semantics(
-              header: true,
-              child: Text(
-                article.title,
-                style: text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-              ),
+            // Headline and age share a line, aligned on their baselines rather
+            // than on their boxes: the two type sizes then sit on the same
+            // line optically, which is what the eye reads as "one row".
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: <Widget>[
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      article.title,
+                      style: text.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                if (age != null) ...<Widget>[
+                  const SizedBox(width: AppSpacing.sm),
+                  // A share of the line, not a fixed width: "vor 4 Tagen" needs
+                  // its one line on an ordinary phone, but at a doubled text
+                  // size the same string would take the width the headline
+                  // lives on. Past this share the timestamp wraps instead.
+                  LayoutBuilder(
+                    builder: (BuildContext _, BoxConstraints constraints) =>
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: constraints.maxWidth * _ageWidthShare,
+                          ),
+                          child: Text(
+                            newsAgeText(l10n, locale, age),
+                            textAlign: TextAlign.end,
+                            style: text.labelMedium?.copyWith(
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                        ),
+                  ),
+                ],
+              ],
             ),
 
             if (handles.isNotEmpty) ...<Widget>[
@@ -125,6 +135,9 @@ class NewsCard extends ConsumerWidget {
     );
   }
 }
+
+/// How much of the headline's line the timestamp may claim before it wraps.
+const double _ageWidthShare = 0.45;
 
 /// An icon plus its word — a state is never carried by the icon alone.
 class _MetaLabel extends StatelessWidget {

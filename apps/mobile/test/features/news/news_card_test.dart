@@ -6,7 +6,7 @@ import 'package:campus_koethen/core/locale/locale_mode.dart';
 import 'package:campus_koethen/features/news/data/news_models.dart';
 import 'package:campus_koethen/features/news/presentation/news_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
@@ -226,6 +226,68 @@ void main() {
     );
 
     expect(find.text('vor 3 h'), findsOneWidget);
+  });
+
+  testWidgets('sets the age beside the title, not above it', (
+    WidgetTester tester,
+  ) async {
+    // On one line with the headline: the timestamp costs no row of its own,
+    // and the eye finds "how old is this" where it already is.
+    await _pumpCard(
+      tester,
+      _article(
+        title: 'Semesterstart',
+        publishedAt: newsTestNow.subtract(const Duration(hours: 3)),
+      ),
+    );
+
+    final Rect title = tester.getRect(find.text('Semesterstart'));
+    final Rect age = tester.getRect(find.text('vor 3 h'));
+
+    expect(
+      age.left,
+      greaterThan(title.right - 1),
+      reason: 'the age sits to the right of the headline',
+    );
+    expect(
+      age.center.dy,
+      closeTo(title.center.dy, title.height / 2),
+      reason: 'and on the same line, not on one of its own',
+    );
+  });
+
+  testWidgets('does not break a long age onto two lines needlessly', (
+    WidgetTester tester,
+  ) async {
+    // "vor 4 Tagen" is the everyday case, not an edge one. It has to fit on
+    // one line next to a short headline on an ordinary phone.
+    await _pumpCard(
+      tester,
+      _article(
+        title: 'Testartikel',
+        publishedAt: newsTestNow.subtract(const Duration(days: 4)),
+      ),
+    );
+
+    final RenderParagraph age = tester.renderObject<RenderParagraph>(
+      find.text('vor 4 Tagen'),
+    );
+    expect(
+      age.size.height,
+      closeTo(age.getMinIntrinsicHeight(double.infinity), 1),
+      reason: 'one line, not two',
+    );
+  });
+
+  testWidgets('keeps the pin above, where it cannot squeeze the headline', (
+    WidgetTester tester,
+  ) async {
+    await _pumpCard(tester, _article(title: 'Semesterstart', isPinned: true));
+
+    expect(
+      tester.getRect(find.text('Angepinnt')).bottom,
+      lessThanOrEqualTo(tester.getRect(find.text('Semesterstart')).top),
+    );
   });
 
   testWidgets('invents no timestamp when the article has none', (
