@@ -11,6 +11,7 @@ import '../../../core/network/cached_endpoint.dart';
 import '../../../core/network/loaded.dart';
 import '../../../core/network/network_providers.dart';
 import 'contact_models.dart';
+import 'contact_search_models.dart';
 
 /// Reads contact areas from the Campus API with a transparent offline cache.
 class ContactsRepository {
@@ -25,6 +26,22 @@ class ContactsRepository {
       cacheKey: CacheKeys.contactAreas(locale),
       locale: locale,
       parse: ContactArea.listFromJson,
+    );
+  }
+
+  /// The search index: every area with its persons and rooms, in one request.
+  ///
+  /// Cached like every other content response, so the search keeps working
+  /// offline — and so opening the search does not wait for the network when the
+  /// index has been loaded before.
+  Future<Loaded<List<ContactSearchArea>>> fetchSearchIndex({
+    required String locale,
+  }) {
+    return _endpoint.load<List<ContactSearchArea>>(
+      path: '/contact-areas/search-index',
+      cacheKey: CacheKeys.contactSearchIndex(locale),
+      locale: locale,
+      parse: ContactSearchArea.listFromJson,
     );
   }
 

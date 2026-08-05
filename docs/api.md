@@ -335,6 +335,61 @@ Personen, sortiert nach `sortOrder`, dann `name`.
 
 Eine Person kann in **mehreren** Bereichen erscheinen.
 
+### `GET /v1/contact-areas/search-index`
+
+Alles, was die Kontaktsuche treffen kann, in **einer** Antwort.
+
+Der Listenendpunkt trägt bewusst keine Detaildaten. Eine Suche über Beschreibungen, Telefonnummern
+oder Raumnummern müsste deshalb jeden Bereich einzeln nachladen — ein N+1 bei jedem Tastendruck.
+Stattdessen lädt der Client diesen Index **einmal**, cacht ihn und sucht lokal.
+
+```jsonc
+{
+  "data": [
+    {
+      "slug": "studierendenrat",
+      "name": "…",
+      "shortDescription": "…",
+      "iconKey": "…",
+      "descriptionText": "Wir helfen bei Anträgen.\nSprechzeiten nach Vereinbarung.",
+      "generalEmail": null,
+      "phone": null,
+      "website": null,
+      "appointmentUrl": null,
+      "address": null,
+      "openingHours": null,
+      "rooms": [{ "roomKey": "…", "roomNumber": "B.201", "…": "…" }],
+      "persons": [
+        {
+          "name": "…",
+          "role": "…",
+          "description": null,
+          "email": null,
+          "phone": null,
+          "website": null,
+          "rooms": [],
+        },
+      ],
+    },
+  ],
+  "meta": { "…": "…" },
+}
+```
+
+Verbindliche Regeln:
+
+- **Nur aktive** Bereiche und **nur aktive** Personen.
+- Ausschließlich **explizit gemappte, öffentliche** Felder. Keine Strapi-Internas, keine IDs.
+- **Kein `profileImage`:** Nach einem Bild sucht niemand, und ein Index ist der falsche Ort, um
+  mehr herauszugeben als die Frage braucht.
+- `descriptionText` ist die **bereinigte** Beschreibung als Klartext. Eine Suche trifft Wörter,
+  keine Formatierung: Links steuern ihren Linktext bei, ihre URL nicht, Bilder gar nichts.
+  Blöcke sind durch `\n` getrennt.
+- Locale-Auflösung und Raum-Mapping verhalten sich exakt wie beim Detailendpunkt; fehlt die
+  englische Fassung, bleibt der deutsche Text und `translationFallback` ist `true`.
+- Höchstens **zwei** Strapi-Anfragen (kanonisch plus angeforderte Sprache), unabhängig von der
+  Anzahl der Bereiche.
+
 ## 7. Mensa
 
 ### `GET /v1/canteens`

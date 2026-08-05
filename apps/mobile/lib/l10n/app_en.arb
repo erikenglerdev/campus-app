@@ -237,6 +237,21 @@
   },
   "timetableSourceLanguageHint": "Subject, room and person names come unchanged from the source and are not translated.",
   "contactsTitle": "Contacts",
+  "contactsSearchTooltip": "Search contacts",
+  "contactsSearchLabel": "Search contacts",
+  "contactsSearchHint": "Name, area, room or phone number",
+  "contactsSearchClear": "Clear search",
+  "contactsSearchEmptyTitle": "No matches",
+  "contactsSearchEmptyMessage": "No area and no person match your search. Check the spelling or search for the room number.",
+  "contactsSearchUnavailable": "Contact search is currently unavailable.",
+  "contactsSearchInArea": "in {area}",
+  "@contactsSearchInArea": {
+    "placeholders": { "area": { "type": "String" } }
+  },
+  "contactsSearchResultCount": "{count, plural, =0{No matches} =1{1 match} other{{count} matches}}",
+  "@contactsSearchResultCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "contactsEmptyTitle": "No contact areas",
   "contactsEmptyMessage": "No points of contact are listed at the moment.",
   "contactsDemoBadge": "Demo content",

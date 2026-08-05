@@ -9,6 +9,8 @@ import {
   ContactAreaDetailResponseDto,
   ContactAreaListItemDto,
   ContactAreasResponseDto,
+  ContactSearchAreaDto,
+  ContactSearchIndexResponseDto,
 } from './contacts.types';
 
 @ApiTags('contacts')
@@ -31,6 +33,26 @@ export class ContactsController {
     @RequestLocale() locale: LocaleResolution,
   ): Promise<ApiResponse<ContactAreaListItemDto[]>> {
     const result = await this.contacts.listAreas(locale);
+    return {
+      data: result.data,
+      meta: buildMeta({ ...locale, translationFallback: result.translationFallback }),
+    };
+  }
+
+  // Declared BEFORE `:slug`, or the parameter route would swallow it and the
+  // index would answer "contact area 'search-index' not found".
+  @Get('search-index')
+  @ApiOperation({
+    summary: 'Everything the contact search can match, in one response.',
+    description:
+      'Exists so a client can search over areas, persons, descriptions and rooms without one request per area — and without a request per keystroke. Only active areas and active persons, only explicitly mapped public fields.',
+  })
+  @ApiQuery({ name: 'locale', required: false, enum: ['de', 'en'] })
+  @ApiOkResponse({ type: ContactSearchIndexResponseDto })
+  async searchIndex(
+    @RequestLocale() locale: LocaleResolution,
+  ): Promise<ApiResponse<ContactSearchAreaDto[]>> {
+    const result = await this.contacts.searchIndex(locale);
     return {
       data: result.data,
       meta: buildMeta({ ...locale, translationFallback: result.translationFallback }),

@@ -19,6 +19,10 @@ abstract final class CacheKeys {
   /// Full contact area list.
   static String contactAreas(String locale) => 'contacts.areas.$locale';
 
+  /// The contact search index: every area with its persons and rooms.
+  static String contactSearchIndex(String locale) =>
+      'contacts.searchIndex.$locale';
+
   /// A single contact area including its persons.
   static String contactArea(String locale, String slug) =>
       'contacts.area.$locale.$slug';

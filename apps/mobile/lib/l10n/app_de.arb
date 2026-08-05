@@ -358,6 +358,28 @@
   "@timetableSourceLanguageHint": {},
   "contactsTitle": "Kontakte",
   "@contactsTitle": {},
+  "contactsSearchTooltip": "Kontakte durchsuchen",
+  "@contactsSearchTooltip": {},
+  "contactsSearchLabel": "Kontakte suchen",
+  "@contactsSearchLabel": {},
+  "contactsSearchHint": "Name, Bereich, Raum oder Telefonnummer",
+  "@contactsSearchHint": {},
+  "contactsSearchClear": "Suche leeren",
+  "@contactsSearchClear": {},
+  "contactsSearchEmptyTitle": "Kein Treffer",
+  "@contactsSearchEmptyTitle": {},
+  "contactsSearchEmptyMessage": "Zu deiner Suche gibt es weder einen Bereich noch eine Person. Prüfe die Schreibweise oder suche nach der Raumnummer.",
+  "@contactsSearchEmptyMessage": {},
+  "contactsSearchUnavailable": "Die Kontaktsuche ist gerade nicht verfügbar.",
+  "@contactsSearchUnavailable": {},
+  "contactsSearchInArea": "in {area}",
+  "@contactsSearchInArea": {
+    "placeholders": { "area": { "type": "String" } }
+  },
+  "contactsSearchResultCount": "{count, plural, =0{Keine Treffer} =1{1 Treffer} other{{count} Treffer}}",
+  "@contactsSearchResultCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "contactsEmptyTitle": "Keine Kontaktbereiche",
   "@contactsEmptyTitle": {},
   "contactsEmptyMessage": "Zurzeit sind keine Anlaufstellen hinterlegt.",
