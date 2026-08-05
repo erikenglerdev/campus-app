@@ -428,7 +428,6 @@ class _WeekView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AppLocalizations l10n = context.l10n;
     final String locale = Localizations.localeOf(context).languageCode;
     final DateTime focused = ref.watch(calendarFocusedDayProvider);
     final bool showWeekend = ref.watch(calendarShowWeekendProvider);
@@ -443,9 +442,9 @@ class _WeekView extends ConsumerWidget {
             AppSpacing.lg,
             AppSpacing.xs,
           ),
-          // A Wrap, not a Row: at a large text size the month and the switch do
-          // not share a line on a narrow phone, and the switch dropping onto
-          // its own line is better than either of them being cut off.
+          // A Wrap, not a Row: at a large text size the month and the range
+          // picker do not share a line on a narrow phone, and the picker
+          // dropping onto its own line beats either of them being cut off.
           child: Wrap(
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.xs,
@@ -455,19 +454,11 @@ class _WeekView extends ConsumerWidget {
                 AppDateFormats.monthAndYear(focused, locale),
                 style: Theme.of(context).textTheme.titleSmall,
               ),
-              // A teaching week is Monday to Friday; the weekend is a local
-              // choice. The chip carries a check mark and its label, so the
-              // state is never the fill colour alone.
-              FilterChip(
-                avatar: const Icon(
-                  Icons.weekend_outlined,
-                  size: AppSizes.iconSmall,
-                ),
-                label: Text(l10n.calendarWeekendLabel),
-                selected: showWeekend,
-                onSelected: (_) =>
-                    ref.read(calendarShowWeekendProvider.notifier).toggle(),
-              ),
+              // Both ranges on screen, the current one picked. A single chip
+              // reading "Wochenende" left the reader to work out whether it
+              // was showing the weekend or hiding it — naming the two weeks
+              // outright answers that before it is asked.
+              _WeekRangePicker(showWeekend: showWeekend),
             ],
           ),
         ),
@@ -488,6 +479,52 @@ class _WeekView extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Teaching week or full week, as the two weeks themselves.
+///
+/// "Mo–Fr" is read at a glance but cannot be heard, so each segment carries
+/// the range written out as its accessible name and as its tooltip.
+class _WeekRangePicker extends ConsumerWidget {
+  const _WeekRangePicker({required this.showWeekend});
+
+  final bool showWeekend;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final AppLocalizations l10n = context.l10n;
+
+    return SegmentedButton<bool>(
+      showSelectedIcon: false,
+      style: SegmentedButton.styleFrom(
+        visualDensity: VisualDensity.compact,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+      ),
+      segments: <ButtonSegment<bool>>[
+        ButtonSegment<bool>(
+          value: false,
+          label: Semantics(
+            label: l10n.calendarWeekRangeWorkdaysSemantic,
+            excludeSemantics: true,
+            child: Text(l10n.calendarWeekRangeWorkdays),
+          ),
+          tooltip: l10n.calendarWeekRangeWorkdaysSemantic,
+        ),
+        ButtonSegment<bool>(
+          value: true,
+          label: Semantics(
+            label: l10n.calendarWeekRangeFullSemantic,
+            excludeSemantics: true,
+            child: Text(l10n.calendarWeekRangeFull),
+          ),
+          tooltip: l10n.calendarWeekRangeFullSemantic,
+        ),
+      ],
+      selected: <bool>{showWeekend},
+      onSelectionChanged: (Set<bool> selection) =>
+          ref.read(calendarShowWeekendProvider.notifier).set(selection.first),
     );
   }
 }

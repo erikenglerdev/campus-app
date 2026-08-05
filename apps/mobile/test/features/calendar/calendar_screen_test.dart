@@ -470,11 +470,47 @@ void _weekViewTests() {
       reason: 'Monday to Friday by default',
     );
 
-    await tester.tap(find.text('Wochenende'));
+    // Both ranges are on screen and the active one is picked, so the control
+    // says what it will do — "Wochenende" alone left open whether the weekend
+    // was being shown or hidden.
+    expect(find.text('Mo–Fr'), findsOneWidget);
+    expect(find.text('Mo–So'), findsOneWidget);
+
+    await tester.tap(find.text('Mo–So'));
     await tester.pumpAndSettle();
 
     expect(tester.widget<WeekGridView>(find.byType(WeekGridView)).dayCount, 7);
     expect(store.getInt(PreferenceKeys.calendarShowWeekend), 1);
+
+    await tester.tap(find.text('Mo–Fr'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<WeekGridView>(find.byType(WeekGridView)).dayCount,
+      5,
+      reason: 'and back again — the control works in both directions',
+    );
+    expect(store.getInt(PreferenceKeys.calendarShowWeekend), 0);
+  });
+
+  testWidgets('the week range spells itself out for a screen reader', (
+    WidgetTester tester,
+  ) async {
+    // "Mo–Fr" is short enough to read at a glance and too short to hear.
+    final ProviderContainer container = await pumpCalendar(tester);
+    container
+        .read(calendarViewModeProvider.notifier)
+        .set(CalendarViewMode.week);
+    await tester.pumpAndSettle();
+
+    final List<String> labels = tester
+        .widgetList<Semantics>(find.byType(Semantics))
+        .map((Semantics s) => s.properties.label ?? '')
+        .where((String l) => l.isNotEmpty)
+        .toList(growable: false);
+
+    expect(labels, contains('Montag bis Freitag'));
+    expect(labels, contains('Montag bis Sonntag'));
   });
 
   testWidgets('the grid starts on a Monday', (WidgetTester tester) async {

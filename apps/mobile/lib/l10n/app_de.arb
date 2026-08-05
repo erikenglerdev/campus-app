@@ -988,8 +988,18 @@
   "@calendarConnectMoodle": {},
   "calendarOpenMoodle": "Moodle öffnen",
   "@calendarOpenMoodle": {},
-  "calendarWeekendLabel": "Wochenende",
-  "@calendarWeekendLabel": {},
+  "calendarWeekRangeWorkdays": "Mo–Fr",
+  "@calendarWeekRangeWorkdays": {
+    "description": "Kurzform der Lehrwoche auf dem Umschalter der Wochenansicht."
+  },
+  "calendarWeekRangeFull": "Mo–So",
+  "@calendarWeekRangeFull": {
+    "description": "Kurzform der vollen Woche auf dem Umschalter der Wochenansicht."
+  },
+  "calendarWeekRangeWorkdaysSemantic": "Montag bis Freitag",
+  "@calendarWeekRangeWorkdaysSemantic": {},
+  "calendarWeekRangeFullSemantic": "Montag bis Sonntag",
+  "@calendarWeekRangeFullSemantic": {},
   "calendarSourcesLabel": "Quellen",
   "@calendarSourcesLabel": {},
   "calendarNoEntries": "Keine Einträge.",
