@@ -27,23 +27,9 @@ import 'news_age_text.dart';
 /// The teaser and the authors are deliberately not shown. Both still exist in
 /// the CMS and the API for compatibility; the feed shows the article.
 class NewsCard extends ConsumerWidget {
-  const NewsCard({
-    required this.article,
-    this.isUnread = false,
-    this.onExpanded,
-    super.key,
-  });
+  const NewsCard({required this.article, super.key});
 
   final NewsArticle article;
-
-  /// Whether this announcement has not been read yet.
-  ///
-  /// Marked by a labelled badge, **not** by colour alone: a tint is invisible
-  /// to a large share of users and to a screen reader.
-  final bool isUnread;
-
-  /// Called when the reader opens the article, which counts as reading it.
-  final ValueChanged<String>? onExpanded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -76,14 +62,14 @@ class NewsCard extends ConsumerWidget {
           children: <Widget>[
             // The meta line sits above the title rather than beside it, so a
             // long headline and a doubled text size never squeeze each other.
-            if (article.isPinned || isUnread || age != null)
+            if (article.isPinned || age != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    // The markers wrap among themselves rather than pushing the
-                    // timestamp off the card at a large text size.
+                    // The pin wraps rather than pushing the timestamp off the
+                    // card at a large text size.
                     Expanded(
                       child: Wrap(
                         spacing: AppSpacing.sm,
@@ -94,34 +80,6 @@ class NewsCard extends ConsumerWidget {
                             _MetaLabel(
                               icon: Icons.push_pin_outlined,
                               label: l10n.newsPinnedLabel,
-                            ),
-                          if (isUnread)
-                            // A word, not a dot: "Neu" is legible, translatable
-                            // and survives being read aloud.
-                            Semantics(
-                              label: l10n.newsUnreadSemantic,
-                              excludeSemantics: true,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: colors.primaryContainer,
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadius.pill,
-                                  ),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.sm,
-                                    vertical: AppSpacing.xxs,
-                                  ),
-                                  child: Text(
-                                    l10n.newsUnreadBadge,
-                                    style: text.labelSmall?.copyWith(
-                                      color: colors.onPrimaryContainer,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ),
                             ),
                         ],
                       ),
@@ -142,9 +100,7 @@ class NewsCard extends ConsumerWidget {
               header: true,
               child: Text(
                 article.title,
-                style: text.titleLarge?.copyWith(
-                  fontWeight: isUnread ? FontWeight.w800 : FontWeight.w700,
-                ),
+                style: text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
 
@@ -160,12 +116,8 @@ class NewsCard extends ConsumerWidget {
             _ArticleBody(
               article: article,
               expanded: expanded,
-              onToggle: () {
-                ref.read(newsExpansionProvider.notifier).toggle(article.slug);
-                // Opening an article is the clearest statement that it has been
-                // read; no dwell timer needs to agree first.
-                if (!expanded) onExpanded?.call(article.slug);
-              },
+              onToggle: () =>
+                  ref.read(newsExpansionProvider.notifier).toggle(article.slug),
             ),
           ],
         ),

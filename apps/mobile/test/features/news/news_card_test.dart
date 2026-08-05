@@ -42,7 +42,6 @@ List<ContentBlock> get _longArticle => <ContentBlock>[
 Future<void> _pumpCard(
   WidgetTester tester,
   NewsArticle article, {
-  bool isUnread = false,
   Locale locale = AppLocales.german,
 }) async {
   tester.view.physicalSize = const Size(390, 1400);
@@ -55,9 +54,7 @@ Future<void> _pumpCard(
   await pumpScreen(
     tester,
     Scaffold(
-      body: ListView(
-        children: <Widget>[NewsCard(article: article, isUnread: isUnread)],
-      ),
+      body: ListView(children: <Widget>[NewsCard(article: article)]),
     ),
     locale: locale,
     overrides: <Override>[frozenNewsClock()],
@@ -247,14 +244,12 @@ void main() {
     expect(find.textContaining('vor'), findsNothing);
   });
 
-  testWidgets('states unread in words and pinned with a label', (
+  testWidgets('states pinned with a label, not with colour alone', (
     WidgetTester tester,
   ) async {
-    await _pumpCard(tester, _article(isPinned: true), isUnread: true);
+    await _pumpCard(tester, _article(isPinned: true));
 
-    expect(find.text('Neu'), findsOneWidget);
     expect(find.text('Angepinnt'), findsOneWidget);
-    expect(_semanticsLabels(tester).join('\n'), contains('Ungelesen'));
   });
 
   testWidgets('renders in English', (WidgetTester tester) async {
@@ -291,7 +286,6 @@ void main() {
                   NewsChannelRef(slug: 'campus-news', name: 'Campus News'),
                 ],
               ),
-              isUnread: true,
             ),
           ],
         ),

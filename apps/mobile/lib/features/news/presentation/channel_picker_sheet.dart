@@ -19,8 +19,8 @@ import '../data/news_models.dart';
 /// channel anywhere in the app.
 ///
 /// Used in two places: inside the feed's filter sheet, and full-screen from the
-/// settings. It is the channel part only — the unread controls live next to it
-/// in the filter sheet, not in here.
+/// settings. The filter sheet carries its own heading, so [showTitle] is what
+/// keeps the settings page from losing one.
 class ChannelPickerList extends ConsumerWidget {
   const ChannelPickerList({this.showTitle = false, super.key});
 

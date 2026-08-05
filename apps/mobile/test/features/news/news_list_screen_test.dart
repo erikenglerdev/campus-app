@@ -114,12 +114,7 @@ Future<ProviderContainer> _pumpFeed(
   final ProviderContainer container = await pumpScreen(
     tester,
     const NewsListScreen(),
-    keyValueStore:
-        store ??
-        InMemoryKeyValueStore(<String, Object>{
-          // A known install, so no card is unread and no dwell timer arms.
-          PreferenceKeys.newsReadInitialised: 1,
-        }),
+    keyValueStore: store ?? InMemoryKeyValueStore(<String, Object>{}),
     overrides: <Override>[
       frozenNewsClock(),
       apiClientProvider.overrideWithValue(fakeApiClient(adapter)),

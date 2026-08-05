@@ -8,16 +8,13 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/offline_notice.dart';
-import '../../../core/widgets/seen_detector.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/status_banner.dart';
 import '../../../l10n/l10n.dart';
 import '../application/channel_subscriptions.dart';
 import '../application/news_feed_controller.dart';
 import '../application/news_providers.dart';
-import '../application/news_read_controller.dart';
 import '../data/news_models.dart';
-import '../domain/read_state.dart';
 import 'news_card.dart';
 import 'news_filter_sheet.dart';
 
@@ -35,31 +32,6 @@ class NewsListScreen extends ConsumerStatefulWidget {
 }
 
 class _NewsListScreenState extends ConsumerState<NewsListScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // A feed that was already loaded when this screen opened produces no
-    // change for the listener below to see.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final NewsFeedState? state = ref.read(newsFeedControllerProvider).value;
-      if (state != null) _syncReadState(state);
-    });
-  }
-
-  /// Reconciles the local read markers with what the feed currently holds.
-  ///
-  /// Pruning is only allowed once the **whole** feed has been loaded: doing it
-  /// against the pages seen so far would drop the marker of every article
-  /// further down and make the archive unread again.
-  void _syncReadState(NewsFeedState state) {
-    ref
-        .read(newsReadProvider.notifier)
-        .syncWithFeed(
-          state.articles.map((NewsArticle article) => article.slug),
-          complete: !state.hasMore,
-        );
-  }
-
   Future<void> _refresh() async {
     ref.invalidate(newsChannelsProvider);
     await ref.read(newsFeedControllerProvider.future);
@@ -70,14 +42,6 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen> {
     final AsyncValue<NewsFeedState> feed = ref.watch(
       newsFeedControllerProvider,
     );
-
-    ref.listen<AsyncValue<NewsFeedState>>(newsFeedControllerProvider, (
-      AsyncValue<NewsFeedState>? _,
-      AsyncValue<NewsFeedState> next,
-    ) {
-      final NewsFeedState? state = next.value;
-      if (state != null) _syncReadState(state);
-    });
 
     return Scaffold(
       body: SafeArea(
@@ -138,7 +102,6 @@ class _FeedHeader extends ConsumerWidget {
     final AppLocalizations l10n = context.l10n;
     final AppMetrics metrics = context.metrics;
 
-    final bool unreadOnly = ref.watch(newsUnreadOnlyProvider);
     final List<NewsChannel> channels =
         ref.watch(newsChannelsProvider).value?.value ?? const <NewsChannel>[];
     final ChannelSubscriptionState subscriptions = ref.watch(
@@ -147,9 +110,8 @@ class _FeedHeader extends ConsumerWidget {
     // "Some channels are switched off" is a filter the reader should be able to
     // see from the outside — otherwise a missing article looks like a bug.
     final bool filtered =
-        unreadOnly ||
-        (channels.isNotEmpty &&
-            subscriptions.selectedSlugs.length < channels.length);
+        channels.isNotEmpty &&
+        subscriptions.selectedSlugs.length < channels.length;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -208,23 +170,9 @@ class _FeedBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AppMetrics metrics = context.metrics;
-    final NewsReadState readState = ref.watch(newsReadProvider);
-    final bool unreadOnly = ref.watch(newsUnreadOnlyProvider);
+    final List<NewsArticle> articles = state.articles;
 
-    final List<NewsArticle> all = state.articles;
-    final List<NewsArticle> articles = unreadOnly
-        ? all
-              .where((NewsArticle a) => readState.isUnread(a.slug))
-              .toList(growable: false)
-        : all;
-
-    if (articles.isEmpty) {
-      return _EmptyFeed(
-        state: state,
-        unreadOnly: unreadOnly,
-        hadAny: all.isNotEmpty,
-      );
-    }
+    if (articles.isEmpty) return _EmptyFeed(state: state);
 
     final List<Widget> notices = _notices(context, state);
     final bool showFooter = state.hasMore || state.loadMoreFailed;
@@ -243,23 +191,7 @@ class _FeedBody extends ConsumerWidget {
         }
 
         final NewsArticle article = articles[articleIndex];
-        final bool isUnread = readState.isUnread(article.slug);
-        final Widget card = NewsCard(
-          key: ValueKey<String>(article.slug),
-          article: article,
-          isUnread: isUnread,
-          onExpanded: (String slug) =>
-              ref.read(newsReadProvider.notifier).markRead(slug),
-        );
-
-        // Reading an article marks it read — but not while the unread filter is
-        // on, where it would vanish from under the reader's finger.
-        if (!isUnread || unreadOnly) return card;
-        return SeenDetector(
-          onSeen: () =>
-              ref.read(newsReadProvider.notifier).markRead(article.slug),
-          child: card,
-        );
+        return NewsCard(key: ValueKey<String>(article.slug), article: article);
       },
     );
   }
@@ -267,17 +199,9 @@ class _FeedBody extends ConsumerWidget {
 
 /// Why the feed is empty — the answers are genuinely different.
 class _EmptyFeed extends ConsumerWidget {
-  const _EmptyFeed({
-    required this.state,
-    required this.unreadOnly,
-    required this.hadAny,
-  });
+  const _EmptyFeed({required this.state});
 
   final NewsFeedState state;
-  final bool unreadOnly;
-
-  /// Whether the feed itself holds articles and only the filter hides them.
-  final bool hadAny;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -287,23 +211,6 @@ class _EmptyFeed extends ConsumerWidget {
     final ChannelSubscriptionState subscriptions = ref.watch(
       channelSubscriptionProvider,
     );
-
-    // "Nothing unread" is a different answer from "no announcements at all",
-    // and the filter is the thing to undo — so it gets its own empty state.
-    if (unreadOnly && hadAny) {
-      return scrollableState(
-        child: EmptyView(
-          icon: Icons.mark_email_read_outlined,
-          title: l10n.newsAllRead,
-          message: l10n.newsNoUnread,
-          action: FilledButton.icon(
-            onPressed: () => ref.read(newsUnreadOnlyProvider.notifier).toggle(),
-            icon: const Icon(Icons.list),
-            label: Text(l10n.newsShowAll),
-          ),
-        ),
-      );
-    }
 
     final Widget empty;
     if (channels.isEmpty) {
