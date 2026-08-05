@@ -4,12 +4,10 @@
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/app_sections.dart';
+import '../../app/app_modules.dart';
 import '../../app/navigation_config.dart';
-import '../../features/today/domain/dashboard_card.dart';
 import '../locale/locale_mode.dart';
 import '../theme/accent_palette.dart';
-import '../theme/app_density.dart';
 import 'key_value_store.dart';
 import 'preference_keys.dart';
 
@@ -19,10 +17,8 @@ class AppSettings {
     this.localeMode = LocaleMode.system,
     this.themeMode = ThemeMode.system,
     this.accentPalette = AccentPalette.fallback,
-    this.displayDensity = DisplayDensity.fallback,
     this.reducedMotion = false,
     this.navigation = NavigationConfig.defaults,
-    this.dashboard = DashboardConfig.defaults,
     this.preferredCanteenSlug,
     this.timetableGroupId,
     this.defaultBuildingKey,
@@ -36,14 +32,11 @@ class AppSettings {
   /// The chosen accent palette. Never a free colour — see [AccentPalette].
   final AccentPalette accentPalette;
 
-  final DisplayDensity displayDensity;
-
   /// The **local** reduced-motion wish. The operating system's own setting is
   /// honoured separately, so this being false does not mean "animate".
   final bool reducedMotion;
 
   final NavigationConfig navigation;
-  final DashboardConfig dashboard;
 
   /// Slug of the canteen the user prefers, or `null` for "not chosen yet".
   final String? preferredCanteenSlug;
@@ -67,10 +60,8 @@ class AppSettings {
     LocaleMode? localeMode,
     ThemeMode? themeMode,
     AccentPalette? accentPalette,
-    DisplayDensity? displayDensity,
     bool? reducedMotion,
     NavigationConfig? navigation,
-    DashboardConfig? dashboard,
     String? preferredCanteenSlug,
     bool clearPreferredCanteen = false,
     String? timetableGroupId,
@@ -84,10 +75,8 @@ class AppSettings {
       localeMode: localeMode ?? this.localeMode,
       themeMode: themeMode ?? this.themeMode,
       accentPalette: accentPalette ?? this.accentPalette,
-      displayDensity: displayDensity ?? this.displayDensity,
       reducedMotion: reducedMotion ?? this.reducedMotion,
       navigation: navigation ?? this.navigation,
-      dashboard: dashboard ?? this.dashboard,
       defaultBuildingKey: clearDefaultBuilding
           ? null
           : (defaultBuildingKey ?? this.defaultBuildingKey),
@@ -129,16 +118,9 @@ class SettingsController extends Notifier<AppSettings> {
       accentPalette: AccentPalette.fromStorage(
         store.getString(PreferenceKeys.accentPalette),
       ),
-      displayDensity: DisplayDensity.fromStorage(
-        store.getString(PreferenceKeys.displayDensity),
-      ),
       reducedMotion: store.getInt(PreferenceKeys.reducedMotion) == 1,
       navigation: NavigationConfig.fromStorage(
-        store.getStringList(PreferenceKeys.navigationMiddle),
-      ),
-      dashboard: DashboardConfig.fromStorage(
-        order: store.getStringList(PreferenceKeys.dashboardCardOrder),
-        hidden: store.getStringList(PreferenceKeys.dashboardHiddenCards),
+        store.getStringList(PreferenceKeys.navigationTabs),
       ),
       preferredCanteenSlug: store.getString(PreferenceKeys.preferredCanteen),
       timetableGroupId: store.getString(PreferenceKeys.preferredTimetableGroup),
@@ -186,39 +168,22 @@ class SettingsController extends Notifier<AppSettings> {
     await _store.setString(PreferenceKeys.accentPalette, palette.storageValue);
   }
 
-  Future<void> setDisplayDensity(DisplayDensity density) async {
-    state = state.copyWith(displayDensity: density);
-    await _store.setString(PreferenceKeys.displayDensity, density.storageValue);
-  }
-
   Future<void> setReducedMotion(bool enabled) async {
     state = state.copyWith(reducedMotion: enabled);
     await _store.setInt(PreferenceKeys.reducedMotion, enabled ? 1 : 0);
   }
 
-  /// Stores the navigation bar's three middle entries.
+  /// Stores the four modules of the navigation bar.
   ///
   /// The wish list is normalised first, so an invalid combination cannot be
   /// persisted at all — the repair happens before the write, not on the next
   /// read.
-  Future<void> setNavigationMiddle(Iterable<AppSection> sections) async {
-    final NavigationConfig config = NavigationConfig.of(sections);
+  Future<void> setNavigationTabs(Iterable<AppModule> modules) async {
+    final NavigationConfig config = NavigationConfig.of(modules);
     state = state.copyWith(navigation: config);
     await _store.setStringList(
-      PreferenceKeys.navigationMiddle,
+      PreferenceKeys.navigationTabs,
       config.toStorage(),
-    );
-  }
-
-  Future<void> setDashboard(DashboardConfig config) async {
-    state = state.copyWith(dashboard: config);
-    await _store.setStringList(
-      PreferenceKeys.dashboardCardOrder,
-      config.orderToStorage(),
-    );
-    await _store.setStringList(
-      PreferenceKeys.dashboardHiddenCards,
-      config.hiddenToStorage(),
     );
   }
 
@@ -249,11 +214,8 @@ class SettingsController extends Notifier<AppSettings> {
       PreferenceKeys.localeMode,
       PreferenceKeys.themeMode,
       PreferenceKeys.accentPalette,
-      PreferenceKeys.displayDensity,
       PreferenceKeys.reducedMotion,
-      PreferenceKeys.navigationMiddle,
-      PreferenceKeys.dashboardCardOrder,
-      PreferenceKeys.dashboardHiddenCards,
+      PreferenceKeys.navigationTabs,
       PreferenceKeys.preferredCanteen,
       PreferenceKeys.preferredTimetableGroup,
       PreferenceKeys.defaultBuilding,

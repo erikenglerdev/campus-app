@@ -3,7 +3,7 @@
 
 import 'package:campus_koethen/app/app_router.dart';
 import 'package:campus_koethen/app/app_routes.dart';
-import 'package:campus_koethen/app/app_sections.dart';
+import 'package:campus_koethen/app/app_modules.dart';
 import 'package:campus_koethen/core/cache/cache_providers.dart';
 import 'package:campus_koethen/core/cache/content_cache.dart';
 import 'package:campus_koethen/core/locale/locale_mode.dart';
@@ -13,7 +13,7 @@ import 'package:campus_koethen/core/prefs/settings_controller.dart';
 import 'package:campus_koethen/core/network/api_client.dart';
 import 'package:campus_koethen/core/network/network_providers.dart';
 import 'package:campus_koethen/core/theme/app_theme.dart';
-import 'package:campus_koethen/features/today/presentation/today_screen.dart';
+import 'package:campus_koethen/features/news/presentation/news_list_screen.dart';
 import 'package:campus_koethen/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,7 +28,7 @@ Future<void> pumpApp(
   WidgetTester tester, {
   KeyValueStore? store,
   Locale locale = AppLocales.german,
-  String initialLocation = AppRoutes.today,
+  String initialLocation = AppRoutes.news,
   bool settle = true,
 }) async {
   tester.view.physicalSize = const Size(390, 844);
@@ -86,12 +86,12 @@ Finder inBar(String label) =>
     find.descendant(of: find.byType(NavigationBar), matching: find.text(label));
 
 void main() {
-  testWidgets('the app opens on Today', (WidgetTester tester) async {
+  testWidgets('the app opens on News', (WidgetTester tester) async {
     await pumpApp(tester);
-    expect(find.byType(TodayScreen), findsOneWidget);
+    expect(find.byType(NewsListScreen), findsOneWidget);
   });
 
-  testWidgets('the default bar shows Today, three middles and More', (
+  testWidgets('the default bar shows the four modules and More', (
     WidgetTester tester,
   ) async {
     await pumpApp(tester);
@@ -100,29 +100,37 @@ void main() {
       find.byType(NavigationBar),
     );
     expect(bar.destinations, hasLength(5));
-    expect(inBar('Heute'), findsOneWidget);
-    expect(inBar('Mehr'), findsOneWidget);
+    expect(inBar('News'), findsOneWidget);
     expect(inBar('Kalender'), findsOneWidget);
     expect(inBar('Mensa'), findsOneWidget);
-    expect(inBar('News'), findsOneWidget);
+    // The bar uses the short name; the full one is "Studentische E-Mail".
+    expect(inBar('E-Mail'), findsOneWidget);
+    expect(inBar('Mehr'), findsOneWidget);
+    expect(inBar('Heute'), findsNothing);
   });
 
-  testWidgets('a stored configuration changes the middle three', (
+  testWidgets('a stored configuration changes all four tabs', (
     WidgetTester tester,
   ) async {
     final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-    await store.setStringList(PreferenceKeys.navigationMiddle, <String>[
-      AppSection.mail.storageValue,
-      AppSection.todos.storageValue,
-      AppSection.campusMap.storageValue,
+    await store.setStringList(PreferenceKeys.navigationTabs, <String>[
+      AppModule.mail.storageValue,
+      AppModule.todos.storageValue,
+      AppModule.campusMap.storageValue,
+      AppModule.grades.storageValue,
     ]);
 
-    await pumpApp(tester, store: store);
+    await pumpApp(
+      tester,
+      store: store,
+      initialLocation: AppRoutes.mail,
+      settle: false,
+    );
 
-    expect(inBar('Heute'), findsOneWidget);
     expect(inBar('Mehr'), findsOneWidget);
     expect(inBar('Aufgaben'), findsOneWidget);
     expect(inBar('Lageplan'), findsOneWidget);
+    expect(inBar('Noten'), findsOneWidget);
     // …and the defaults are gone.
     expect(inBar('Kalender'), findsNothing);
     expect(inBar('Mensa'), findsNothing);
@@ -132,10 +140,10 @@ void main() {
     WidgetTester tester,
   ) async {
     final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-    await store.setStringList(PreferenceKeys.navigationMiddle, <String>[
-      'removed-section',
-      AppSection.more.storageValue,
-      AppSection.today.storageValue,
+    await store.setStringList(PreferenceKeys.navigationTabs, <String>[
+      'removed-module',
+      'today',
+      AppModule.settings.storageValue,
     ]);
 
     await pumpApp(tester, store: store);
@@ -144,26 +152,26 @@ void main() {
       find.byType(NavigationBar),
     );
     expect(bar.destinations, hasLength(5));
-    expect(inBar('Heute'), findsOneWidget);
     expect(inBar('Mehr'), findsOneWidget);
+    expect(inBar('Einstellungen'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('tapping a tab switches section', (WidgetTester tester) async {
+  testWidgets('tapping a tab switches module', (WidgetTester tester) async {
     await pumpApp(tester);
-    expect(find.byType(TodayScreen), findsOneWidget);
+    expect(find.byType(NewsListScreen), findsOneWidget);
 
     await tester.tap(inBar('Mehr'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(TodayScreen), findsNothing);
+    expect(find.byType(NewsListScreen), findsNothing);
     final NavigationBar bar = tester.widget<NavigationBar>(
       find.byType(NavigationBar),
     );
     expect(bar.selectedIndex, 4);
   });
 
-  testWidgets('a section reached outside the bar highlights More', (
+  testWidgets('a module reached outside the bar highlights More', (
     WidgetTester tester,
   ) async {
     // Grades is not in the default bar. Opening it must not leave the bar with
@@ -178,9 +186,9 @@ void main() {
 
   testWidgets('the bar is localised', (WidgetTester tester) async {
     await pumpApp(tester, locale: AppLocales.english);
-    expect(inBar('Today'), findsOneWidget);
     expect(inBar('More'), findsOneWidget);
-    expect(inBar('Heute'), findsNothing);
+    expect(inBar('Email'), findsOneWidget);
+    expect(inBar('Mehr'), findsNothing);
   });
 
   testWidgets('every tab keeps a 48dp touch target', (
@@ -226,7 +234,7 @@ void main() {
             ).copyWith(textScaler: const TextScaler.linear(2)),
             child: child ?? const SizedBox.shrink(),
           ),
-          routerConfig: createAppRouter(initialLocation: AppRoutes.today),
+          routerConfig: createAppRouter(initialLocation: AppRoutes.news),
         ),
       ),
     );

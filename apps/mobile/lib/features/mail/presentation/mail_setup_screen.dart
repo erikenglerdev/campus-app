@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/links/safe_link_launcher.dart';
-import '../../../core/theme/app_density.dart';
+import '../../../core/theme/app_metrics.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../l10n/l10n.dart';
 import '../application/mail_account_controller.dart';

@@ -1,21 +1,17 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
-import 'package:campus_koethen/app/app_sections.dart';
+import 'package:campus_koethen/app/app_modules.dart';
 import 'package:campus_koethen/core/locale/locale_mode.dart';
 import 'package:campus_koethen/core/prefs/key_value_store.dart';
 import 'package:campus_koethen/core/prefs/preference_keys.dart';
 import 'package:campus_koethen/core/prefs/settings_controller.dart';
 import 'package:campus_koethen/core/theme/accent_palette.dart';
 import 'package:campus_koethen/core/theme/app_colors.dart';
-import 'package:campus_koethen/core/theme/app_density.dart';
-import 'package:campus_koethen/core/theme/app_dimensions.dart';
 import 'package:campus_koethen/core/theme/app_motion.dart';
 import 'package:campus_koethen/core/theme/app_theme.dart';
-import 'package:campus_koethen/features/settings/presentation/dashboard_settings_screen.dart';
 import 'package:campus_koethen/features/settings/presentation/navigation_settings_screen.dart';
 import 'package:campus_koethen/features/settings/presentation/personalisation_tiles.dart';
-import 'package:campus_koethen/features/today/domain/dashboard_card.dart';
 import 'package:campus_koethen/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,7 +56,6 @@ Future<ProviderContainer> pumpThemed(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             theme: AppTheme.light(
               accent: settings.accentPalette,
-              density: settings.displayDensity,
               motion: AppMotion.resolve(
                 systemDisablesAnimations: false,
                 userPrefersReducedMotion: settings.reducedMotion,
@@ -114,32 +109,6 @@ void main() {
     });
   });
 
-  group('density', () {
-    testWidgets('switching to compact tightens the rendered theme', (
-      WidgetTester tester,
-    ) async {
-      final ProviderContainer container = await pumpThemed(
-        tester,
-        const Scaffold(body: DensityTile()),
-      );
-
-      double rowHeight() => Theme.of(
-        tester.element(find.byType(DensityTile)),
-      ).listTileTheme.minTileHeight!;
-      final double comfortable = rowHeight();
-
-      await container
-          .read(settingsProvider.notifier)
-          .setDisplayDensity(DisplayDensity.compact);
-      await tester.pumpAndSettle();
-
-      expect(rowHeight(), lessThan(comfortable));
-      // …but never below the minimum touch target.
-      expect(rowHeight(), greaterThanOrEqualTo(AppSizes.minTouchTarget));
-      expect(find.text('Kompakt'), findsWidgets);
-    });
-  });
-
   group('reduced motion', () {
     testWidgets('the switch reaches the theme', (WidgetTester tester) async {
       final ProviderContainer container = await pumpThemed(
@@ -162,152 +131,80 @@ void main() {
   });
 
   group('navigation settings', () {
-    testWidgets('Today and More are shown as fixed and cannot be changed', (
+    testWidgets('More is shown as fixed and cannot be changed', (
       WidgetTester tester,
     ) async {
       await pumpThemed(tester, const NavigationSettingsScreen());
 
-      expect(find.byIcon(Icons.lock_outline), findsWidgets);
-      expect(find.text('Heute'), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('Mehr'), 200);
+      expect(find.byIcon(Icons.lock_outline), findsOneWidget);
       expect(find.text('Mehr'), findsOneWidget);
-      expect(find.byIcon(Icons.lock_outline), findsWidgets);
-      // Neither is offered as a checkbox.
-      expect(find.widgetWithText(CheckboxListTile, 'Heute'), findsNothing);
     });
 
-    testWidgets('a fourth pick is unavailable rather than silently evicting', (
+    testWidgets('the four active tabs are listed with a drag handle', (
       WidgetTester tester,
     ) async {
       await pumpThemed(tester, const NavigationSettingsScreen());
 
-      final CheckboxListTile mail = tester.widget<CheckboxListTile>(
-        find.widgetWithText(CheckboxListTile, 'Studentische E-Mail'),
-      );
-      expect(
-        mail.onChanged,
-        isNull,
-        reason: 'three are already chosen, so a fourth must be disabled',
-      );
-
-      // Freeing a slot makes it available again.
-      final CheckboxListTile news = tester.widget<CheckboxListTile>(
-        find.widgetWithText(CheckboxListTile, 'News'),
-      );
-      expect(news.value, isTrue);
-      news.onChanged!(false);
-      await tester.pumpAndSettle();
-
-      final CheckboxListTile mailAgain = tester.widget<CheckboxListTile>(
-        find.widgetWithText(CheckboxListTile, 'Studentische E-Mail'),
-      );
-      expect(mailAgain.onChanged, isNotNull);
+      for (final String title in <String>[
+        'News',
+        'Kalender',
+        'Mensa',
+        'Studentische E-Mail',
+      ]) {
+        expect(find.text(title), findsOneWidget, reason: title);
+      }
+      expect(find.byIcon(Icons.drag_handle), findsNWidgets(4));
     });
 
-    testWidgets('a choice is persisted', (WidgetTester tester) async {
-      final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-      await pumpThemed(tester, const NavigationSettingsScreen(), store: store);
+    testWidgets('a full bar offers no further module', (
+      WidgetTester tester,
+    ) async {
+      // Adding a fifth must be unavailable rather than silently evicting
+      // somebody else's pick.
+      await pumpThemed(tester, const NavigationSettingsScreen());
 
-      final CheckboxListTile news = tester.widget<CheckboxListTile>(
-        find.widgetWithText(CheckboxListTile, 'News'),
+      final Iterable<IconButton> adders = tester.widgetList<IconButton>(
+        find.widgetWithIcon(IconButton, Icons.add_circle_outline),
       );
-      news.onChanged!(false);
+      expect(adders, isNotEmpty);
+      for (final IconButton button in adders) {
+        expect(button.onPressed, isNull);
+      }
+    });
+
+    testWidgets('removing one and adding another is persisted', (
+      WidgetTester tester,
+    ) async {
+      final InMemoryKeyValueStore store = InMemoryKeyValueStore();
+      await pumpThemed(
+        tester,
+        const NavigationSettingsScreen(),
+        store: store,
+        // Tall enough that both lists are laid out at once: the editor is a
+        // single ListView, and an add button below the fold is not tappable.
+        surface: const Size(390, 3000),
+      );
+
+      await tester.tap(
+        find.widgetWithIcon(IconButton, Icons.remove_circle_outline).first,
+      );
       await tester.pumpAndSettle();
 
-      final CheckboxListTile map = tester.widget<CheckboxListTile>(
-        find.widgetWithText(CheckboxListTile, 'Lageplan'),
+      // A larger surface instead of scrolling: scrollUntilVisible needs a
+      // finder that matches exactly one widget, and every free slot offers an
+      // add button.
+      await tester.tap(
+        find.widgetWithIcon(IconButton, Icons.add_circle_outline).first,
+        warnIfMissed: false,
       );
-      map.onChanged!(true);
       await tester.pumpAndSettle();
 
       final List<String>? stored = store.getStringList(
-        PreferenceKeys.navigationMiddle,
+        PreferenceKeys.navigationTabs,
       );
-      expect(stored, contains(AppSection.campusMap.storageValue));
-      expect(stored, isNot(contains(AppSection.news.storageValue)));
-      expect(stored, hasLength(3));
-    });
-  });
-
-  group('dashboard settings', () {
-    testWidgets('every card is listed, pending ones are marked', (
-      WidgetTester tester,
-    ) async {
-      await pumpThemed(tester, const DashboardSettingsScreen());
-
-      expect(find.byType(Switch), findsNWidgets(DashboardCard.values.length));
-      // The cards that are not wired up yet say so instead of pretending.
-      final int pending = DashboardCard.values
-          .where((DashboardCard c) => !c.isImplemented)
-          .length;
-      expect(
-        find.text('Folgt in einer späteren Version'),
-        findsNWidgets(pending),
-      );
-    });
-
-    testWidgets('moving a card up changes the stored order', (
-      WidgetTester tester,
-    ) async {
-      final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-      final ProviderContainer container = await pumpThemed(
-        tester,
-        const DashboardSettingsScreen(),
-        store: store,
-      );
-
-      final DashboardCard second = container
-          .read(settingsProvider)
-          .dashboard
-          .configurable[1];
-
-      await tester.tap(find.byTooltip('Nach oben').at(1));
-      await tester.pumpAndSettle();
-
-      expect(container.read(settingsProvider).dashboard.order.first, second);
-      expect(
-        store.getStringList(PreferenceKeys.dashboardCardOrder)?.first,
-        second.storageValue,
-      );
-    });
-
-    testWidgets('the first card cannot move up and the last not down', (
-      WidgetTester tester,
-    ) async {
-      await pumpThemed(tester, const DashboardSettingsScreen());
-
-      // byTooltip finds the Tooltip; the button is its ancestor.
-      IconButton buttonFor(Finder tooltip) => tester.widget<IconButton>(
-        find.ancestor(of: tooltip, matching: find.byType(IconButton)).first,
-      );
-      final IconButton firstUp = buttonFor(find.byTooltip('Nach oben').first);
-      final IconButton lastDown = buttonFor(find.byTooltip('Nach unten').last);
-      expect(firstUp.onPressed, isNull);
-      expect(lastDown.onPressed, isNull);
-    });
-
-    testWidgets('switching a card off persists', (WidgetTester tester) async {
-      final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-      final ProviderContainer container = await pumpThemed(
-        tester,
-        const DashboardSettingsScreen(),
-        store: store,
-      );
-
-      await container
-          .read(settingsProvider.notifier)
-          .setDashboard(
-            container
-                .read(settingsProvider)
-                .dashboard
-                .withVisibility(DashboardCard.canteen, visible: false),
-          );
-      await tester.pumpAndSettle();
-
-      expect(
-        store.getStringList(PreferenceKeys.dashboardHiddenCards),
-        contains(DashboardCard.canteen.storageValue),
-      );
+      expect(stored, hasLength(4));
+      expect(stored, isNot(contains(AppModule.news.storageValue)));
+      expect(stored!.toSet(), hasLength(4));
     });
   });
 

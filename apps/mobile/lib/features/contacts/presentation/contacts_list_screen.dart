@@ -7,13 +7,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../core/network/loaded.dart';
-import '../../../core/theme/app_density.dart';
+import '../../../core/theme/app_metrics.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/icon_keys.dart';
 import '../../../core/widgets/offline_notice.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
-import '../../search/presentation/search_screen.dart';
 import '../application/contacts_providers.dart';
 import '../data/contact_models.dart';
 
@@ -29,10 +28,7 @@ class ContactsListScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.contactsTitle),
-        actions: const <Widget>[SearchIconButton()],
-      ),
+      appBar: AppBar(title: Text(l10n.contactsTitle)),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(contactAreasProvider);

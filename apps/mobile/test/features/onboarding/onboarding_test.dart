@@ -13,7 +13,7 @@ import 'package:campus_koethen/core/prefs/settings_controller.dart';
 import 'package:campus_koethen/core/theme/accent_palette.dart';
 import 'package:campus_koethen/core/theme/app_theme.dart';
 import 'package:campus_koethen/features/onboarding/presentation/onboarding_screen.dart';
-import 'package:campus_koethen/features/today/presentation/today_screen.dart';
+import 'package:campus_koethen/features/news/presentation/news_list_screen.dart';
 import 'package:campus_koethen/l10n/l10n.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -74,7 +74,7 @@ void main() {
     await pumpApp(tester);
 
     expect(find.byType(OnboardingScreen), findsOneWidget);
-    expect(find.byType(TodayScreen), findsNothing);
+    expect(find.byType(NewsListScreen), findsNothing);
     expect(find.text('Willkommen'), findsOneWidget);
   });
 
@@ -95,7 +95,7 @@ void main() {
     await pumpApp(tester, store: store);
 
     expect(find.byType(OnboardingScreen), findsNothing);
-    expect(find.byType(TodayScreen), findsOneWidget);
+    expect(find.byType(NewsListScreen), findsOneWidget);
   });
 
   testWidgets('skipping everything finishes the setup', (
@@ -110,7 +110,7 @@ void main() {
     // Skipping counts as answering — the app must not ask again unprompted.
     expect(container.read(settingsProvider).onboardingCompleted, isTrue);
     expect(store.getInt(PreferenceKeys.onboardingCompleted), 1);
-    expect(find.byType(TodayScreen), findsOneWidget);
+    expect(find.byType(NewsListScreen), findsOneWidget);
   });
 
   testWidgets('individual steps can be skipped forward and back', (
@@ -187,7 +187,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(container.read(settingsProvider).onboardingCompleted, isTrue);
-    expect(find.byType(TodayScreen), findsOneWidget);
+    expect(find.byType(NewsListScreen), findsOneWidget);
   });
 
   testWidgets('renders in English', (WidgetTester tester) async {

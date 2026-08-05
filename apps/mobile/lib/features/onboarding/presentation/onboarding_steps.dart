@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/app_routes.dart';
-import '../../../app/app_sections.dart';
+import '../../../app/app_modules.dart';
 import '../../../app/navigation_config.dart';
 import '../../../core/network/loaded.dart';
 import '../../../core/prefs/settings_controller.dart';
@@ -54,11 +54,7 @@ class OnboardingStepView extends StatelessWidget {
         title: l10n.onboardingAppearanceTitle,
         body: l10n.onboardingAppearanceBody,
         icon: Icons.palette_outlined,
-        children: const <Widget>[
-          AccentColorTile(),
-          DensityTile(),
-          ReducedMotionTile(),
-        ],
+        children: const <Widget>[AccentColorTile(), ReducedMotionTile()],
       ),
       OnboardingStep.campus => _StepScaffold(
         title: l10n.onboardingCampusTitle,
@@ -264,8 +260,8 @@ class _ContentLinks extends StatelessWidget {
   }
 }
 
-/// The three middle navigation entries, with the same rules as the settings
-/// editor: pick exactly three, fixed entries are not on offer.
+/// The four navigation modules, with the same rules as the settings editor:
+/// pick exactly four, and only modules that may be pinned are on offer.
 class _NavigationStep extends ConsumerStatefulWidget {
   const _NavigationStep();
 
@@ -274,30 +270,30 @@ class _NavigationStep extends ConsumerStatefulWidget {
 }
 
 class _NavigationStepState extends ConsumerState<_NavigationStep> {
-  List<AppSection>? _draft;
+  List<AppModule>? _draft;
 
-  List<AppSection> get _chosen =>
-      _draft ?? ref.read(settingsProvider).navigation.middle;
+  List<AppModule> get _chosen =>
+      _draft ?? ref.read(settingsProvider).navigation.tabs;
 
-  void _set(AppSection section, {required bool selected}) {
-    final List<AppSection> next = _chosen.toList();
+  void _set(AppModule module, {required bool selected}) {
+    final List<AppModule> next = _chosen.toList();
     if (selected) {
-      if (next.length >= NavigationConfig.middleSlots) return;
-      next.add(section);
+      if (next.length >= NavigationConfig.tabCount) return;
+      next.add(module);
     } else {
-      next.remove(section);
+      next.remove(module);
     }
     setState(() => _draft = next);
-    if (next.length == NavigationConfig.middleSlots) {
-      ref.read(settingsProvider.notifier).setNavigationMiddle(next);
+    if (next.length == NavigationConfig.tabCount) {
+      ref.read(settingsProvider.notifier).setNavigationTabs(next);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
-    final List<AppSection> chosen = _chosen;
-    final bool full = chosen.length >= NavigationConfig.middleSlots;
+    final List<AppModule> chosen = _chosen;
+    final bool full = chosen.length >= NavigationConfig.tabCount;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,19 +302,19 @@ class _NavigationStepState extends ConsumerState<_NavigationStep> {
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: Text(
-              l10n.settingsSelectExactlyThree,
+              l10n.settingsSelectExactlyFour,
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
-        for (final AppSection section in AppSection.configurable)
+        for (final AppModule module in AppModule.pinnableModules)
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
-            secondary: Icon(section.icon),
-            title: Text(section.label(l10n)),
-            value: chosen.contains(section),
-            onChanged: full && !chosen.contains(section)
+            secondary: Icon(module.icon),
+            title: Text(module.title(l10n)),
+            value: chosen.contains(module),
+            onChanged: full && !chosen.contains(module)
                 ? null
-                : (bool? value) => _set(section, selected: value ?? false),
+                : (bool? value) => _set(module, selected: value ?? false),
           ),
       ],
     );

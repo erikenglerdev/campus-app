@@ -1,7 +1,7 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
-import 'package:campus_koethen/app/app_sections.dart';
+import 'package:campus_koethen/app/app_modules.dart';
 import 'package:campus_koethen/core/locale/locale_mode.dart';
 import 'package:campus_koethen/core/prefs/key_value_store.dart';
 import 'package:campus_koethen/core/prefs/preference_keys.dart';
@@ -14,10 +14,12 @@ import '../../support/pump_app.dart';
 
 Future<AppLocalizations> pumpMore(
   WidgetTester tester, {
-  List<AppSection>? bottomBar,
+  List<AppModule>? bar,
   Locale locale = AppLocales.german,
+  TextScaler textScaler = TextScaler.noScaling,
+  Size surface = const Size(390, 2000),
 }) async {
-  tester.view.physicalSize = const Size(390, 1600);
+  tester.view.physicalSize = surface;
   tester.view.devicePixelRatio = 1;
   addTearDown(() {
     tester.view.resetPhysicalSize();
@@ -25,10 +27,10 @@ Future<AppLocalizations> pumpMore(
   });
 
   final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-  if (bottomBar != null) {
+  if (bar != null) {
     await store.setStringList(
-      PreferenceKeys.navigationMiddle,
-      bottomBar.map((AppSection s) => s.storageValue).toList(),
+      PreferenceKeys.navigationTabs,
+      bar.map((AppModule m) => m.storageValue).toList(),
     );
   }
 
@@ -37,6 +39,7 @@ Future<AppLocalizations> pumpMore(
     const MoreScreen(),
     locale: locale,
     keyValueStore: store,
+    textScaler: textScaler,
   );
   await tester.pumpAndSettle();
 
@@ -44,80 +47,102 @@ Future<AppLocalizations> pumpMore(
 }
 
 void main() {
-  testWidgets('every area that is not in the bottom bar is listed', (
+  testWidgets('the default bar produces exactly the specified hub', (
     WidgetTester tester,
   ) async {
-    // "More" is the app's promise that no area can become unreachable, whatever
-    // the user puts in the three configurable slots. That only holds if the
-    // list is DERIVED from the section catalogue — a hand-written list silently
-    // drops whatever nobody remembered to add.
     final AppLocalizations l10n = await pumpMore(tester);
 
-    for (final AppSection section in AppSection.configurable) {
-      if (NavigationConfigForTest.defaultBar.contains(section)) continue;
+    // Headings.
+    for (final ModuleCategory category in ModuleCategory.values) {
+      expect(find.text(category.label(l10n)), findsOneWidget);
+    }
+
+    // Studium: what is not pinned.
+    for (final AppModule module in <AppModule>[
+      AppModule.moodle,
+      AppModule.grades,
+      AppModule.todos,
+      AppModule.campusMap,
+      AppModule.contacts,
+      AppModule.requests,
+      AppModule.settings,
+      AppModule.about,
+    ]) {
       expect(
-        find.text(section.label(l10n)),
+        find.text(module.title(l10n)),
         findsOneWidget,
-        reason: '${section.storageValue} is reachable from nowhere',
+        reason: module.storageValue,
       );
     }
   });
 
-  testWidgets('contacts is reachable', (WidgetTester tester) async {
-    // The regression that motivated this test: contacts is a section with a
-    // route, sits in no default tab, and was missing from the hand-written
-    // list — so the only way in was the dashboard shortcut.
-    final AppLocalizations l10n = await pumpMore(tester);
-    expect(find.text(AppSection.contacts.label(l10n)), findsOneWidget);
-  });
-
-  testWidgets('areas pushed out of the bottom bar show up here', (
+  testWidgets('what is on the bar is not repeated here', (
     WidgetTester tester,
   ) async {
-    // A user who fills the bar with Moodle, tasks and the campus map must not
-    // lose the calendar, the canteen and the news.
+    final AppLocalizations l10n = await pumpMore(tester);
+    for (final AppModule module in <AppModule>[
+      AppModule.news,
+      AppModule.calendar,
+      AppModule.canteen,
+      AppModule.mail,
+    ]) {
+      expect(
+        find.text(module.title(l10n)),
+        findsNothing,
+        reason: module.storageValue,
+      );
+    }
+  });
+
+  testWidgets('a module pushed off the bar appears under its category', (
+    WidgetTester tester,
+  ) async {
+    // The invariant the hub exists for: whichever four are pinned, the rest
+    // stay reachable.
     final AppLocalizations l10n = await pumpMore(
       tester,
-      bottomBar: <AppSection>[
-        AppSection.moodle,
-        AppSection.todos,
-        AppSection.campusMap,
+      bar: <AppModule>[
+        AppModule.moodle,
+        AppModule.todos,
+        AppModule.campusMap,
+        AppModule.grades,
       ],
     );
 
-    for (final AppSection section in <AppSection>[
-      AppSection.calendar,
-      AppSection.canteen,
-      AppSection.news,
+    for (final AppModule module in <AppModule>[
+      AppModule.calendar,
+      AppModule.mail,
+      AppModule.news,
+      AppModule.canteen,
     ]) {
-      expect(find.text(section.label(l10n)), findsOneWidget);
+      expect(
+        find.text(module.title(l10n)),
+        findsOneWidget,
+        reason: module.storageValue,
+      );
     }
+    expect(find.text(AppModule.moodle.title(l10n)), findsNothing);
   });
 
-  testWidgets('what is already in the bottom bar is not repeated', (
+  testWidgets('settings and about are always under App', (
     WidgetTester tester,
   ) async {
-    final AppLocalizations l10n = await pumpMore(tester);
-    for (final AppSection section in <AppSection>[
-      AppSection.calendar,
-      AppSection.canteen,
-      AppSection.news,
-    ]) {
-      expect(find.text(section.label(l10n)), findsNothing);
-    }
-  });
-
-  testWidgets('settings are always offered', (WidgetTester tester) async {
-    // Settings is not a section and has no tab, so it can never be crowded out.
     final AppLocalizations l10n = await pumpMore(
       tester,
-      bottomBar: <AppSection>[
-        AppSection.moodle,
-        AppSection.todos,
-        AppSection.campusMap,
+      bar: <AppModule>[
+        AppModule.moodle,
+        AppModule.todos,
+        AppModule.campusMap,
+        AppModule.grades,
       ],
     );
     expect(find.text(l10n.moreSettings), findsOneWidget);
+    expect(find.text(l10n.aboutTitle), findsOneWidget);
+  });
+
+  testWidgets('there is no Today entry any more', (WidgetTester tester) async {
+    final AppLocalizations l10n = await pumpMore(tester);
+    expect(find.text(l10n.navToday), findsNothing);
   });
 
   testWidgets('renders in English', (WidgetTester tester) async {
@@ -125,37 +150,26 @@ void main() {
       tester,
       locale: AppLocales.english,
     );
-    expect(find.text(l10n.moreSettings), findsOneWidget);
-    expect(find.text(AppSection.contacts.label(l10n)), findsOneWidget);
+    expect(find.text(l10n.moduleCategoryStudy), findsOneWidget);
+    expect(find.text(l10n.moduleContactsTitle), findsOneWidget);
+  });
+
+  testWidgets('every row stays a 48dp target', (WidgetTester tester) async {
+    await pumpMore(tester);
+    for (final Element element in find.byType(ListTile).evaluate()) {
+      final RenderBox box = element.renderObject! as RenderBox;
+      expect(box.size.height, greaterThanOrEqualTo(48));
+    }
   });
 
   testWidgets('survives a narrow phone with doubled text', (
     WidgetTester tester,
   ) async {
-    tester.view.physicalSize = const Size(320, 2400);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-
-    await pumpScreen(
+    await pumpMore(
       tester,
-      const MoreScreen(),
       textScaler: const TextScaler.linear(2),
+      surface: const Size(320, 4000),
     );
-    await tester.pumpAndSettle();
-
     expect(tester.takeException(), isNull);
   });
-}
-
-/// The bar a fresh install shows, spelled out so the expectations above read
-/// as statements rather than as a repetition of production code.
-abstract final class NavigationConfigForTest {
-  static const List<AppSection> defaultBar = <AppSection>[
-    AppSection.calendar,
-    AppSection.canteen,
-    AppSection.news,
-  ];
 }

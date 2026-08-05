@@ -4,26 +4,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../app/app_sections.dart';
+import '../../../app/app_modules.dart';
 import '../../../app/navigation_config.dart';
 import '../../../core/prefs/settings_controller.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../l10n/l10n.dart';
 
-/// Picks the three middle entries of the bottom navigation bar.
+/// Picks and orders the four modules of the bottom navigation bar.
 ///
-/// Today and More are shown as fixed, disabled rows rather than hidden: the
-/// user can see the whole bar they are configuring, and why two of it cannot
-/// be changed.
-///
-/// The screen edits a **local draft** and only writes through once exactly
-/// three areas are selected.
+/// The screen edits a **local draft** and only writes through once exactly four
+/// modules are selected.
 ///
 /// Writing on every tap looked simpler and did not work: the stored
-/// configuration is always repaired to exactly three, so unchecking one
-/// immediately refilled it from the defaults and the checkbox appeared to do
-/// nothing. A draft lets the user take one away, put another back, and commit
-/// a state the store can actually hold.
+/// configuration is always repaired to exactly four, so removing one
+/// immediately refilled it from the defaults and the control appeared to do
+/// nothing. A draft lets the user take one away, put another back, and commit a
+/// state the store can actually hold.
+///
+/// More is shown as a fixed, disabled row rather than hidden: the user can see
+/// the whole bar they are configuring, and why the last entry cannot change.
 class NavigationSettingsScreen extends ConsumerStatefulWidget {
   const NavigationSettingsScreen({super.key});
 
@@ -34,31 +33,38 @@ class NavigationSettingsScreen extends ConsumerStatefulWidget {
 
 class _NavigationSettingsScreenState
     extends ConsumerState<NavigationSettingsScreen> {
-  List<AppSection>? _draft;
+  List<AppModule>? _draft;
 
-  List<AppSection> get _chosen =>
-      _draft ?? ref.read(settingsProvider).navigation.middle;
+  List<AppModule> get _chosen =>
+      _draft ?? ref.read(settingsProvider).navigation.tabs;
 
-  void _set(AppSection section, {required bool selected}) {
-    final List<AppSection> next = _chosen.toList();
-    if (selected) {
-      if (next.length >= NavigationConfig.middleSlots) return;
-      next.add(section);
-    } else {
-      next.remove(section);
-    }
+  void _commit(List<AppModule> next) {
     setState(() => _draft = next);
     // Only a complete selection is a valid bar, so only that is persisted.
-    if (next.length == NavigationConfig.middleSlots) {
-      ref.read(settingsProvider.notifier).setNavigationMiddle(next);
+    if (next.length == NavigationConfig.tabCount) {
+      ref.read(settingsProvider.notifier).setNavigationTabs(next);
     }
+  }
+
+  void _add(AppModule module) {
+    if (_chosen.length >= NavigationConfig.tabCount) return;
+    _commit(<AppModule>[..._chosen, module]);
+  }
+
+  void _remove(AppModule module) =>
+      _commit(_chosen.where((AppModule m) => m != module).toList());
+
+  void _reorder(int oldIndex, int newIndex) {
+    final List<AppModule> next = _chosen.toList();
+    next.insert(newIndex, next.removeAt(oldIndex));
+    _commit(next);
   }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
-    final List<AppSection> chosen = _chosen;
-    final bool full = chosen.length >= NavigationConfig.middleSlots;
+    final List<AppModule> chosen = _chosen;
+    final bool full = chosen.length >= NavigationConfig.tabCount;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsNavigation)),
@@ -89,46 +95,157 @@ class _NavigationSettingsScreenState
                   const SizedBox(width: AppSpacing.sm),
                   Flexible(
                     child: Text(
-                      l10n.settingsSelectExactlyThree,
+                      l10n.settingsSelectExactlyFour,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
                 ],
               ),
             ),
-          _FixedRow(section: AppSection.today),
-          for (final AppSection section in AppSection.configurable)
-            CheckboxListTile(
-              secondary: Icon(section.icon),
-              title: Text(section.label(l10n)),
-              value: chosen.contains(section),
-              // Full and not already chosen: leave it disabled rather than
-              // evicting someone else's pick behind their back.
-              onChanged: full && !chosen.contains(section)
-                  ? null
-                  : (bool? value) => _set(section, selected: value ?? false),
-            ),
-          _FixedRow(section: AppSection.more),
+
+          _Heading(text: l10n.settingsNavigationActive),
+          ReorderableListView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            onReorderItem: _reorder,
+            children: <Widget>[
+              for (int i = 0; i < chosen.length; i++)
+                _ActiveRow(
+                  key: ValueKey<String>('tab-${chosen[i].storageValue}'),
+                  module: chosen[i],
+                  index: i,
+                  onRemove: () => _remove(chosen[i]),
+                ),
+            ],
+          ),
+          // Always last, always locked.
+          ListTile(
+            leading: const Icon(Icons.more_horiz),
+            title: Text(l10n.navMore),
+            trailing: const Icon(Icons.lock_outline),
+            enabled: false,
+          ),
+
+          _Heading(text: l10n.settingsNavigationAvailable),
+          for (final ModuleCategory category in ModuleCategory.values)
+            ..._availableIn(category, chosen, l10n, full),
         ],
       ),
     );
   }
+
+  /// The pinnable modules of one category that are not on the bar yet.
+  ///
+  /// Non-pinnable modules never appear here: settings and the about page are
+  /// not places to spend time in, and offering them would only produce a bar
+  /// slot nobody wants.
+  List<Widget> _availableIn(
+    ModuleCategory category,
+    List<AppModule> chosen,
+    AppLocalizations l10n,
+    bool full,
+  ) {
+    final List<AppModule> modules = AppModule.inCategory(category)
+        .where((AppModule m) => m.pinnable && !chosen.contains(m))
+        .toList(growable: false);
+    if (modules.isEmpty) return const <Widget>[];
+    return <Widget>[
+      Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          AppSpacing.xxs,
+        ),
+        child: Semantics(
+          header: true,
+          child: Text(
+            category.label(l10n),
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+        ),
+      ),
+      for (final AppModule module in modules)
+        ListTile(
+          leading: Icon(module.icon),
+          title: Text(module.title(l10n)),
+          // Full: leave it disabled rather than evicting someone else's pick
+          // behind their back.
+          trailing: IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            tooltip: l10n.settingsNavigationAdd,
+            onPressed: full ? null : () => _add(module),
+          ),
+          enabled: !full,
+          onTap: full ? null : () => _add(module),
+        ),
+    ];
+  }
 }
 
-/// A bar entry the user cannot move.
-class _FixedRow extends StatelessWidget {
-  const _FixedRow({required this.section});
+class _Heading extends StatelessWidget {
+  const _Heading({required this.text});
 
-  final AppSection section;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(
+      AppSpacing.lg,
+      AppSpacing.lg,
+      AppSpacing.lg,
+      AppSpacing.xs,
+    ),
+    child: Semantics(
+      header: true,
+      child: Text(text, style: Theme.of(context).textTheme.titleSmall),
+    ),
+  );
+}
+
+/// One row of the bar, draggable and removable.
+class _ActiveRow extends StatelessWidget {
+  const _ActiveRow({
+    required this.module,
+    required this.index,
+    required this.onRemove,
+    super.key,
+  });
+
+  final AppModule module;
+  final int index;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
     return ListTile(
-      leading: Icon(section.icon),
-      title: Text(section.label(l10n)),
-      trailing: const Icon(Icons.lock_outline),
-      enabled: false,
+      leading: Icon(module.icon),
+      title: Text(module.title(l10n)),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.remove_circle_outline),
+            tooltip: l10n.settingsNavigationRemove,
+            onPressed: onRemove,
+          ),
+          // An explicit handle rather than a long press on the whole row:
+          // a screen reader user gets a labelled control, and the remove
+          // button stays tappable.
+          ReorderableDragStartListener(
+            index: index,
+            child: Semantics(
+              label: l10n.settingsNavigationReorder,
+              child: const Padding(
+                padding: EdgeInsets.all(AppSpacing.sm),
+                child: Icon(Icons.drag_handle),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

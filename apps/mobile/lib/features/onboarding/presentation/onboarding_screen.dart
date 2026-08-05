@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../core/prefs/settings_controller.dart';
-import '../../../core/theme/app_density.dart';
+import '../../../core/theme/app_metrics.dart';
 import '../../../core/theme/app_motion.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../l10n/l10n.dart';
@@ -51,7 +51,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _finish() async {
     await ref.read(settingsProvider.notifier).setOnboardingCompleted(true);
     if (!mounted) return;
-    GoRouter.of(context).go(AppRoutes.today);
+    GoRouter.of(context).go(AppRoutes.news);
   }
 
   void _goTo(int index) {

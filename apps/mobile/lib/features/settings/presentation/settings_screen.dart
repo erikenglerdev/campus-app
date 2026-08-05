@@ -63,17 +63,9 @@ class SettingsScreen extends ConsumerWidget {
           _LanguageTile(settings: settings),
           _ThemeTile(settings: settings),
           const AccentColorTile(),
-          const DensityTile(),
           const ReducedMotionTile(),
           const Divider(),
           _SectionHeader(title: l10n.settingsSectionPersonalisation),
-          ListTile(
-            leading: const Icon(Icons.dashboard_customize_outlined),
-            title: Text(l10n.settingsDashboard),
-            subtitle: Text(l10n.settingsDashboardSubtitle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(AppRoutes.settingsDashboard),
-          ),
           ListTile(
             leading: const Icon(Icons.space_dashboard_outlined),
             title: Text(l10n.settingsNavigation),

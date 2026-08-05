@@ -3,9 +3,7 @@
 
 /// All route paths and names of the app in one place.
 abstract final class AppRoutes {
-  /// The day dashboard — the app's entry point and the first navigation tab.
-  static const String today = '/today';
-
+  /// The news feed — the app's entry point and the first default tab.
   static const String news = '/news';
   static const String newsDetailName = 'news-detail';
   static const String newsDetailPath = ':slug';
@@ -24,8 +22,8 @@ abstract final class AppRoutes {
   static const String contactAreaName = 'contact-area';
   static const String contactAreaPath = ':slug';
 
-  /// "Mehr" is the fifth top-level destination. Settings and the student email
-  /// client both live underneath it — neither is a tab of its own.
+  /// "Mehr" is the fixed fifth destination. Settings and the about page live
+  /// underneath it and can never be pinned to the bar.
   static const String more = '/more';
 
   // Student email client, nested under More.
@@ -69,10 +67,6 @@ abstract final class AppRoutes {
   /// Draft editor. The id is the local draft's identifier; `new` starts one.
   static const String requestDraftPath = 'draft/:id';
 
-  /// Global search over non-sensitive content only.
-  static const String searchPath = 'search';
-  static const String search = '/more/search';
-
   /// First-run onboarding. A top-level route, outside the navigation shell.
   static const String onboarding = '/onboarding';
 
@@ -83,5 +77,4 @@ abstract final class AppRoutes {
   static const String privacy = '/more/settings/privacy';
   static const String channels = '/more/settings/channels';
   static const String settingsNavigation = '/more/settings/navigation';
-  static const String settingsDashboard = '/more/settings/dashboard';
 }

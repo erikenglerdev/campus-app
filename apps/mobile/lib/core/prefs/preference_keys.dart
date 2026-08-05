@@ -58,22 +58,18 @@ abstract final class PreferenceKeys {
   /// Storage value of the chosen [AccentPalette].
   static const String accentPalette = 'settings.accentPalette.v1';
 
-  /// Storage value of the chosen [DisplayDensity].
-  static const String displayDensity = 'settings.displayDensity.v1';
-
   /// `1` when the user asked for reduced motion locally. The operating
   /// system's own setting is honoured independently of this flag.
   static const String reducedMotion = 'settings.reducedMotion.v1';
 
-  /// The three user-chosen middle entries of the bottom navigation bar, as
-  /// section storage values in bar order.
-  static const String navigationMiddle = 'settings.navigation.middle.v1';
-
-  /// Dashboard cards in display order. Absent means "the product default".
-  static const String dashboardCardOrder = 'settings.dashboard.order.v1';
-
-  /// Dashboard cards the user switched off.
-  static const String dashboardHiddenCards = 'settings.dashboard.hidden.v1';
+  /// The four user-chosen modules of the bottom navigation bar, as module
+  /// storage values in bar order.
+  ///
+  /// `v2`: the bar used to be a fixed first tab, three configurable middles and
+  /// More. It is now four free slots and More, over a different catalogue, so a
+  /// `v1` list would repair into something the user never chose. A new key lets
+  /// the old value be ignored rather than misread.
+  static const String navigationTabs = 'settings.navigation.tabs.v2';
 
   /// buildingKey of the building the campus map opens on.
   static const String defaultBuilding = 'settings.defaultBuilding.v1';

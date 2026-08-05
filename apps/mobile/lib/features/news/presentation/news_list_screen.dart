@@ -11,7 +11,6 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/offline_notice.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
-import '../../search/presentation/search_screen.dart';
 import '../application/channel_subscriptions.dart';
 import '../application/news_providers.dart';
 import '../application/news_read_controller.dart';
@@ -54,7 +53,6 @@ class NewsListScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l10n.newsTitle),
         actions: <Widget>[
-          const SearchIconButton(),
           IconButton(
             tooltip: unreadOnly ? l10n.newsShowAll : l10n.newsUnreadOnly,
             onPressed: () => ref.read(newsUnreadOnlyProvider.notifier).toggle(),

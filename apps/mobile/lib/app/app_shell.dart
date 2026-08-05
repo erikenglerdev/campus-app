@@ -8,23 +8,31 @@ import 'package:go_router/go_router.dart';
 import '../core/prefs/settings_controller.dart';
 import '../core/theme/app_dimensions.dart';
 import '../l10n/l10n.dart';
-import 'app_sections.dart';
+import 'app_modules.dart';
 import 'navigation_config.dart';
 
 /// Bottom navigation shell.
 ///
-/// The router owns **one branch per [AppSection]**, so a branch index is just
-/// the section's index. This widget shows five of them: Today, the user's three
-/// choices and More.
+/// The router owns **one branch per [AppModule]**, in enum order, plus a final
+/// branch for More. A branch index is therefore just the module's index, and
+/// More is the last one — no lookup table can drift out of sync.
 ///
-/// A section the user navigated to without it being in the bar — grades opened
+/// A module the user navigated to without it being on the bar — grades opened
 /// from More, say — has no tab of its own. Rather than leaving nothing
-/// selected, the bar then highlights More, which is where that section was
+/// selected, the bar then highlights More, which is where that module was
 /// reached from and where it can be reached again.
 class AppShell extends ConsumerWidget {
   const AppShell({required this.navigationShell, super.key});
 
   final StatefulNavigationShell navigationShell;
+
+  /// Branch index of the More tab: one past the last pinnable module.
+  ///
+  /// The router lays out one branch per pinnable module, in enum order, and
+  /// More last. That only works while the pinnable modules are the leading
+  /// values of the enum — an invariant `app_modules_test` asserts, because
+  /// breaking it would silently point every tab at the wrong screen.
+  static int get moreBranchIndex => AppModule.pinnableModules.length;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -32,13 +40,17 @@ class AppShell extends ConsumerWidget {
     final NavigationConfig config = ref.watch(
       settingsProvider.select((AppSettings s) => s.navigation),
     );
-    final List<AppSection> destinations = config.destinations;
+    final List<AppModule> tabs = config.tabs;
 
-    // Branch index -> bar index. `-1` means "this branch has no tab".
-    int selected = destinations.indexWhere(
-      (AppSection s) => s.index == navigationShell.currentIndex,
+    /// Branch index of each bar entry: the four modules, then More.
+    int branchOf(int barIndex) =>
+        barIndex < tabs.length ? tabs[barIndex].index : moreBranchIndex;
+
+    // Branch index -> bar index. Anything not on the bar falls back to More.
+    int selected = tabs.indexWhere(
+      (AppModule m) => m.index == navigationShell.currentIndex,
     );
-    if (selected == -1) selected = destinations.indexOf(AppSection.more);
+    if (selected == -1) selected = tabs.length;
 
     return Scaffold(
       body: navigationShell,
@@ -48,20 +60,25 @@ class AppShell extends ConsumerWidget {
         child: NavigationBar(
           selectedIndex: selected,
           onDestinationSelected: (int barIndex) => navigationShell.goBranch(
-            destinations[barIndex].index,
-            // Tapping the tab you are already on returns to that section's
+            branchOf(barIndex),
+            // Tapping the tab you are already on returns to that module's
             // root — the behaviour both platforms have trained users to expect.
-            initialLocation:
-                destinations[barIndex].index == navigationShell.currentIndex,
+            initialLocation: branchOf(barIndex) == navigationShell.currentIndex,
           ),
           destinations: <NavigationDestination>[
-            for (final AppSection section in destinations)
+            for (final AppModule module in tabs)
               NavigationDestination(
-                icon: Icon(section.icon),
-                selectedIcon: Icon(section.selectedIcon),
-                label: section.label(l10n),
-                tooltip: section.label(l10n),
+                icon: Icon(module.icon),
+                selectedIcon: Icon(module.selectedIcon),
+                label: module.shortTitle(l10n),
+                tooltip: module.title(l10n),
               ),
+            NavigationDestination(
+              icon: const Icon(Icons.more_horiz),
+              selectedIcon: const Icon(Icons.more_horiz),
+              label: l10n.navMore,
+              tooltip: l10n.navMore,
+            ),
           ],
         ),
       ),

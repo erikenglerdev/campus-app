@@ -1,14 +1,12 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
-import 'package:campus_koethen/app/app_sections.dart';
+import 'package:campus_koethen/app/app_modules.dart';
 import 'package:campus_koethen/app/navigation_config.dart';
 import 'package:campus_koethen/core/prefs/key_value_store.dart';
 import 'package:campus_koethen/core/prefs/preference_keys.dart';
 import 'package:campus_koethen/core/prefs/settings_controller.dart';
 import 'package:campus_koethen/core/theme/accent_palette.dart';
-import 'package:campus_koethen/core/theme/app_density.dart';
-import 'package:campus_koethen/features/today/domain/dashboard_card.dart';
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -30,10 +28,8 @@ void main() {
       ).read(settingsProvider);
 
       expect(settings.accentPalette, AccentPalette.campusViolet);
-      expect(settings.displayDensity, DisplayDensity.comfortable);
       expect(settings.reducedMotion, isFalse);
       expect(settings.navigation, NavigationConfig.defaults);
-      expect(settings.dashboard, DashboardConfig.defaults);
       expect(settings.defaultBuildingKey, isNull);
       expect(
         settings.onboardingCompleted,
@@ -47,19 +43,13 @@ void main() {
       () async {
         final InMemoryKeyValueStore store = InMemoryKeyValueStore();
         await store.setString(PreferenceKeys.accentPalette, 'neon-pink');
-        await store.setString(PreferenceKeys.displayDensity, 'enormous');
-        await store.setStringList(PreferenceKeys.navigationMiddle, <String>[
+        await store.setStringList(PreferenceKeys.navigationTabs, <String>[
           'nope',
-        ]);
-        await store.setStringList(PreferenceKeys.dashboardCardOrder, <String>[
-          'gone',
         ]);
 
         final AppSettings settings = _container(store).read(settingsProvider);
         expect(settings.accentPalette, AccentPalette.fallback);
-        expect(settings.displayDensity, DisplayDensity.fallback);
         expect(settings.navigation.isValid, isTrue);
-        expect(settings.dashboard.order.length, DashboardCard.values.length);
       },
     );
   });
@@ -73,33 +63,32 @@ void main() {
       );
 
       await controller.setAccentPalette(AccentPalette.deepTeal);
-      await controller.setDisplayDensity(DisplayDensity.compact);
       await controller.setReducedMotion(true);
       await controller.setDefaultBuilding('demo-north');
       await controller.setOnboardingCompleted(true);
-      await controller.setNavigationMiddle(<AppSection>[
-        AppSection.mail,
-        AppSection.todos,
-        AppSection.campusMap,
+      await controller.setNavigationTabs(<AppModule>[
+        AppModule.mail,
+        AppModule.todos,
+        AppModule.campusMap,
+        AppModule.grades,
       ]);
 
       // The live state is updated…
       final AppSettings live = container.read(settingsProvider);
       expect(live.accentPalette, AccentPalette.deepTeal);
-      expect(live.displayDensity, DisplayDensity.compact);
       expect(live.reducedMotion, isTrue);
       expect(live.defaultBuildingKey, 'demo-north');
       expect(live.onboardingCompleted, isTrue);
-      expect(live.navigation.middle, <AppSection>[
-        AppSection.mail,
-        AppSection.todos,
-        AppSection.campusMap,
+      expect(live.navigation.tabs, <AppModule>[
+        AppModule.mail,
+        AppModule.todos,
+        AppModule.campusMap,
+        AppModule.grades,
       ]);
 
       // …and so is the store, so a restart keeps the choice.
       final AppSettings reloaded = _container(store).read(settingsProvider);
       expect(reloaded.accentPalette, AccentPalette.deepTeal);
-      expect(reloaded.displayDensity, DisplayDensity.compact);
       expect(reloaded.reducedMotion, isTrue);
       expect(reloaded.defaultBuildingKey, 'demo-north');
       expect(reloaded.onboardingCompleted, isTrue);
@@ -114,41 +103,24 @@ void main() {
           store,
         ).read(settingsProvider.notifier);
 
-        // Fixed entries and a duplicate — none of this may reach storage.
-        await controller.setNavigationMiddle(<AppSection>[
-          AppSection.more,
-          AppSection.news,
-          AppSection.news,
-          AppSection.today,
+        // A module that may not be pinned, and a duplicate — none of this may
+        // reach storage.
+        await controller.setNavigationTabs(<AppModule>[
+          AppModule.settings,
+          AppModule.news,
+          AppModule.news,
+          AppModule.about,
         ]);
 
         final List<String>? stored = store.getStringList(
-          PreferenceKeys.navigationMiddle,
+          PreferenceKeys.navigationTabs,
         );
-        expect(stored, hasLength(3));
-        expect(stored, isNot(contains(AppSection.more.storageValue)));
-        expect(stored, isNot(contains(AppSection.today.storageValue)));
-        expect(stored!.toSet().length, 3);
+        expect(stored, hasLength(4));
+        expect(stored, isNot(contains(AppModule.settings.storageValue)));
+        expect(stored, isNot(contains(AppModule.about.storageValue)));
+        expect(stored!.toSet().length, 4);
       },
     );
-
-    test('dashboard order and hidden cards persist together', () async {
-      final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-      final SettingsController controller = _container(
-        store,
-      ).read(settingsProvider.notifier);
-
-      await controller.setDashboard(
-        DashboardConfig.defaults
-            .reordered(DashboardCard.quickActions, 0)
-            .withVisibility(DashboardCard.news, visible: false),
-      );
-
-      final AppSettings reloaded = _container(store).read(settingsProvider);
-      expect(reloaded.dashboard.order.first, DashboardCard.quickActions);
-      expect(reloaded.dashboard.isVisible(DashboardCard.news), isFalse);
-      expect(reloaded.dashboard.visible, isNot(contains(DashboardCard.news)));
-    });
 
     test('clearing the default building removes the key', () async {
       final InMemoryKeyValueStore store = InMemoryKeyValueStore();
@@ -173,7 +145,6 @@ void main() {
 
       await controller.setThemeMode(ThemeMode.dark);
       await controller.setAccentPalette(AccentPalette.warmAmber);
-      await controller.setDisplayDensity(DisplayDensity.compact);
       await controller.setReducedMotion(true);
       await controller.setPreferredCanteen('mensa-koethen');
       await controller.setDefaultBuilding('demo-north');
@@ -184,7 +155,6 @@ void main() {
       final AppSettings after = container.read(settingsProvider);
       expect(after.themeMode, ThemeMode.system);
       expect(after.accentPalette, AccentPalette.fallback);
-      expect(after.displayDensity, DisplayDensity.fallback);
       expect(after.reducedMotion, isFalse);
       expect(after.preferredCanteenSlug, isNull);
       expect(after.defaultBuildingKey, isNull);

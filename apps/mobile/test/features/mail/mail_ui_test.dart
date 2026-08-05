@@ -129,13 +129,15 @@ MailMessageHeader _header({String id = '1'}) => MailMessageHeader(
 
 void main() {
   group('MoreScreen', () {
-    testWidgets('lists the mail and settings entries', (
+    testWidgets('does not repeat mail, which is a default tab', (
       WidgetTester tester,
     ) async {
+      // Mail moved into the bottom bar, so the hub must not list it a second
+      // time. Settings can never be pinned and is therefore always here.
       await pumpScreen(tester, const MoreScreen());
       await tester.pumpAndSettle();
 
-      expect(find.text('Studentische E-Mail'), findsOneWidget);
+      expect(find.text('Studentische E-Mail'), findsNothing);
       expect(find.text('Einstellungen'), findsOneWidget);
     });
   });

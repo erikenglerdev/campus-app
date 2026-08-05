@@ -2,7 +2,6 @@
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
 import 'package:campus_koethen/app/app_router.dart';
-import 'package:campus_koethen/app/app_routes.dart';
 import 'package:campus_koethen/core/cache/cache_providers.dart';
 import 'package:campus_koethen/core/cache/content_cache.dart';
 import 'package:campus_koethen/core/locale/locale_mode.dart';
@@ -10,7 +9,7 @@ import 'package:campus_koethen/core/network/network_providers.dart';
 import 'package:campus_koethen/core/prefs/key_value_store.dart';
 import 'package:campus_koethen/core/prefs/settings_controller.dart';
 import 'package:campus_koethen/core/theme/app_theme.dart';
-import 'package:campus_koethen/features/today/presentation/today_screen.dart';
+import 'package:campus_koethen/features/news/presentation/news_list_screen.dart';
 import 'package:campus_koethen/l10n/l10n.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -76,9 +75,9 @@ void main() {
       bar.destinations.cast<NavigationDestination>().map(
         (NavigationDestination destination) => destination.label,
       ),
-      // The redesign puts the day dashboard first and keeps More last; the
-      // three between them are the user's defaults until they change them.
-      <String>['Heute', 'Kalender', 'Mensa', 'News', 'Mehr'],
+      // Four modules the user may change, then a fixed More. The four here are
+      // the product defaults until the user picks otherwise.
+      <String>['News', 'Kalender', 'Mensa', 'E-Mail', 'Mehr'],
     );
   });
 
@@ -97,11 +96,10 @@ void main() {
     expect(find.text('Liste'), findsOneWidget);
   });
 
-  testWidgets('starts on the day dashboard', (WidgetTester tester) async {
+  testWidgets('starts on the news feed', (WidgetTester tester) async {
     await pumpApp(tester);
 
-    expect(AppRoutes.today, '/today');
-    expect(find.byType(TodayScreen), findsOneWidget);
+    expect(find.byType(NewsListScreen), findsOneWidget);
     // The calendar view toggle is not shown until the Kalender tab is opened.
     expect(find.text('Liste'), findsNothing);
   });
@@ -117,10 +115,10 @@ void main() {
 
     expect(tester.takeException(), isNull);
     for (final String label in <String>[
-      'Heute',
+      'News',
       'Kalender',
       'Mensa',
-      'News',
+      'E-Mail',
       'Mehr',
     ]) {
       expect(

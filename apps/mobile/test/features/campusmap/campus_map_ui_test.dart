@@ -133,7 +133,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Lageplan'), findsOneWidget);
+    // The hub uses the module's full title; "Lageplan" alone is the short one.
+    expect(find.text('Lageplan & Räume'), findsOneWidget);
     expect(find.text('Fiktiver Demo-Etagenplan mit Raumsuche'), findsOneWidget);
   });
 
@@ -456,7 +457,7 @@ void main() {
 
       // Reaching the map through the real route table, exactly as the contact
       // row does, rather than asserting on a string.
-      await tester.tap(find.text('Lageplan'));
+      await tester.tap(find.text('Lageplan & Räume'));
       await tester.pumpAndSettle();
       expect(find.byType(CampusMapScreen), findsOneWidget);
     });
