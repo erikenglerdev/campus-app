@@ -10,6 +10,7 @@ import 'package:campus_koethen/core/prefs/settings_controller.dart';
 import 'package:campus_koethen/features/calendar/application/calendar_providers.dart';
 import 'package:campus_koethen/features/calendar/domain/calendar_entry.dart';
 import 'package:campus_koethen/features/calendar/presentation/calendar_screen.dart';
+import 'package:campus_koethen/features/calendar/presentation/calendar_source_sheets.dart';
 import 'package:campus_koethen/features/calendar/presentation/week_grid_view.dart';
 import 'package:campus_koethen/features/calendar/presentation/week_strip.dart';
 import 'package:dio/dio.dart';
@@ -202,17 +203,65 @@ void main() {
   });
 
   group('the source controls', () {
-    testWidgets('name all three sources and their state', (
+    testWidgets('name all three sources, without spelling out the state', (
       WidgetTester tester,
     ) async {
+      // The name is the only word on the button. The state used to be a second
+      // line under every one of them, which made three controls read like a
+      // paragraph; it now lives in the icon and in the accessible name.
       await pumpCalendar(tester);
 
       expect(find.text('Stundenplan'), findsOneWidget);
       expect(find.text('Moodle'), findsOneWidget);
       expect(find.text('Events'), findsOneWidget);
-      // State in words, never in a colour alone.
-      expect(find.text('Sichtbar'), findsNWidgets(2));
-      expect(find.text('Nicht verbunden'), findsOneWidget);
+      expect(find.text('Sichtbar'), findsNothing);
+      expect(find.text('Nicht verbunden'), findsNothing);
+    });
+
+    testWidgets('say the state to a screen reader all the same', (
+      WidgetTester tester,
+    ) async {
+      await pumpCalendar(tester);
+
+      final List<String> labels = tester
+          .widgetList<Semantics>(find.byType(Semantics))
+          .map((Semantics s) => s.properties.label ?? '')
+          .where((String l) => l.isNotEmpty)
+          .toList(growable: false);
+
+      expect(labels, contains('Stundenplan, Sichtbar'));
+      expect(labels, contains('Moodle, Nicht verbunden'));
+    });
+
+    testWidgets('mark a hidden source by a different glyph, not by a tint', (
+      WidgetTester tester,
+    ) async {
+      final InMemoryKeyValueStore store = InMemoryKeyValueStore();
+      await store.setStringList(
+        PreferenceKeys.calendarDisabledSources,
+        <String>[CalendarSource.publicCalendar.storageValue],
+      );
+      await pumpCalendar(tester, store: store);
+
+      // Three states, three glyphs: showing, switched off, and no account
+      // yet. None of them is told apart by a tint. Scoped to the buttons —
+      // the same schedule glyph also appears in the "pick a course" hint.
+      Finder onButtons(IconData icon) => find.descendant(
+        of: find.byType(OutlinedButton),
+        matching: find.byIcon(icon),
+      );
+
+      expect(onButtons(Icons.visibility_off_outlined), findsOneWidget);
+      expect(onButtons(Icons.link_off), findsOneWidget);
+      expect(
+        onButtons(calendarSourceIcon(CalendarSource.timetable)),
+        findsOneWidget,
+      );
+      expect(
+        onButtons(calendarSourceIcon(CalendarSource.publicCalendar)),
+        findsNothing,
+        reason: 'the hidden source shows the crossed-out eye in its place',
+      );
     });
 
     testWidgets('the timetable control opens its sheet', (
@@ -359,8 +408,8 @@ void main() {
     await pumpCalendar(tester, locale: AppLocales.english);
 
     expect(find.text('Day'), findsOneWidget);
-    expect(find.text('Not connected'), findsOneWidget);
-    expect(find.text('Visible'), findsNWidgets(2));
+    expect(find.text('Timetable'), findsOneWidget);
+    expect(find.text('Events'), findsOneWidget);
   });
 
   testWidgets('survives a narrow phone with doubled text', (

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/locale/formatters.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/status_banner.dart';
 import '../../../l10n/l10n.dart';
@@ -155,8 +156,13 @@ class _ViewToggle extends ConsumerWidget {
 ///
 /// Not toggles: what a source needs differs — the timetable needs a course,
 /// Moodle needs an account, the events are a list of calendars — so tapping
-/// opens the place where all of that lives. The state is on the button itself
-/// in words, an icon **and** the accessible state, never in a colour.
+/// opens the place where all of that lives.
+///
+/// One glyph and one word per source. Spelling the state out under every name
+/// made three controls read like a paragraph, for information that only ever
+/// differs from the default in one of them; a source that is not showing says
+/// so by wearing a crossed-out eye in place of its own icon, and the full
+/// state stays in the accessible name.
 class _SourceControls extends ConsumerWidget {
   const _SourceControls({required this.data});
 
@@ -166,13 +172,24 @@ class _SourceControls extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final AppLocalizations l10n = context.l10n;
 
+    bool notConnected(CalendarSource source) =>
+        source == CalendarSource.moodle && !data.moodleConnected;
+
     String stateOf(CalendarSource source) {
-      if (source == CalendarSource.moodle && !data.moodleConnected) {
-        return l10n.calendarSourceNotConnected;
-      }
+      if (notConnected(source)) return l10n.calendarSourceNotConnected;
       return data.enabledSources.contains(source)
           ? l10n.calendarSourceVisible
           : l10n.calendarSourceHidden;
+    }
+
+    /// One glyph per state, and three states — a source that has no account
+    /// yet is not the same thing as one the reader switched off, so it does
+    /// not get to wear the same symbol.
+    IconData glyphOf(CalendarSource source) {
+      if (notConnected(source)) return Icons.link_off;
+      return data.enabledSources.contains(source)
+          ? calendarSourceIcon(source)
+          : Icons.visibility_off_outlined;
     }
 
     return Padding(
@@ -182,11 +199,10 @@ class _SourceControls extends ConsumerWidget {
         AppSpacing.lg,
         AppSpacing.xs,
       ),
-      // One row, three equal shares. The buttons stack their own label over
-      // their own state so a third of a phone is enough for both, and each one
-      // takes exactly the same width whatever its label says. IntrinsicHeight
-      // is what keeps the row even when one label needs a second line, instead
-      // of leaving one button taller than its neighbours.
+      // One row, three equal shares — each button the same width whatever its
+      // label says. IntrinsicHeight is what keeps the row even when a longer
+      // name takes a second line, instead of leaving one button taller than
+      // its neighbours.
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -197,7 +213,7 @@ class _SourceControls extends ConsumerWidget {
                 const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: _SourceButton(
-                  icon: calendarSourceIcon(source),
+                  icon: glyphOf(source),
                   label: calendarSourceLabel(l10n, source),
                   state: stateOf(source),
                   active:
@@ -231,11 +247,12 @@ class _SourceButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppColors colors = context.colors;
     final TextTheme text = Theme.of(context).textTheme;
     return Semantics(
       button: true,
       // Announced as "Stundenplan, Sichtbar" — the state is part of the name,
-      // not something a screen reader has to infer from a tint.
+      // not something a screen reader has to infer from a glyph or a tint.
       label: '$label, $state',
       excludeSemantics: true,
       child: OutlinedButton(
@@ -243,42 +260,26 @@ class _SourceButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.xs,
-            vertical: AppSpacing.sm,
+            vertical: AppSpacing.xs,
           ),
+          visualDensity: VisualDensity.compact,
+          foregroundColor: active ? null : colors.textSecondary,
         ),
-        // Stacked, not side by side: a third of a phone's width is not enough
-        // for an icon, a name and a state on one line, and the name is the
-        // part that must never be cut. Filling the height rather than hugging
-        // it is what keeps the three buttons reading as one row when a longer
-        // name takes a second line.
+        // Icon over word, nothing else. A third of a phone's width is not
+        // enough for both on one line, and the name is the part that must
+        // never be cut.
         child: Column(
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Icon(icon, size: AppSizes.iconSmall),
-                const SizedBox(width: AppSpacing.xxs),
-                // The eye is the second, redundant carrier of the state: it
-                // says the same as the word below it, so neither the colour
-                // nor a single glyph has to do the job alone.
-                Icon(
-                  active ? Icons.visibility : Icons.visibility_off,
-                  size: AppSizes.iconSmall,
-                ),
-              ],
-            ),
+            // The state glyph TAKES THE PLACE of the source icon rather than
+            // sitting next to it: two glyphs per button was the clutter, and
+            // the name below already says which source this is.
+            Icon(icon, size: AppSizes.iconSmall),
+            const SizedBox(height: AppSpacing.xxs),
             Text(
               label,
               style: text.labelMedium,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              state,
-              style: text.labelSmall,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
