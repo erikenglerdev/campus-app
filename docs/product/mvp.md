@@ -170,9 +170,13 @@ gebaut.
   (Quelle `location_id=22`).
 - Die Mensenliste kommt **ausschließlich** aus der Campus API. Flutter kennt keine Location-IDs.
   Eine weitere Mensa erfordert höchstens eine Backend-Konfigurationsänderung, **kein App-Release**.
-- Angezeigt werden Datum, Name, Zusatztext, Beilagen, Sprint-Kennzeichen, Zutaten/Marker und der
-  Preis **einer** Personengruppe — der, die im Filter gewählt ist; Standard ist `student`. Fehlt
-  dieser Preis, sagt die Karte das, statt den Preis einer anderen Gruppe zu zeigen.
+- Angezeigt werden Datum, Name, Zusatztext, Beilagen, Sprint-Kennzeichen und der Preis **einer**
+  Personengruppe — der, die im Filter gewählt ist; Standard ist `student`. Fehlt dieser Preis,
+  sagt die Karte das, statt den Preis einer anderen Gruppe zu zeigen.
+- Die **Zutatenkennzeichnungen stehen nicht auf der Karte**: Dafür ist der Filter da, und ein
+  Dutzend Chips unter jedem Gericht verdeckt genau die zwei Zeilen, die sich zwischen zwei
+  Gerichten unterscheiden. Marker ohne Filterentsprechung (Bio, Klima-Teller und dergleichen)
+  bleiben stehen, weil sie sonst nirgends stünden.
 - Gefiltert wird über die **stabilen semantischen Schlüssel** der Campus API (`traits`,
   `allergens`), nie über die Marker-Codes der Quelle. Die Taxonomie ist fest, nicht aus dem
   sichtbaren Tag abgeleitet: „keine Erdnüsse" muss dienstags dasselbe heißen wie freitags.

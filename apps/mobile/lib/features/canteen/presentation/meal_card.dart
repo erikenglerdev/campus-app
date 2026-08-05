@@ -16,6 +16,12 @@ import '../data/canteen_models.dart';
 /// Only **one** price is shown: the one for the group the reader selected. The
 /// other groups are somebody else's price, and three numbers on a card mean
 /// three numbers to read past every time.
+///
+/// The ingredient declarations are not listed either: they are what the filter
+/// works on, and a dozen chips under every dish buried the two lines that
+/// actually differ between one meal and the next. The remaining markers — Bio,
+/// Klima-Teller and the like — stay, because no filter covers them and nothing
+/// else on the screen says them.
 class MealCard extends StatelessWidget {
   const MealCard({
     required this.meal,
@@ -118,15 +124,6 @@ class MealCard extends StatelessWidget {
               _LabelledWrap(
                 label: l10n.canteenMarkersLabel,
                 values: meal.nonIngredientMarkers
-                    .map((MealMarker marker) => marker.label)
-                    .toList(growable: false),
-              ),
-            ],
-            if (meal.ingredients.isNotEmpty) ...<Widget>[
-              const SizedBox(height: AppSpacing.md),
-              _LabelledWrap(
-                label: l10n.canteenIngredientsLabel,
-                values: meal.ingredients
                     .map((MealMarker marker) => marker.label)
                     .toList(growable: false),
               ),

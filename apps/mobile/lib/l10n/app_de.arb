@@ -164,8 +164,6 @@
   "@canteenExtrasLabel": {},
   "canteenMarkersLabel": "Marker",
   "@canteenMarkersLabel": {},
-  "canteenIngredientsLabel": "Zutaten",
-  "@canteenIngredientsLabel": {},
   "canteenPriceSemanticLabel": "{group}: {price}",
   "@canteenPriceSemanticLabel": {
     "placeholders": {

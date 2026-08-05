@@ -97,7 +97,6 @@
   "canteenSprintSemanticLabel": "Sprint offer",
   "canteenExtrasLabel": "Sides",
   "canteenMarkersLabel": "Markers",
-  "canteenIngredientsLabel": "Ingredients",
   "canteenPriceSemanticLabel": "{group}: {price}",
   "@canteenPriceSemanticLabel": {
     "placeholders": {

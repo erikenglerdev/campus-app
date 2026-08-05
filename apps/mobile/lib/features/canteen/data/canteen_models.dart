@@ -155,9 +155,6 @@ class Meal {
 
   final List<MealPrice> prices;
 
-  List<MealMarker> get ingredients =>
-      markers.where((MealMarker marker) => marker.isIngredient).toList();
-
   List<MealMarker> get nonIngredientMarkers =>
       markers.where((MealMarker marker) => !marker.isIngredient).toList();
 
