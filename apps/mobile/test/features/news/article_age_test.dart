@@ -45,10 +45,7 @@ void main() {
       // "vor 14 Wochen" says less than the date does.
       final DateTime old = _now.subtract(kRelativeAgeLimit);
       expect(articleAge(old, now: _now), OlderThanWeeks(old));
-      expect(
-        _ageAfter(const Duration(days: 400)),
-        isA<OlderThanWeeks>(),
-      );
+      expect(_ageAfter(const Duration(days: 400)), isA<OlderThanWeeks>());
     });
   });
 
