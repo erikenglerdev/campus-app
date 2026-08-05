@@ -67,31 +67,25 @@ class _CanteenScreenState extends ConsumerState<CanteenScreen>
     );
     final String? slug = ref.watch(selectedCanteenSlugProvider);
 
+    // No app bar: the name of the canteen says where you are, and it is part
+    // of the content rather than a title bar repeating the word "Mensa".
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.canteenTitle),
-        actions: <Widget>[
-          IconButton(
-            tooltip: l10n.canteenPickerTooltip,
-            onPressed: () => showCanteenPickerSheet(context),
-            icon: const Icon(Icons.restaurant_outlined),
+      body: SafeArea(
+        child: switch (canteens) {
+          AsyncLoading<Loaded<List<Canteen>>>() when !canteens.hasValue =>
+            const LoadingView(),
+          AsyncError<Loaded<List<Canteen>>>(:final Object error) => ErrorView(
+            failure: error,
+            onRetry: () => ref.invalidate(canteensProvider),
           ),
-        ],
+          _ when slug == null => EmptyView(
+            icon: Icons.restaurant_outlined,
+            title: l10n.canteenNoCanteensTitle,
+            message: l10n.canteenNoCanteensMessage,
+          ),
+          _ => _MenuBody(slug: slug, onRefresh: _refresh),
+        },
       ),
-      body: switch (canteens) {
-        AsyncLoading<Loaded<List<Canteen>>>() when !canteens.hasValue =>
-          const LoadingView(),
-        AsyncError<Loaded<List<Canteen>>>(:final Object error) => ErrorView(
-          failure: error,
-          onRetry: () => ref.invalidate(canteensProvider),
-        ),
-        _ when slug == null => EmptyView(
-          icon: Icons.restaurant_outlined,
-          title: l10n.canteenNoCanteensTitle,
-          message: l10n.canteenNoCanteensMessage,
-        ),
-        _ => _MenuBody(slug: slug, onRefresh: _refresh),
-      },
     );
   }
 }
@@ -139,14 +133,10 @@ class _MenuContent extends ConsumerWidget {
     final List<Meal> allMeals = day?.meals ?? const <Meal>[];
     final CanteenFilter filter = ref.watch(canteenFilterProvider);
     final List<Meal> meals = filter.apply(allMeals);
-    final int hiddenCount = allMeals.where(filter.isHidden).length;
 
-    // The filter offers only what the source published for the visible day —
-    // never a fixed vocabulary the data may not support.
-    final Map<String, MealMarker> markerVocabulary = <String, MealMarker>{
-      for (final Meal meal in allMeals)
-        for (final MealMarker marker in meal.markers) marker.code: marker,
-    };
+    // The filter's trait and allergen vocabulary is fixed; only the price
+    // groups come from the data, because a canteen cannot be asked for a group
+    // it does not have.
     final Map<String, MealPrice> priceVocabulary = <String, MealPrice>{
       for (final Meal meal in allMeals)
         for (final MealPrice price in meal.prices) price.group: price,
@@ -168,15 +158,16 @@ class _MenuContent extends ConsumerWidget {
             style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
-        _DayNavigator(date: selectedDay),
         const SizedBox(height: AppSpacing.sm),
-        Row(
+        // A Wrap, not a Row: two buttons with their labels do not share a line
+        // on a narrow phone at a large text size.
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.xs,
           children: <Widget>[
             OutlinedButton.icon(
               onPressed: () => showCanteenFilterSheet(
                 context,
-                markerVocabulary.values.toList(growable: false),
                 priceVocabulary.values.toList(growable: false),
               ),
               icon: const Icon(Icons.tune, size: AppSizes.iconSmall),
@@ -186,18 +177,18 @@ class _MenuContent extends ConsumerWidget {
                     : l10n.canteenFilterTitle,
               ),
             ),
-            if (hiddenCount > 0) ...<Widget>[
-              const SizedBox(width: AppSpacing.sm),
-              Flexible(
-                child: Text(
-                  l10n.canteenHiddenCount(hiddenCount),
-                  style: Theme.of(context).textTheme.bodySmall,
-                  overflow: TextOverflow.ellipsis,
-                ),
+            OutlinedButton.icon(
+              onPressed: () => showCanteenPickerSheet(context),
+              icon: const Icon(
+                Icons.restaurant_outlined,
+                size: AppSizes.iconSmall,
               ),
-            ],
+              label: Text(l10n.canteenPickerTitle),
+            ),
           ],
         ),
+        const SizedBox(height: AppSpacing.md),
+        _DayNavigator(date: selectedDay),
         const SizedBox(height: AppSpacing.md),
         if (loaded.fromCache) ...<Widget>[
           OfflineNotice(cachedAt: loaded.cachedAt),
@@ -271,13 +262,11 @@ class _MenuContent extends ConsumerWidget {
           for (final Meal meal in meals) ...<Widget>[
             MealCard(
               meal: meal,
+              priceGroup: filter.priceGroup,
               isFavourite: filter.isFavourite(meal),
-              emphasisedPriceGroup: filter.priceGroup,
               onToggleFavourite: () => ref
                   .read(canteenFilterProvider.notifier)
                   .toggleFavourite(meal),
-              onHide: () =>
-                  ref.read(canteenFilterProvider.notifier).toggleHidden(meal),
             ),
             const SizedBox(height: AppSpacing.md),
           ],

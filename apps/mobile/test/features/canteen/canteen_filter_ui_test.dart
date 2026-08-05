@@ -28,7 +28,9 @@ String _today() {
 Map<String, dynamic> _meal(
   String id,
   String name, {
-  List<Map<String, dynamic>> markers = const <Map<String, dynamic>>[],
+  List<String> traits = const <String>[],
+  List<String> allergens = const <String>[],
+  List<Map<String, dynamic>> prices = const <Map<String, dynamic>>[],
 }) => <String, dynamic>{
   'id': id,
   'name': name,
@@ -36,30 +38,26 @@ Map<String, dynamic> _meal(
   'sourceLanguage': 'de',
   'isSprint': false,
   'extras': <String>[],
-  'markers': markers,
-  'prices': <Map<String, dynamic>>[
-    <String, dynamic>{
-      'group': 'student',
-      'label': 'Studierende',
-      'amount': '1.95',
-      'currency': 'EUR',
-      'isStudentGroup': true,
-    },
-    <String, dynamic>{
-      'group': 'employee',
-      'label': 'Beschäftigte',
-      'amount': '4.95',
-      'currency': 'EUR',
-      'isStudentGroup': false,
-    },
-  ],
+  'markers': <Map<String, dynamic>>[],
+  'traits': traits,
+  'allergens': allergens,
+  'prices': prices.isEmpty ? _bothPrices : prices,
 };
 
-Map<String, dynamic> _marker(String code, String label) => <String, dynamic>{
-  'code': code,
-  'label': label,
-  'kind': 'ingredient',
-};
+const List<Map<String, dynamic>> _bothPrices = <Map<String, dynamic>>[
+  <String, dynamic>{
+    'group': 'student',
+    'label': 'Studierende',
+    'amount': '1.95',
+    'currency': 'EUR',
+  },
+  <String, dynamic>{
+    'group': 'employee',
+    'label': 'Beschäftigte',
+    'amount': '4.95',
+    'currency': 'EUR',
+  },
+];
 
 ApiClient _api(List<Map<String, dynamic>> meals) => fakeApiClient(
   FakeHttpAdapter((RequestOptions options) {
@@ -118,11 +116,7 @@ Future<ProviderContainer> pumpCanteen(
         _api(
           meals ??
               <Map<String, dynamic>>[
-                _meal(
-                  '1',
-                  'Gemüsepfanne',
-                  markers: <Map<String, dynamic>>[_marker('52', 'vegan')],
-                ),
+                _meal('1', 'Gemüsepfanne', traits: <String>['vegan']),
                 _meal('2', 'Schnitzel'),
               ],
         ),
@@ -134,140 +128,250 @@ Future<ProviderContainer> pumpCanteen(
 }
 
 void main() {
-  testWidgets('without a filter every dish is listed', (
+  testWidgets('starts with the canteen and its two buttons, no app bar', (
     WidgetTester tester,
   ) async {
     await pumpCanteen(tester);
+
+    expect(find.byType(AppBar), findsNothing);
+    expect(find.text('Mensa Köthen'), findsOneWidget);
+    expect(find.text('Filter'), findsOneWidget);
+    expect(find.text('Mensa wählen'), findsOneWidget);
     expect(find.text('Gemüsepfanne'), findsOneWidget);
     expect(find.text('Schnitzel'), findsOneWidget);
-    expect(find.text('Filter'), findsOneWidget);
   });
 
-  testWidgets('the filter offers only markings the source published', (
-    WidgetTester tester,
-  ) async {
-    // This is the whole point: no hardcoded vocabulary, so the app can never
-    // offer a filter the data cannot honour.
-    await pumpCanteen(tester);
+  group('the fixed taxonomy', () {
+    testWidgets('offers the four traits whatever the day holds', (
+      WidgetTester tester,
+    ) async {
+      // A filter that appears and disappears with the day's offer cannot be
+      // relied on. "Vegan" has to be there on a day without a vegan dish too.
+      await pumpCanteen(
+        tester,
+        meals: <Map<String, dynamic>>[_meal('1', 'Schnitzel')],
+      );
 
-    await tester.tap(find.text('Filter'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Filter'));
+      await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(FilterChip, 'vegan'), findsNWidgets(2));
-    expect(find.widgetWithText(FilterChip, 'vegetarisch'), findsNothing);
+      expect(find.widgetWithText(FilterChip, 'Vegetarisch'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, 'Vegan'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, 'Fleischlos'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, 'Sprintmenü'), findsOneWidget);
+    });
+
+    testWidgets('shows the allergen subtypes under their parent', (
+      WidgetTester tester,
+    ) async {
+      await pumpCanteen(tester);
+
+      await tester.tap(find.text('Filter'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Enthält glutenhaltige Getreide'), findsOneWidget);
+      expect(find.text('Weizen'), findsOneWidget);
+      expect(find.text('Dinkel'), findsOneWidget);
+      expect(find.text('Enthält Schalenfrüchte'), findsOneWidget);
+      expect(find.text('Macadamianuss'), findsOneWidget);
+    });
+
+    testWidgets('a trait selected in the sheet narrows the list', (
+      WidgetTester tester,
+    ) async {
+      final InMemoryKeyValueStore store = InMemoryKeyValueStore();
+      await pumpCanteen(tester, store: store);
+
+      await tester.tap(find.text('Filter'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilterChip, 'Vegan'));
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Gemüsepfanne'), findsOneWidget);
+      expect(find.text('Schnitzel'), findsNothing);
+      expect(find.text('Filter aktiv'), findsOneWidget);
+      expect(store.getStringList(PreferenceKeys.canteenTraits), <String>[
+        'vegan',
+      ]);
+    });
   });
 
-  testWidgets('a day without markings says so instead of offering nothing', (
+  testWidgets('excluding a parent allergen hides a dish declared by subtype', (
     WidgetTester tester,
   ) async {
+    final InMemoryKeyValueStore store = InMemoryKeyValueStore(<String, Object>{
+      PreferenceKeys.canteenAllergens: <String>['gluten'],
+    });
+
     await pumpCanteen(
       tester,
-      meals: <Map<String, dynamic>>[_meal('1', 'Schnitzel')],
+      store: store,
+      meals: <Map<String, dynamic>>[
+        _meal('1', 'Nudeln', allergens: <String>['gluten', 'gluten_wheat']),
+        _meal('2', 'Reis'),
+      ],
     );
 
-    await tester.tap(find.text('Filter'));
-    await tester.pumpAndSettle();
-
-    expect(
-      find.text('Für diesen Tag liefert die Quelle keine Kennzeichnungen.'),
-      findsOneWidget,
-    );
-  });
-
-  testWidgets('requiring a marking narrows the list', (
-    WidgetTester tester,
-  ) async {
-    final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-    await store.setStringList(PreferenceKeys.canteenRequiredMarkers, <String>[
-      '52',
-    ]);
-
-    await pumpCanteen(tester, store: store);
-
-    expect(find.text('Gemüsepfanne'), findsOneWidget);
-    expect(find.text('Schnitzel'), findsNothing);
-    expect(find.text('Filter aktiv'), findsOneWidget);
+    expect(find.text('Nudeln'), findsNothing);
+    expect(find.text('Reis'), findsOneWidget);
   });
 
   testWidgets('a filter that matches nothing offers a way out', (
     WidgetTester tester,
   ) async {
-    final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-    await store.setStringList(PreferenceKeys.canteenRequiredMarkers, <String>[
-      'does-not-exist',
-    ]);
+    final InMemoryKeyValueStore store = InMemoryKeyValueStore(<String, Object>{
+      PreferenceKeys.canteenTraits: <String>['vegan'],
+    });
 
-    await pumpCanteen(tester, store: store);
+    await pumpCanteen(
+      tester,
+      store: store,
+      meals: <Map<String, dynamic>>[_meal('1', 'Schnitzel')],
+    );
 
     // Different from "nothing on offer", and this one has a remedy.
     expect(find.text('Kein Gericht passt zu deinem Filter.'), findsOneWidget);
     expect(find.text('Filter zurücksetzen'), findsWidgets);
   });
 
-  testWidgets('starring a dish persists and marks it in words', (
-    WidgetTester tester,
-  ) async {
-    final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-    final ProviderContainer container = await pumpCanteen(tester, store: store);
+  group('prices', () {
+    testWidgets('one card shows exactly one price, the student one', (
+      WidgetTester tester,
+    ) async {
+      await pumpCanteen(
+        tester,
+        meals: <Map<String, dynamic>>[_meal('1', 'Gemüsepfanne')],
+      );
 
-    await tester.tap(find.byTooltip('Zu Favoriten').first);
-    await tester.pumpAndSettle();
+      expect(find.text('Studierende'), findsOneWidget);
+      expect(find.text('Beschäftigte'), findsNothing);
+      expect(find.textContaining('1,95'), findsOneWidget);
+      expect(find.textContaining('4,95'), findsNothing);
+    });
 
-    expect(
-      container.read(canteenFilterProvider).favourites,
-      contains('Gemüsepfanne'),
-    );
-    expect(
-      store.getStringList(PreferenceKeys.canteenFavourites),
-      contains('Gemüsepfanne'),
-    );
-    // A filled star and a semantic label, never colour alone.
-    expect(find.byIcon(Icons.star), findsOneWidget);
-    expect(find.bySemanticsLabel(RegExp('Favorit')), findsWidgets);
+    testWidgets('choosing another group replaces the price, not adds to it', (
+      WidgetTester tester,
+    ) async {
+      final InMemoryKeyValueStore store = InMemoryKeyValueStore(
+        <String, Object>{PreferenceKeys.canteenPriceGroup: 'employee'},
+      );
+
+      await pumpCanteen(
+        tester,
+        store: store,
+        meals: <Map<String, dynamic>>[_meal('1', 'Gemüsepfanne')],
+      );
+
+      expect(find.text('Beschäftigte'), findsOneWidget);
+      expect(find.textContaining('4,95'), findsOneWidget);
+      expect(find.text('Studierende'), findsNothing);
+      expect(find.textContaining('1,95'), findsNothing);
+    });
+
+    testWidgets('a missing price is stated, never substituted', (
+      WidgetTester tester,
+    ) async {
+      // Another group's price is a different number for a different person.
+      final InMemoryKeyValueStore store = InMemoryKeyValueStore(
+        <String, Object>{PreferenceKeys.canteenPriceGroup: 'guest'},
+      );
+
+      await pumpCanteen(
+        tester,
+        store: store,
+        meals: <Map<String, dynamic>>[_meal('1', 'Gemüsepfanne')],
+      );
+
+      expect(
+        find.text('Für diese Preisgruppe ist kein Preis hinterlegt.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('1,95'), findsNothing);
+    });
+
+    testWidgets('the sheet offers only the groups this canteen has', (
+      WidgetTester tester,
+    ) async {
+      await pumpCanteen(tester);
+
+      await tester.tap(find.text('Filter'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.widgetWithText(RadioListTile<String>, 'Studierende'),
+        findsOneWidget,
+      );
+      expect(
+        find.widgetWithText(RadioListTile<String>, 'Beschäftigte'),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(RadioListTile<String>, 'Gäste'), findsNothing);
+    });
   });
 
-  testWidgets('hiding a dish removes it and reports the count', (
-    WidgetTester tester,
-  ) async {
+  group('favourites', () {
+    testWidgets('starring a dish persists and marks it in words', (
+      WidgetTester tester,
+    ) async {
+      final InMemoryKeyValueStore store = InMemoryKeyValueStore();
+      final ProviderContainer container = await pumpCanteen(
+        tester,
+        store: store,
+      );
+
+      await tester.tap(find.byTooltip('Zu Favoriten').first);
+      await tester.pumpAndSettle();
+
+      expect(
+        container.read(canteenFilterProvider).favourites,
+        contains('Gemüsepfanne'),
+      );
+      expect(
+        store.getStringList(PreferenceKeys.canteenFavourites),
+        contains('Gemüsepfanne'),
+      );
+      // A filled star and a semantic label, never colour alone.
+      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp('Favorit')), findsWidgets);
+    });
+
+    testWidgets('do not change the order and do not hide anything', (
+      WidgetTester tester,
+    ) async {
+      final InMemoryKeyValueStore store = InMemoryKeyValueStore(
+        <String, Object>{
+          PreferenceKeys.canteenFavourites: <String>['Schnitzel'],
+        },
+      );
+
+      await pumpCanteen(tester, store: store);
+
+      final List<MealCard> cards = tester
+          .widgetList<MealCard>(find.byType(MealCard))
+          .toList();
+      expect(cards.map((MealCard card) => card.meal.name), <String>[
+        'Gemüsepfanne',
+        'Schnitzel',
+      ]);
+    });
+  });
+
+  testWidgets('a dish can no longer be hidden', (WidgetTester tester) async {
     await pumpCanteen(tester);
-
-    await tester.tap(find.byTooltip('Gericht ausblenden').first);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Gemüsepfanne'), findsNothing);
-    expect(find.text('1 Gericht ausgeblendet'), findsOneWidget);
-  });
-
-  testWidgets('favourites are listed first', (WidgetTester tester) async {
-    final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-    await store.setStringList(PreferenceKeys.canteenFavourites, <String>[
-      'Schnitzel',
-    ]);
-
-    await pumpCanteen(tester, store: store);
-
-    final List<MealCard> cards = tester
-        .widgetList<MealCard>(find.byType(MealCard))
-        .toList();
-    expect(cards.first.meal.name, 'Schnitzel');
-  });
-
-  testWidgets('every price group stays visible when one is emphasised', (
-    WidgetTester tester,
-  ) async {
-    final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-    await store.setString(PreferenceKeys.canteenPriceGroup, 'employee');
-
-    await pumpCanteen(tester, store: store);
-
-    // The emphasis moved, but nothing was removed.
-    expect(find.text('Studierende'), findsWidgets);
-    expect(find.text('Beschäftigte'), findsWidgets);
+    expect(find.byTooltip('Gericht ausblenden'), findsNothing);
   });
 
   testWidgets('renders in English', (WidgetTester tester) async {
     await pumpCanteen(tester, locale: AppLocales.english);
-    expect(find.text('Filters'), findsOneWidget);
+
+    await tester.tap(find.text('Filters'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Must contain'), findsOneWidget);
+    expect(find.text('Must not contain'), findsOneWidget);
+    expect(find.widgetWithText(FilterChip, 'Vegan'), findsOneWidget);
   });
 
   testWidgets('survives a narrow phone with doubled text', (

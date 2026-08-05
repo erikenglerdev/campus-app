@@ -88,24 +88,24 @@ abstract final class PreferenceKeys {
   /// `1` while the news list is filtered to unread items only.
   static const String newsUnreadOnly = 'news.filter.unreadOnly.v1';
 
-  /// Marker codes a meal must carry to be shown.
-  static const String canteenRequiredMarkers = 'canteen.filter.required.v1';
+  /// Semantic properties a dish must have, as `MealTrait` keys.
+  ///
+  /// A new key rather than the old `canteen.filter.required.v1`: that one held
+  /// the source's own marker codes. Those are a different vocabulary, and
+  /// adopting them unchecked would turn "avoid code 52" into "avoid something
+  /// else entirely" the day the source renumbers.
+  static const String canteenTraits = 'canteen.filter.traits.v1';
 
-  /// Marker codes that hide a meal — allergens and ingredients to avoid.
-  static const String canteenExcludedMarkers = 'canteen.filter.excluded.v1';
+  /// Allergens to avoid, as `MealAllergen` keys. New key for the same reason.
+  static const String canteenAllergens = 'canteen.filter.allergens.v1';
 
-  /// The price group the canteen screen emphasises, or absent for the API's
-  /// own emphasis.
-  static const String canteenPriceGroup = 'canteen.filter.priceGroup.v1';
+  /// The one price group the cards show. Version 2: the value is no longer
+  /// optional, and an absent key now means "student" rather than "the API's
+  /// own emphasis".
+  static const String canteenPriceGroup = 'canteen.filter.priceGroup.v2';
 
   /// Names of starred dishes. Names, not upstream ids — those change weekly.
   static const String canteenFavourites = 'canteen.favourites.v1';
-
-  /// Names of dishes the user never wants to see.
-  static const String canteenHidden = 'canteen.hidden.v1';
-
-  /// `1` while the canteen list is filtered to favourites only.
-  static const String canteenFavouritesOnly = 'canteen.filter.favOnly.v1';
 
   /// Calendar sources the user switched OFF, as source storage values.
   ///

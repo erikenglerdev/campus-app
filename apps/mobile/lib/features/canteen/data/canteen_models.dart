@@ -2,6 +2,7 @@
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
 import '../../../core/network/json.dart';
+import '../domain/meal_taxonomy.dart';
 
 /// A canteen as delivered by `GET /v1/canteens`.
 ///
@@ -126,6 +127,8 @@ class Meal {
     this.isSprint = false,
     this.extras = const <String>[],
     this.markers = const <MealMarker>[],
+    this.traits = const <MealTrait>{},
+    this.allergens = const <MealAllergen>{},
     this.prices = const <MealPrice>[],
   });
 
@@ -141,6 +144,15 @@ class Meal {
   final bool isSprint;
   final List<String> extras;
   final List<MealMarker> markers;
+
+  /// Stable semantic properties from the API. The filter uses these — never a
+  /// marker code and never a German label.
+  final Set<MealTrait> traits;
+
+  /// Declared allergens as stable keys. A subtype always arrives together with
+  /// its parent, so excluding "gluten" covers a dish declared as wheat.
+  final Set<MealAllergen> allergens;
+
   final List<MealPrice> prices;
 
   List<MealMarker> get ingredients =>
@@ -149,16 +161,15 @@ class Meal {
   List<MealMarker> get nonIngredientMarkers =>
       markers.where((MealMarker marker) => !marker.isIngredient).toList();
 
-  /// All price groups, with the student group first so the emphasis is also
-  /// reflected in the reading order for screen readers.
-  List<MealPrice> get orderedPrices {
-    final List<MealPrice> student = prices
-        .where((MealPrice price) => price.isStudentGroup)
-        .toList();
-    final List<MealPrice> others = prices
-        .where((MealPrice price) => !price.isStudentGroup)
-        .toList();
-    return <MealPrice>[...student, ...others];
+  /// The price for [group], or `null` when the source did not deliver one.
+  ///
+  /// A missing price is stated as missing; another group's price would be a
+  /// different number for a different person.
+  MealPrice? priceFor(String group) {
+    for (final MealPrice price in prices) {
+      if (price.group == group) return price;
+    }
+    return null;
   }
 
   static Meal? fromJson(Object? json) {
@@ -178,6 +189,20 @@ class Meal {
           .map(MealMarker.fromJson)
           .whereType<MealMarker>()
           .toList(growable: false),
+      // A key this build does not know is dropped rather than guessed at: the
+      // API may publish a new one before the app is updated.
+      traits: asList(map['traits'])
+          .map(asString)
+          .whereType<String>()
+          .map(MealTrait.fromKey)
+          .whereType<MealTrait>()
+          .toSet(),
+      allergens: asList(map['allergens'])
+          .map(asString)
+          .whereType<String>()
+          .map(MealAllergen.fromKey)
+          .whereType<MealAllergen>()
+          .toSet(),
       prices: asList(
         map['prices'],
       ).map(MealPrice.fromJson).whereType<MealPrice>().toList(growable: false),

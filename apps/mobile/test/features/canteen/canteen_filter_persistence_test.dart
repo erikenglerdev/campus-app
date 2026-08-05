@@ -7,6 +7,7 @@ import 'package:campus_koethen/core/prefs/settings_controller.dart';
 import 'package:campus_koethen/features/canteen/application/canteen_filter_controller.dart';
 import 'package:campus_koethen/features/canteen/data/canteen_models.dart';
 import 'package:campus_koethen/features/canteen/domain/canteen_filter.dart';
+import 'package:campus_koethen/features/canteen/domain/meal_taxonomy.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
@@ -26,6 +27,7 @@ void main() {
     ).read(canteenFilterProvider);
     expect(filter, CanteenFilter.none);
     expect(filter.isActive, isFalse);
+    expect(filter.priceGroup, MealPrice.studentGroup);
   });
 
   test('every part of the filter survives a restart', () async {
@@ -34,35 +36,69 @@ void main() {
       store,
     ).read(canteenFilterProvider.notifier);
 
-    await controller.toggleRequired('52');
-    await controller.toggleExcluded('nuts');
+    await controller.toggleTrait(MealTrait.vegan);
+    await controller.toggleAllergen(MealAllergen.nutsAlmond);
     await controller.setPriceGroup('employee');
     await controller.toggleFavourite(const Meal(id: 'x', name: 'Gemüsepfanne'));
-    await controller.toggleHidden(const Meal(id: 'y', name: 'Leber'));
-    await controller.setFavouritesOnly(value: true);
 
     final CanteenFilter reloaded = _container(
       store,
     ).read(canteenFilterProvider);
-    expect(reloaded.requiredMarkers, <String>{'52'});
-    expect(reloaded.excludedMarkers, <String>{'nuts'});
+    expect(reloaded.requiredTraits, <MealTrait>{MealTrait.vegan});
+    expect(reloaded.excludedAllergens, <MealAllergen>{MealAllergen.nutsAlmond});
     expect(reloaded.priceGroup, 'employee');
     expect(reloaded.favourites, <String>{'Gemüsepfanne'});
-    expect(reloaded.hidden, <String>{'Leber'});
-    expect(reloaded.favouritesOnly, isTrue);
   });
 
-  test('clearing the price group removes the key', () async {
+  test('stable keys are stored, not localised labels', () async {
+    // The store has to survive a language change and an app update.
     final InMemoryKeyValueStore store = InMemoryKeyValueStore();
     final CanteenFilterController controller = _container(
       store,
     ).read(canteenFilterProvider.notifier);
 
-    await controller.setPriceGroup('guest');
-    await controller.setPriceGroup(null);
+    await controller.toggleTrait(MealTrait.vegan);
+    await controller.toggleAllergen(MealAllergen.glutenWheat);
 
-    expect(store.getString(PreferenceKeys.canteenPriceGroup), isNull);
-    expect(_container(store).read(canteenFilterProvider).priceGroup, isNull);
+    expect(store.getStringList(PreferenceKeys.canteenTraits), <String>[
+      'vegan',
+    ]);
+    expect(store.getStringList(PreferenceKeys.canteenAllergens), <String>[
+      'gluten_wheat',
+    ]);
+  });
+
+  test('the old code-based filters are not adopted', () async {
+    // "Avoid code 52" means nothing in the new vocabulary, and reading it as a
+    // semantic key would turn it into a filter the user never set.
+    final InMemoryKeyValueStore store = InMemoryKeyValueStore(<String, Object>{
+      'canteen.filter.required.v1': <String>['52'],
+      'canteen.filter.excluded.v1': <String>['A1', 'G2'],
+      'canteen.hidden.v1': <String>['Leber'],
+      'canteen.filter.favOnly.v1': 1,
+    });
+
+    final CanteenFilter filter = _container(store).read(canteenFilterProvider);
+
+    expect(filter.requiredTraits, isEmpty);
+    expect(filter.excludedAllergens, isEmpty);
+    expect(filter.isActive, isFalse);
+  });
+
+  test('an unknown stored key is dropped, not kept as a dead filter', () async {
+    final InMemoryKeyValueStore store = InMemoryKeyValueStore(<String, Object>{
+      PreferenceKeys.canteenAllergens: <String>['nuts', 'a-key-we-removed'],
+    });
+
+    expect(
+      _container(store).read(canteenFilterProvider).excludedAllergens,
+      <MealAllergen>{MealAllergen.nuts},
+    );
+  });
+
+  test('the price group defaults to student when nothing is stored', () {
+    final InMemoryKeyValueStore store = InMemoryKeyValueStore();
+    expect(_container(store).read(canteenFilterProvider).priceGroup, 'student');
   });
 
   test('sets are written in a stable order', () async {
@@ -73,30 +109,32 @@ void main() {
       store,
     ).read(canteenFilterProvider.notifier);
 
-    await controller.toggleExcluded('c');
-    await controller.toggleExcluded('a');
-    await controller.toggleExcluded('b');
+    await controller.toggleAllergen(MealAllergen.soy);
+    await controller.toggleAllergen(MealAllergen.egg);
+    await controller.toggleAllergen(MealAllergen.milk);
 
-    expect(store.getStringList(PreferenceKeys.canteenExcludedMarkers), <String>[
-      'a',
-      'b',
-      'c',
+    expect(store.getStringList(PreferenceKeys.canteenAllergens), <String>[
+      'egg',
+      'milk',
+      'soy',
     ]);
   });
 
-  test('clearing keeps favourites and hidden dishes on disk', () async {
+  test('clearing keeps favourites and the price group on disk', () async {
     final InMemoryKeyValueStore store = InMemoryKeyValueStore();
     final CanteenFilterController controller = _container(
       store,
     ).read(canteenFilterProvider.notifier);
 
-    await controller.toggleRequired('52');
+    await controller.toggleTrait(MealTrait.vegan);
+    await controller.setPriceGroup('guest');
     await controller.toggleFavourite(const Meal(id: 'x', name: 'Pasta'));
     await controller.clear();
 
-    expect(store.getStringList(PreferenceKeys.canteenRequiredMarkers), isEmpty);
+    expect(store.getStringList(PreferenceKeys.canteenTraits), isEmpty);
     expect(store.getStringList(PreferenceKeys.canteenFavourites), <String>[
       'Pasta',
     ]);
+    expect(store.getString(PreferenceKeys.canteenPriceGroup), 'guest');
   });
 }

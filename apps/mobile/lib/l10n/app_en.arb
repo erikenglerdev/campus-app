@@ -78,9 +78,7 @@
     }
   },
   "newsTranslationFallbackHint": "No English version of this content is available yet. The original German text is shown.",
-  "canteenTitle": "Canteen",
   "canteenPickerTitle": "Choose canteen",
-  "canteenPickerTooltip": "Switch canteen",
   "canteenNoCanteensTitle": "No canteen available",
   "canteenNoCanteensMessage": "No canteens are configured at the moment.",
   "canteenNoMealsTitle": "Nothing on offer",
@@ -100,20 +98,8 @@
   "canteenExtrasLabel": "Sides",
   "canteenMarkersLabel": "Markers",
   "canteenIngredientsLabel": "Ingredients",
-  "canteenPricesLabel": "Prices",
   "canteenPriceSemanticLabel": "{group}: {price}",
   "@canteenPriceSemanticLabel": {
-    "placeholders": {
-      "group": {
-        "type": "String"
-      },
-      "price": {
-        "type": "String"
-      }
-    }
-  },
-  "canteenPriceStudentSemanticLabel": "Student price, {group}: {price}",
-  "@canteenPriceStudentSemanticLabel": {
     "placeholders": {
       "group": {
         "type": "String"
@@ -900,30 +886,49 @@
   },
   "newsUnreadSemantic": "Unread",
   "canteenFilterTitle": "Filters",
+  "canteenFilterMustContain": "Must contain",
+  "canteenFilterMustNotContain": "Must not contain",
+  "canteenPriceGroupSection": "Price group",
+  "canteenPriceForGroupMissing": "No price is available for this price group.",
+  "canteenTraitVegetarian": "Vegetarian",
+  "canteenTraitVegan": "Vegan",
+  "canteenTraitMeatless": "Meat-free",
+  "canteenTraitSprint": "Sprint menu",
+  "canteenAllergenGluten": "Contains cereals with gluten",
+  "canteenAllergenGlutenWheat": "Wheat",
+  "canteenAllergenGlutenRye": "Rye",
+  "canteenAllergenGlutenOats": "Oats",
+  "canteenAllergenGlutenBarley": "Barley",
+  "canteenAllergenGlutenSpelt": "Spelt",
+  "canteenAllergenCrustaceans": "Contains crustaceans",
+  "canteenAllergenEgg": "Contains egg",
+  "canteenAllergenPeanuts": "Contains peanuts",
+  "canteenAllergenSoy": "Contains soy",
+  "canteenAllergenMilk": "Contains milk (lactose)",
+  "canteenAllergenNuts": "Contains tree nuts",
+  "canteenAllergenNutsHazelnut": "Hazelnut",
+  "canteenAllergenNutsAlmond": "Almonds",
+  "canteenAllergenNutsWalnut": "Walnut",
+  "canteenAllergenNutsCashew": "Cashews",
+  "canteenAllergenNutsPecan": "Pecans",
+  "canteenAllergenNutsPistachio": "Pistachios",
+  "canteenAllergenNutsMacadamia": "Macadamia",
+  "canteenAllergenCelery": "Contains celery",
+  "canteenAllergenMustard": "Contains mustard",
+  "canteenAllergenSesame": "Contains sesame",
+  "canteenAllergenSulphites": "Contains SO₂/sulphites",
+  "canteenAllergenLupin": "Contains lupin",
+  "canteenAllergenMolluscs": "Contains molluscs",
+  "canteenAllergenFish": "Contains fish",
   "canteenFilterTooltip": "Filters and favourites",
-  "canteenFilterRequire": "Must have",
-  "canteenFilterExclude": "Exclude",
   "canteenFilterMarkersHint": "Only markings the source publishes for this day.",
-  "canteenFilterNoMarkers": "The source publishes no markings for this day.",
-  "canteenFilterFavouritesOnly": "Favourites only",
   "canteenFilterClear": "Clear filters",
   "canteenFilterActive": "Filters active",
   "canteenNoMealsAfterFilter": "No dish matches your filters.",
   "canteenFavouriteAdd": "Add to favourites",
   "canteenFavouriteRemove": "Remove from favourites",
-  "canteenHideMeal": "Hide dish",
   "canteenUnhideMeal": "Show again",
-  "canteenHiddenCount": "{count, plural, =1{1 dish hidden} other{{count} dishes hidden}}",
-  "@canteenHiddenCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "canteenFavouriteSemantic": "Favourite",
-  "canteenPriceGroupLabel": "Preferred price group",
-  "canteenPriceGroupDefault": "As published by the source",
   "requestsSubtitle": "File a finance application or give feedback",
   "requestsFinanceTitle": "Finance application",
   "requestsFinanceSubtitle": "Apply for funding for a project",
