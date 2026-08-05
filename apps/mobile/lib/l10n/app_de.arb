@@ -5,6 +5,8 @@
     "description": "Sichtbarer Name der App."
   },
   "navNews": "News",
+  "navToday": "Heute",
+  "requestsTitle": "Anträge & Feedback",
   "@navNews": {
     "description": "Label des News-Tabs in der unteren Navigation."
   },
@@ -77,8 +79,6 @@
   },
   "offlineCachedUnknownTime": "Zuletzt geladen: unbekannt",
   "@offlineCachedUnknownTime": {},
-  "newsTitle": "News",
-  "@newsTitle": {},
   "newsEmptyTitle": "Keine Beiträge",
   "@newsEmptyTitle": {},
   "newsEmptyMessage": "In den ausgewählten Kanälen gibt es derzeit keine Beiträge.",
@@ -93,8 +93,6 @@
   "@newsNoChannelsAvailableMessage": {},
   "newsChannelPickerTitle": "Kanäle",
   "@newsChannelPickerTitle": {},
-  "newsChannelPickerTooltip": "Kanäle auswählen",
-  "@newsChannelPickerTooltip": {},
   "newsChannelSelected": "Kanal {name} abonniert",
   "@newsChannelSelected": {
     "placeholders": {
@@ -113,23 +111,6 @@
   },
   "newsPinnedLabel": "Angepinnt",
   "@newsPinnedLabel": {},
-  "newsPublishedAt": "Veröffentlicht am {date}",
-  "@newsPublishedAt": {
-    "description": "date wird von AppDateFormats locale-gerecht vorformatiert.",
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "newsAuthorsLabel": "Von {authors}",
-  "@newsAuthorsLabel": {
-    "placeholders": {
-      "authors": {
-        "type": "String"
-      }
-    }
-  },
   "newsSourceLabel": "Quelle: {source}",
   "@newsSourceLabel": {
     "placeholders": {
@@ -140,17 +121,6 @@
   },
   "newsOpenSource": "Quelle öffnen",
   "@newsOpenSource": {},
-  "newsArticleSemanticLabel": "Beitrag {title}, veröffentlicht am {date}",
-  "@newsArticleSemanticLabel": {
-    "placeholders": {
-      "title": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
   "newsChannelCountLabel": "{count, plural, =0{Keine Kanäle ausgewählt} =1{1 Kanal ausgewählt} other{{count} Kanäle ausgewählt}}",
   "@newsChannelCountLabel": {
     "placeholders": {
@@ -161,12 +131,8 @@
   },
   "newsTranslationFallbackHint": "Für diesen Inhalt liegt noch keine englische Fassung vor. Angezeigt wird der deutsche Originaltext.",
   "@newsTranslationFallbackHint": {},
-  "canteenTitle": "Mensa",
-  "@canteenTitle": {},
   "canteenPickerTitle": "Mensa wählen",
   "@canteenPickerTitle": {},
-  "canteenPickerTooltip": "Mensa wechseln",
-  "@canteenPickerTooltip": {},
   "canteenNoCanteensTitle": "Keine Mensa verfügbar",
   "@canteenNoCanteensTitle": {},
   "canteenNoCanteensMessage": "Zurzeit sind keine Mensen hinterlegt.",
@@ -198,23 +164,8 @@
   "@canteenExtrasLabel": {},
   "canteenMarkersLabel": "Marker",
   "@canteenMarkersLabel": {},
-  "canteenIngredientsLabel": "Zutaten",
-  "@canteenIngredientsLabel": {},
-  "canteenPricesLabel": "Preise",
-  "@canteenPricesLabel": {},
   "canteenPriceSemanticLabel": "{group}: {price}",
   "@canteenPriceSemanticLabel": {
-    "placeholders": {
-      "group": {
-        "type": "String"
-      },
-      "price": {
-        "type": "String"
-      }
-    }
-  },
-  "canteenPriceStudentSemanticLabel": "Studierendenpreis, {group}: {price}",
-  "@canteenPriceStudentSemanticLabel": {
     "placeholders": {
       "group": {
         "type": "String"
@@ -405,6 +356,28 @@
   "@timetableSourceLanguageHint": {},
   "contactsTitle": "Kontakte",
   "@contactsTitle": {},
+  "contactsSearchTooltip": "Kontakte durchsuchen",
+  "@contactsSearchTooltip": {},
+  "contactsSearchLabel": "Kontakte suchen",
+  "@contactsSearchLabel": {},
+  "contactsSearchHint": "Name, Bereich, Raum oder Telefonnummer",
+  "@contactsSearchHint": {},
+  "contactsSearchClear": "Suche leeren",
+  "@contactsSearchClear": {},
+  "contactsSearchEmptyTitle": "Kein Treffer",
+  "@contactsSearchEmptyTitle": {},
+  "contactsSearchEmptyMessage": "Zu deiner Suche gibt es weder einen Bereich noch eine Person. Prüfe die Schreibweise oder suche nach der Raumnummer.",
+  "@contactsSearchEmptyMessage": {},
+  "contactsSearchUnavailable": "Die Kontaktsuche ist gerade nicht verfügbar.",
+  "@contactsSearchUnavailable": {},
+  "contactsSearchInArea": "in {area}",
+  "@contactsSearchInArea": {
+    "placeholders": { "area": { "type": "String" } }
+  },
+  "contactsSearchResultCount": "{count, plural, =0{Keine Treffer} =1{1 Treffer} other{{count} Treffer}}",
+  "@contactsSearchResultCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "contactsEmptyTitle": "Keine Kontaktbereiche",
   "@contactsEmptyTitle": {},
   "contactsEmptyMessage": "Zurzeit sind keine Anlaufstellen hinterlegt.",
@@ -987,8 +960,6 @@
   "@moodleErrorDownloadFailed": {},
   "moodleErrorGeneric": "Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
   "@moodleErrorGeneric": {},
-  "calendarTitle": "Kalender",
-  "@calendarTitle": {},
   "calendarViewMonth": "Kalender",
   "@calendarViewMonth": {},
   "calendarViewList": "Liste",
@@ -999,6 +970,26 @@
   "@calendarSourceTimetable": {},
   "calendarSourceMoodle": "Moodle",
   "@calendarSourceMoodle": {},
+  "calendarSourceEvents": "Events",
+  "@calendarSourceEvents": {},
+  "calendarSourceVisible": "Sichtbar",
+  "@calendarSourceVisible": {},
+  "calendarSourceHidden": "Ausgeblendet",
+  "@calendarSourceHidden": {},
+  "calendarSourceNotConnected": "Nicht verbunden",
+  "@calendarSourceNotConnected": {},
+  "calendarSourceShowInCalendar": "Im Kalender anzeigen",
+  "@calendarSourceShowInCalendar": {},
+  "calendarTimetableNoGroup": "Noch kein Kurs gewählt",
+  "@calendarTimetableNoGroup": {},
+  "calendarTimetableGroupLabel": "Kurs",
+  "@calendarTimetableGroupLabel": {},
+  "calendarConnectMoodle": "Moodle verbinden",
+  "@calendarConnectMoodle": {},
+  "calendarOpenMoodle": "Moodle öffnen",
+  "@calendarOpenMoodle": {},
+  "calendarWeekendLabel": "Wochenende",
+  "@calendarWeekendLabel": {},
   "calendarSourcesLabel": "Quellen",
   "@calendarSourcesLabel": {},
   "calendarNoEntries": "Keine Einträge.",
@@ -1017,8 +1008,6 @@
   "@calendarSelectGroupHint": {},
   "calendarManageTitle": "Kalender verwalten",
   "@calendarManageTitle": {},
-  "calendarManageTooltip": "Kalender verwalten",
-  "@calendarManageTooltip": {},
   "calendarSectionPublic": "Öffentliche Kalender",
   "@calendarSectionPublic": {},
   "calendarSourcePublic": "Öffentlicher Kalender",
@@ -1083,6 +1072,10 @@
   "@moreCampusMapSubtitle": {
     "description": "Untertitel des Lageplan-Eintrags im Mehr-Bereich."
   },
+  "moreContactsSubtitle": "Ansprechstellen und Beratungsangebote",
+  "@moreContactsSubtitle": {
+    "description": "Untertitel des Kontakte-Eintrags im Mehr-Bereich."
+  },
   "campusMapTitle": "Lageplan",
   "@campusMapTitle": {
     "description": "Titel des Lageplan-Bildschirms."
@@ -1110,15 +1103,6 @@
   "campusMapNoResultsHint": "Prüfe die Schreibweise. Raumnummern funktionieren mit und ohne Punkt.",
   "@campusMapNoResultsHint": {
     "description": "Hilfetext im Leerzustand der Suche."
-  },
-  "campusMapRoomCount": "{count, plural, =0{Keine Räume} =1{1 Raum} other{{count} Räume}}",
-  "@campusMapRoomCount": {
-    "description": "Anzahl der gefundenen Räume.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
   },
   "campusMapBuildingLabel": "Gebäude",
   "@campusMapBuildingLabel": {
@@ -1241,8 +1225,462 @@
   "@campusMapDemoBadge": {
     "description": "Immer sichtbarer Kurzhinweis auf der Karte; der vollständige Text erscheint beim Antippen."
   },
-  "campusMapShowAllRooms": "Alle anzeigen",
-  "@campusMapShowAllRooms": {
-    "description": "Aktion in der unteren Leiste, die die vollständige Raumliste öffnet."
+  "campusMapSchematicBadge": "Schematische Übersicht",
+  "campusMapSchematicNotice": "Vereinfachte Campusübersicht, nicht maßstabsgetreu. Sie ist kein Flucht-, Rettungs- oder amtlicher Lageplan. Unabhängiges, inoffizielles Projekt.",
+  "campusMapBuildingSelectorSemantic": "Gebäude auswählen, aktuell {building}",
+  "@campusMapBuildingSelectorSemantic": {
+    "placeholders": {
+      "building": {
+        "type": "String",
+        "example": "Name of the building currently shown"
+      }
+    }
+  },
+  "campusMapFloorSelectorSemantic": "Etage auswählen, aktuell {floor}",
+  "@campusMapFloorSelectorSemantic": {
+    "placeholders": {
+      "floor": {
+        "type": "String",
+        "example": "Name of the floor currently shown"
+      }
+    }
+  },
+  "campusMapSingleFloorSemantic": "Einzige Ebene: {floor}",
+  "@campusMapSingleFloorSemantic": {
+    "placeholders": {
+      "floor": {
+        "type": "String",
+        "example": "Name of the only available level"
+      }
+    }
+  },
+  "todayGreetingMorning": "Guten Morgen",
+  "todayGreetingDay": "Hallo",
+  "todayGreetingEvening": "Guten Abend",
+  "todayTomorrowHint": "Vorschau auf morgen",
+  "todayNowLabel": "Gerade jetzt",
+  "todayNextLabel": "Als Nächstes",
+  "todayNothingToday": "Für heute ist nichts eingetragen.",
+  "todayAgendaTitle": "Dein Tag",
+  "todayCanteenTitle": "Mensa heute",
+  "todayTasksTitle": "Aufgaben",
+  "todayTasksOpen": "{count, plural, =0{Nichts offen} =1{1 offene Aufgabe} other{{count} offene Aufgaben}}",
+  "@todayTasksOpen": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayQuickActionsTitle": "Schnellzugriff",
+  "todayFindRoom": "Raum suchen",
+  "todayFindContact": "Kontakt finden",
+  "todayCardFailed": "Dieser Bereich konnte nicht geladen werden.",
+  "todayRefresh": "Aktualisieren",
+  "todayEmptyDashboard": "Alle Karten sind ausgeblendet. In den Einstellungen kannst du sie wieder einschalten.",
+  "todayNoMoreToday": "Für heute ist nichts mehr eingetragen.",
+  "todayAllDayLabel": "Ganztägig",
+  "todaySourceTimetable": "Stundenplan",
+  "todaySourceMoodle": "Moodle",
+  "todaySourcePublic": "Kalender",
+  "todayMoreEntries": "{count, plural, =1{1 weiterer Termin} other{{count} weitere Termine}}",
+  "@todayMoreEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarViewDay": "Tag",
+  "calendarPreviousDay": "Vorheriger Tag",
+  "calendarNextDay": "Nächster Tag",
+  "calendarWeekStripSemantic": "Woche, {day} ausgewählt",
+  "@calendarWeekStripSemantic": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarDayHasEntries": "{count, plural, =1{1 Termin} other{{count} Termine}}",
+  "@calendarDayHasEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsSectionPersonalisation": "Personalisierung",
+  "settingsAccentColor": "Akzentfarbe",
+  "settingsAccentCampusViolet": "Campus-Violett",
+  "settingsAccentOceanBlue": "Ozeanblau",
+  "settingsAccentDeepTeal": "Petrol",
+  "settingsAccentFreshGreen": "Frischgrün",
+  "settingsAccentBrightMagenta": "Magenta",
+  "settingsAccentWarmAmber": "Bernstein",
+  "settingsReducedMotion": "Bewegung reduzieren",
+  "settingsReducedMotionSubtitle": "Blendet Animationen aus. Die Systemeinstellung wird ohnehin beachtet.",
+  "settingsNavigation": "Navigationsleiste",
+  "settingsNavigationSubtitle": "Die vier Module der Leiste wählen",
+  "settingsNavigationHint": "Mehr ist fest. Wähle genau vier Module davor und ordne sie per Ziehen.",
+  "settingsDashboard": "Karten auf „Heute\"",
+  "settingsDashboardPending": "Folgt in einer späteren Version",
+  "settingsDefaultBuilding": "Standardgebäude",
+  "settingsDefaultBuildingNone": "Nicht festgelegt",
+  "settingsSectionData": "App-Daten",
+  "settingsReset": "Lokale App-Daten zurücksetzen",
+  "settingsResetSubtitle": "Setzt Darstellung und Präferenzen zurück. Mail-, Noten- und Moodle-Konten bleiben unberührt.",
+  "settingsResetConfirmTitle": "Zurücksetzen?",
+  "settingsResetConfirmMessage": "Sprache, Theme, Akzentfarbe, Dichte, Navigationsleiste, Dashboard-Karten und deine gewählte Mensa, Stundenplangruppe und Standardgebäude werden zurückgesetzt. Deine Konten und lokalen Aufgaben bleiben erhalten.",
+  "settingsResetConfirmAction": "Zurücksetzen",
+  "settingsResetDone": "Zurückgesetzt.",
+  "settingsCardMoveUp": "Nach oben",
+  "settingsCardMoveDown": "Nach unten",
+  "settingsSelectExactlyFour": "Genau vier Module wählen",
+  "settingsNavigationActive": "In der Leiste",
+  "settingsNavigationAvailable": "Verfügbar",
+  "settingsNavigationAdd": "Zur Leiste hinzufügen",
+  "settingsNavigationRemove": "Aus der Leiste entfernen",
+  "settingsNavigationReorder": "Ziehen zum Umsortieren",
+  "onboardingWelcomeTitle": "Willkommen",
+  "onboardingWelcomeBody": "Richte die App in ein paar Schritten für dich ein. Du kannst jeden Schritt überspringen und alles später in den Einstellungen ändern.",
+  "onboardingSkip": "Überspringen",
+  "onboardingSkipAll": "Alles überspringen",
+  "onboardingBack": "Zurück",
+  "onboardingNext": "Weiter",
+  "onboardingFinish": "Los geht’s",
+  "onboardingStepOf": "Schritt {current} von {total}",
+  "@onboardingStepOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingAppearanceTitle": "Aussehen",
+  "onboardingAppearanceBody": "Wähle, wie die App aussehen soll.",
+  "onboardingCampusTitle": "Dein Campus",
+  "onboardingCampusBody": "Damit Mensa, Stundenplan und Lageplan gleich das Richtige zeigen.",
+  "onboardingContentTitle": "Inhalte",
+  "onboardingContentBody": "Welche Meldungen und öffentlichen Kalender dich interessieren.",
+  "onboardingNavigationTitle": "Deine Leiste",
+  "onboardingNavigationBody": "Die drei mittleren Einträge der unteren Leiste.",
+  "onboardingSourceUnavailable": "Gerade nicht verfügbar. Du kannst das später in den Einstellungen nachholen.",
+  "onboardingNoCanteens": "Es sind noch keine Mensen hinterlegt.",
+  "onboardingRestart": "Onboarding erneut starten",
+  "onboardingRestartSubtitle": "Führt dich noch einmal durch die Einrichtung.",
+  "onboardingOpenChannels": "News-Kanäle wählen",
+  "onboardingOpenCalendars": "Öffentliche Kalender wählen",
+  "onboardingOpenTimetableGroup": "Stundenplangruppe wählen",
+  "canteenFilterTitle": "Filter",
+  "canteenFilterMustContain": "Muss enthalten",
+  "@canteenFilterMustContain": {},
+  "canteenFilterMustNotContain": "Darf nicht enthalten",
+  "@canteenFilterMustNotContain": {},
+  "canteenPriceGroupSection": "Preisgruppe",
+  "@canteenPriceGroupSection": {},
+  "canteenPriceForGroupMissing": "Für diese Preisgruppe ist kein Preis hinterlegt.",
+  "@canteenPriceForGroupMissing": {},
+  "canteenTraitVegetarian": "Vegetarisch",
+  "@canteenTraitVegetarian": {},
+  "canteenTraitVegan": "Vegan",
+  "@canteenTraitVegan": {},
+  "canteenTraitMeatless": "Fleischlos",
+  "@canteenTraitMeatless": {},
+  "canteenTraitSprint": "Sprintmenü",
+  "@canteenTraitSprint": {},
+  "canteenAllergenGluten": "Enthält glutenhaltige Getreide",
+  "@canteenAllergenGluten": {},
+  "canteenAllergenGlutenWheat": "Weizen",
+  "@canteenAllergenGlutenWheat": {},
+  "canteenAllergenGlutenRye": "Roggen",
+  "@canteenAllergenGlutenRye": {},
+  "canteenAllergenGlutenOats": "Hafer",
+  "@canteenAllergenGlutenOats": {},
+  "canteenAllergenGlutenBarley": "Gerste",
+  "@canteenAllergenGlutenBarley": {},
+  "canteenAllergenGlutenSpelt": "Dinkel",
+  "@canteenAllergenGlutenSpelt": {},
+  "canteenAllergenCrustaceans": "Enthält Krebstiere",
+  "@canteenAllergenCrustaceans": {},
+  "canteenAllergenEgg": "Enthält Ei",
+  "@canteenAllergenEgg": {},
+  "canteenAllergenPeanuts": "Enthält Erdnüsse",
+  "@canteenAllergenPeanuts": {},
+  "canteenAllergenSoy": "Enthält Soja",
+  "@canteenAllergenSoy": {},
+  "canteenAllergenMilk": "Enthält Milch (Laktose)",
+  "@canteenAllergenMilk": {},
+  "canteenAllergenNuts": "Enthält Schalenfrüchte",
+  "@canteenAllergenNuts": {},
+  "canteenAllergenNutsHazelnut": "Haselnuss",
+  "@canteenAllergenNutsHazelnut": {},
+  "canteenAllergenNutsAlmond": "Mandeln",
+  "@canteenAllergenNutsAlmond": {},
+  "canteenAllergenNutsWalnut": "Walnuss",
+  "@canteenAllergenNutsWalnut": {},
+  "canteenAllergenNutsCashew": "Cashewkerne",
+  "@canteenAllergenNutsCashew": {},
+  "canteenAllergenNutsPecan": "Pekannüsse",
+  "@canteenAllergenNutsPecan": {},
+  "canteenAllergenNutsPistachio": "Pistazien",
+  "@canteenAllergenNutsPistachio": {},
+  "canteenAllergenNutsMacadamia": "Macadamianuss",
+  "@canteenAllergenNutsMacadamia": {},
+  "canteenAllergenCelery": "Enthält Sellerie",
+  "@canteenAllergenCelery": {},
+  "canteenAllergenMustard": "Enthält Senf",
+  "@canteenAllergenMustard": {},
+  "canteenAllergenSesame": "Enthält Sesam",
+  "@canteenAllergenSesame": {},
+  "canteenAllergenSulphites": "Enthält SO₂/Sulfit",
+  "@canteenAllergenSulphites": {},
+  "canteenAllergenLupin": "Enthält Lupine",
+  "@canteenAllergenLupin": {},
+  "canteenAllergenMolluscs": "Enthält Weichtiere",
+  "@canteenAllergenMolluscs": {},
+  "canteenAllergenFish": "Enthält Fisch",
+  "@canteenAllergenFish": {},
+  "canteenFilterTooltip": "Filter und Favoriten",
+  "canteenNoMealsAfterFilterMessage": "Lockere den Filter oder sieh dir einen anderen Tag an.",
+  "@canteenNoMealsAfterFilterMessage": {},
+  "canteenFilterClear": "Filter zurücksetzen",
+  "canteenFilterActive": "Filter aktiv",
+  "canteenNoMealsAfterFilter": "Kein Gericht passt zu deinem Filter.",
+  "canteenFavouriteAdd": "Zu Favoriten",
+  "canteenFavouriteRemove": "Aus Favoriten entfernen",
+  "canteenUnhideMeal": "Wieder einblenden",
+  "canteenFavouriteSemantic": "Favorit",
+  "requestsSubtitle": "Finanzantrag stellen oder Feedback geben",
+  "requestsFinanceTitle": "Finanzantrag",
+  "requestsFinanceSubtitle": "Mittel für ein Vorhaben beantragen",
+  "requestsFeedbackTitle": "Feedback",
+  "requestsFeedbackSubtitle": "Rückmeldung zur App oder zum Campus",
+  "requestsDevNoticeTitle": "Übermittlung noch nicht angebunden",
+  "requestsDevNoticeBody": "Diese Entwicklungsfassung kann noch nichts einreichen — es gibt bislang keine vereinbarte Empfangsstelle. Du kannst Entwürfe anlegen, bearbeiten und behalten; sie bleiben ausschließlich auf diesem Gerät.",
+  "requestsDrafts": "Entwürfe",
+  "requestsNoDrafts": "Noch keine Entwürfe.",
+  "requestsNewDraft": "Neuer Entwurf",
+  "requestsDeleteDraft": "Entwurf löschen",
+  "requestsDeleteConfirm": "Diesen Entwurf löschen?",
+  "requestsSave": "Entwurf speichern",
+  "requestsSaved": "Entwurf gespeichert.",
+  "requestsDeleted": "Entwurf gelöscht.",
+  "requestsSubmit": "Einreichen",
+  "requestsSubmitUnavailable": "Für diese Fassung ist keine Empfangsstelle hinterlegt. Es wurde nichts übermittelt.",
+  "requestsFieldApplicant": "Name der antragstellenden Person",
+  "requestsFieldLocation": "Standort",
+  "@requestsFieldLocation": {
+    "description": "Auswahl des Gremiums, an das der Antrag geht."
+  },
+  "requestsLocationsLoading": "Standorte werden geladen …",
+  "requestsLocationsUnavailable": "Die Standorte konnten nicht geladen werden.",
+  "requestsLocationsEmpty": "Zurzeit steht kein Standort zur Auswahl.",
+  "requestsErrorLocationMissing": "Bitte einen Standort wählen.",
+  "requestsErrorApplicantMissing": "Bitte einen Namen angeben.",
+  "requestsFilesTitle": "Dateien",
+  "requestsFilesHint": "Finanzantrag und Studierendenausweis sind Pflicht. Höchstens 25 MB je Datei.",
+  "requestsSlotFinanceRequest": "Finanzantrag",
+  "requestsSlotStudentCard": "Studierendenausweis",
+  "requestsSlotAnnexA": "Anlage A",
+  "requestsSlotAnnexB": "Anlage B",
+  "requestsSlotRequired": "Pflicht",
+  "requestsSlotOptional": "Optional",
+  "requestsSlotFormats": "Erlaubt: {formats}",
+  "@requestsSlotFormats": {
+    "placeholders": {
+      "formats": {
+        "type": "String",
+        "example": "PDF"
+      }
+    }
+  },
+  "requestsSlotChoose": "Datei wählen",
+  "requestsSlotReplace": "Ersetzen",
+  "requestsSlotWrongType": "Dieser Dateityp passt nicht in dieses Feld.",
+  "requestsSlotTooLarge": "Die Datei ist größer als 25 MB.",
+  "requestsStudentCardPrivacy": "Der Ausweis wird nur intern verarbeitet und erscheint nicht auf der öffentlichen Statusseite.",
+  "requestsSubmitting": "Wird übermittelt …",
+  "requestsSubmitIncomplete": "Der Antrag ist noch nicht vollständig.",
+  "requestsSubmitConflict": "Dieser Entwurf wurde bereits mit anderen Daten eingereicht. Für eine neue Einreichung bitte einen neuen Entwurf anlegen.",
+  "requestsSubmitTooLarge": "Die Dateien sind zu groß. Höchstens 25 MB je Datei.",
+  "requestsSubmitRateLimited": "Zu viele Einreichungen in kurzer Zeit. Bitte später erneut versuchen.",
+  "requestsSubmitUnreachable": "Die Einreichung konnte nicht zugestellt werden. Der Entwurf bleibt erhalten — ein erneuter Versuch legt keinen zweiten Antrag an.",
+  "@requestsSubmitUnreachable": {
+    "description": "Netzwerkfehler. Der Hinweis auf den Idempotenzschlüssel ist wichtig, damit niemand aus Sorge vor Doppeleinreichung aufgibt."
+  },
+  "requestsSubmitFailed": "Die Einreichung ist fehlgeschlagen.",
+  "requestsResultTitle": "Antrag eingereicht",
+  "requestsResultReplayed": "Dieser Antrag lag bereits vor. Es wurde nichts doppelt eingereicht.",
+  "requestsResultNumber": "Antragsnummer {number}",
+  "@requestsResultNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String",
+        "example": "A_0042_2026"
+      }
+    }
+  },
+  "requestsResultNoNumber": "Für dieses Gremium wird keine Antragsnummer vergeben.",
+  "requestsResultSecretHint": "Der Statuslink ist der einzige Zugang zu diesem Antrag. Bewahre ihn sicher auf und gib ihn nicht weiter.",
+  "requestsResultOpenStatus": "Status öffnen",
+  "requestsResultOpenReceipt": "Eingangsbestätigung (PDF)",
+  "requestsResultDone": "Fertig",
+  "navMailShort": "E-Mail",
+  "@navMailShort": {
+    "description": "Kurzer Name der E-Mail für die Navigationsleiste. Der volle Modultitel bleibt „Studentische E-Mail“."
+  },
+  "moduleCampusMapTitle": "Lageplan & Räume",
+  "moduleContactsTitle": "Anlaufstellen & Kontakte",
+  "moduleCategoryStudy": "Studium",
+  "moduleCategoryCampus": "Campus",
+  "moduleCategoryApp": "App",
+  "newsFeedTitle": "Campus News",
+  "newsShowMore": "Mehr anzeigen",
+  "@newsShowMore": {},
+  "newsShowLess": "Weniger anzeigen",
+  "@newsShowLess": {},
+  "newsFilterTooltip": "Filter",
+  "@newsFilterTooltip": {},
+  "newsFilterTitle": "Filter",
+  "@newsFilterTitle": {},
+  "newsLoadMoreFailed": "Weitere Beiträge konnten nicht geladen werden.",
+  "@newsLoadMoreFailed": {},
+  "newsLoadMoreRetry": "Erneut versuchen",
+  "@newsLoadMoreRetry": {},
+  "newsNoContent": "Für diesen Beitrag liegt kein Text vor.",
+  "@newsNoContent": {},
+  "newsAgeJustNow": "gerade eben",
+  "newsAgeMinutes": "vor {count} min",
+  "@newsAgeMinutes": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "newsAgeHours": "vor {count} h",
+  "@newsAgeHours": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "newsAgeDays": "{count, plural, =1{vor 1 Tag} other{vor {count} Tagen}}",
+  "@newsAgeDays": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "newsAgeWeeks": "{count, plural, =1{vor 1 Woche} other{vor {count} Wochen}}",
+  "@newsAgeWeeks": {
+    "placeholders": { "count": { "type": "int" } },
+    "description": "Ab etwa einem Monat wechselt die Anzeige auf ein kurzes Datum."
+  },
+  "moodleSearchTooltip": "Kurse durchsuchen",
+  "moodleSearchLabel": "Kurs suchen",
+  "moodleSearchHint": "Name, Kurzname oder Beschreibung",
+  "moodleSearchClear": "Suche leeren",
+  "moodleSearchEmptyTitle": "Kein passender Kurs",
+  "moodleSearchEmptyMessage": "Kein geladener Kurs passt zur Suche. Prüfe die Schreibweise oder aktualisiere die Kursliste.",
+  "@moodleSearchEmptyMessage": {
+    "description": "Die Suche läuft ausschließlich über die bereits geladenen Kurse; deshalb der Hinweis aufs Aktualisieren."
+  },
+  "gradesAverageLabel": "Durchschnitt",
+  "@gradesAverageLabel": {
+    "description": "Anzeigename der HIS-QIS-Zeile „Credit-Sammelkonto“. Der Wert stammt unverändert von dort und wird nicht selbst berechnet."
+  },
+  "commonCopy": "Kopieren",
+  "commonCopied": "In die Zwischenablage kopiert.",
+  "requestsFieldTitle": "Titel",
+  "requestsFieldCategory": "Kategorie",
+  "requestsFieldAmount": "Beantragter Betrag",
+  "requestsFieldPurpose": "Verwendungszweck",
+  "requestsFieldDescription": "Beschreibung",
+  "requestsFieldContactName": "Name (optional)",
+  "requestsFieldContactEmail": "E-Mail (optional)",
+  "requestsAttachments": "Anhänge",
+  "requestsAttachmentsHint": "Anhänge lassen sich vorbereiten. Hochgeladen wird nichts, solange keine Empfangsstelle angebunden ist.",
+  "requestsErrorTitleMissing": "Bitte einen Titel angeben.",
+  "requestsErrorTitleTooLong": "Der Titel ist zu lang.",
+  "requestsErrorCategoryMissing": "Bitte eine Kategorie wählen.",
+  "requestsErrorAmountMissing": "Bitte einen Betrag angeben.",
+  "requestsErrorAmountInvalid": "Bitte einen Betrag wie 120,50 angeben.",
+  "requestsErrorAmountZero": "Der Betrag muss größer als null sein.",
+  "requestsErrorPurposeMissing": "Bitte den Verwendungszweck angeben.",
+  "requestsErrorDescriptionMissing": "Bitte eine Beschreibung angeben.",
+  "requestsErrorDescriptionTooLong": "Die Beschreibung ist zu lang.",
+  "requestsErrorEmailInvalid": "Diese E-Mail-Adresse sieht nicht gültig aus.",
+  "requestsCategoryGeneral": "Allgemein",
+  "requestsCategoryEvent": "Veranstaltung",
+  "requestsCategoryMaterial": "Material",
+  "requestsCategoryTravel": "Fahrtkosten",
+  "requestsCategoryApp": "App",
+  "requestsCategoryCampus": "Campus",
+  "searchTitle": "Suche",
+  "searchTooltip": "Suchen",
+  "searchHint": "Bereiche, Räume, News, Kontakte, Gerichte",
+  "searchClear": "Eingabe löschen",
+  "searchStartTyping": "Tippe, um zu suchen.",
+  "searchScopeHint": "Durchsucht werden nur öffentliche Inhalte. Mail, Noten und Moodle bleiben außen vor und haben ihre eigene Suche.",
+  "searchNoResults": "Nichts gefunden",
+  "searchNoResultsHint": "Prüfe die Schreibweise. Gesucht wird in den bereits geladenen Inhalten.",
+  "searchOfflineHint": "Offline wird in den zuletzt geladenen Inhalten gesucht.",
+  "searchCategorySection": "Bereiche",
+  "searchCategoryNews": "News",
+  "searchCategoryEvent": "Termine",
+  "searchCategoryTimetable": "Stundenplan",
+  "searchCategoryRoom": "Räume",
+  "searchCategoryContact": "Kontakte",
+  "searchCategoryMeal": "Mensa",
+  "searchResultCount": "{count, plural, =1{1 Treffer} other{{count} Treffer}}",
+  "@searchResultCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "canteenNextOpenDay": "Nächster Tag mit Angebot",
+  "canteenShowingToday": "Heute",
+  "canteenJumpToNextOpen": "Zum nächsten Angebot",
+  "todayMailStatusUnread": "{count, plural, =0{Keine ungelesenen Nachrichten} =1{1 ungelesene Nachricht} other{{count} ungelesene Nachrichten}}",
+  "@todayMailStatusUnread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayGradesChecked": "Zuletzt geprüft: {when}",
+  "@todayGradesChecked": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGradesNeverChecked": "Noch nicht abgerufen",
+  "todayGradesPrivacyHint": "Noten werden hier nicht angezeigt.",
+  "todayTasksMoodleDue": "{count, plural, =1{1 Abgabe in den nächsten 7 Tagen} other{{count} Abgaben in den nächsten 7 Tagen}}",
+  "@todayTasksMoodleDue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "requestsAddAttachment": "Datei hinzufügen",
+  "requestsRemoveAttachment": "Anhang entfernen",
+  "requestsNoAttachments": "Keine Anhänge.",
+  "calendarViewWeek": "Woche",
+  "calendarWeekAllDay": "Ganztägig",
+  "calendarWeekSemantic": "{title}, {start} bis {end}",
+  "@calendarWeekSemantic": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
   }
 }

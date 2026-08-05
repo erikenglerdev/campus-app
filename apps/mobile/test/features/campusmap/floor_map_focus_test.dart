@@ -20,6 +20,7 @@ const MapFloor _floor = MapFloor(
   floorKey: 'demo-north-level2',
   buildingKey: 'demo-north',
   level: 2,
+  name: LocalisedName(de: '2. Obergeschoss', en: 'Second floor'),
   svgAsset: 'assets/maps/demo-north/level2.svg',
   viewBox: Rect.fromLTWH(0, 0, 1900, 1080),
   sortOrder: 10,
@@ -39,6 +40,8 @@ Future<GlobalKey<FloorMapViewState>> pumpMap(
   WidgetTester tester, {
   MapRoomGeometry? selected,
   Size viewport = const Size(1200, 400),
+  List<MapRoomGeometry> rooms = const <MapRoomGeometry>[],
+  ValueChanged<String>? onRoomTap,
 }) async {
   // The default 800x600 test surface would silently shrink the requested
   // viewport and make the expectations below measure something else.
@@ -60,7 +63,13 @@ Future<GlobalKey<FloorMapViewState>> pumpMap(
           child: SizedBox(
             width: viewport.width,
             height: viewport.height,
-            child: FloorMapView(key: key, floor: _floor, selected: selected),
+            child: FloorMapView(
+              key: key,
+              floor: _floor,
+              rooms: rooms,
+              selected: selected,
+              onRoomTap: onRoomTap,
+            ),
           ),
         ),
       ),

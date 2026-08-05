@@ -5,7 +5,9 @@ import 'package:campus_koethen/features/moodle/application/moodle_providers.dart
 import 'package:campus_koethen/features/moodle/domain/moodle_account.dart';
 import 'package:campus_koethen/features/moodle/domain/moodle_cache.dart';
 import 'package:campus_koethen/features/moodle/domain/moodle_course.dart';
+import 'package:campus_koethen/features/moodle/presentation/moodle_course_screen.dart';
 import 'package:campus_koethen/features/moodle/presentation/moodle_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
@@ -26,6 +28,8 @@ List<Override> _overrides({
 
 void main() {
   final DateTime t0 = DateTime.utc(2026, 7, 26, 12);
+
+  group('course tabs', _courseTabTests);
 
   testWidgets('shows the connect screen when disconnected', (
     WidgetTester tester,
@@ -72,5 +76,174 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Beispielkurs Informatik'), findsOneWidget);
+  });
+
+  testWidgets('the local search filters the loaded courses', (
+    WidgetTester tester,
+  ) async {
+    // Purely local: the fake API records every call, and none may happen while
+    // typing. Moodle data never leaves the device.
+    final api = FakeMoodleApiClient();
+    final tokens = InMemoryMoodleTokenStore()
+      ..token = const MoodleToken(value: 'tok', userId: 7, username: 'demo');
+    final cache = InMemoryMoodleCacheStore()
+      ..courses = <MoodleCourse>[
+        const MoodleCourse(id: 1, fullName: 'Einführung in die Programmierung'),
+        const MoodleCourse(id: 2, fullName: 'Rechnernetze', shortName: 'RN'),
+      ]
+      ..marks = MoodleSyncMarks(lastAttempt: t0);
+
+    await pumpScreen(
+      tester,
+      const MoodleScreen(),
+      overrides: _overrides(
+        api: api,
+        tokens: tokens,
+        cache: cache,
+        clock: MutableClock(t0),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Kurse durchsuchen'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'einfuehrung');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Einführung in die Programmierung'), findsOneWidget);
+    expect(find.text('Rechnernetze'), findsNothing);
+  });
+
+  testWidgets('a search without matches says so instead of showing nothing', (
+    WidgetTester tester,
+  ) async {
+    final tokens = InMemoryMoodleTokenStore()
+      ..token = const MoodleToken(value: 'tok', userId: 7, username: 'demo');
+    final cache = InMemoryMoodleCacheStore()
+      ..courses = <MoodleCourse>[
+        const MoodleCourse(id: 1, fullName: 'Rechnernetze'),
+      ]
+      ..marks = MoodleSyncMarks(lastAttempt: t0);
+
+    await pumpScreen(
+      tester,
+      const MoodleScreen(),
+      overrides: _overrides(
+        api: FakeMoodleApiClient(),
+        tokens: tokens,
+        cache: cache,
+        clock: MutableClock(t0),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Kurse durchsuchen'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'quantenphysik');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kein passender Kurs'), findsOneWidget);
+  });
+
+  testWidgets('closing the search restores the whole list', (
+    WidgetTester tester,
+  ) async {
+    final tokens = InMemoryMoodleTokenStore()
+      ..token = const MoodleToken(value: 'tok', userId: 7, username: 'demo');
+    final cache = InMemoryMoodleCacheStore()
+      ..courses = <MoodleCourse>[
+        const MoodleCourse(id: 1, fullName: 'Rechnernetze'),
+      ]
+      ..marks = MoodleSyncMarks(lastAttempt: t0);
+
+    await pumpScreen(
+      tester,
+      const MoodleScreen(),
+      overrides: _overrides(
+        api: FakeMoodleApiClient(),
+        tokens: tokens,
+        cache: cache,
+        clock: MutableClock(t0),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Kurse durchsuchen'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'quantenphysik');
+    await tester.pumpAndSettle();
+    expect(find.text('Rechnernetze'), findsNothing);
+
+    // Closing clears the term, so a forgotten filter cannot hide everything.
+    await tester.tap(find.byTooltip('Kurse durchsuchen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Rechnernetze'), findsOneWidget);
+  });
+}
+
+/// The three tab titles must stay readable where they are hardest to fit.
+void _courseTabTests() {
+  final DateTime t0 = DateTime.utc(2026, 7, 26, 12);
+
+  Future<void> pumpCourse(
+    WidgetTester tester, {
+    required Size surface,
+    TextScaler textScaler = TextScaler.noScaling,
+  }) async {
+    tester.view.physicalSize = surface;
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final tokens = InMemoryMoodleTokenStore()
+      ..token = const MoodleToken(value: 'tok', userId: 7, username: 'demo');
+
+    await pumpScreen(
+      tester,
+      const MoodleCourseScreen(courseId: 1),
+      textScaler: textScaler,
+      overrides: _overrides(
+        api: FakeMoodleApiClient(),
+        tokens: tokens,
+        cache: InMemoryMoodleCacheStore(),
+        clock: MutableClock(t0),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+
+  testWidgets('all three titles are written out on a narrow phone', (
+    WidgetTester tester,
+  ) async {
+    await pumpCourse(tester, surface: const Size(320, 640));
+
+    expect(find.text('Inhalte'), findsOneWidget);
+    expect(find.text('Aufgaben'), findsOneWidget);
+    // The long one: three equal thirds of 320 px cannot hold it.
+    expect(find.text('Ankündigungen'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('and survive doubled text', (WidgetTester tester) async {
+    await pumpCourse(
+      tester,
+      surface: const Size(320, 900),
+      textScaler: const TextScaler.linear(2),
+    );
+
+    expect(find.text('Ankündigungen'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the bar scrolls rather than shrinking the labels', (
+    WidgetTester tester,
+  ) async {
+    await pumpCourse(tester, surface: const Size(320, 640));
+    final TabBar bar = tester.widget<TabBar>(find.byType(TabBar));
+    expect(bar.isScrollable, isTrue);
   });
 }

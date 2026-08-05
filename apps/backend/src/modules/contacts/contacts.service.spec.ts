@@ -293,4 +293,226 @@ describe('ContactsService', () => {
       expect(serialised).not.toContain('doc-42');
     });
   });
+
+  describe('searchIndex', () => {
+    const demoRoom = (over: Record<string, unknown> = {}) => ({
+      roomKey: 'demo-north-level2-b201',
+      roomNumber: 'B.201',
+      buildingKey: 'demo-north',
+      buildingNameDe: 'Demogebäude Nord (fiktiv)',
+      buildingNameEn: 'Demo building north (fictional)',
+      floorKey: 'demo-north-level2',
+      floorLevel: 2,
+      floorNameDe: '2. Obergeschoss',
+      floorNameEn: 'Second floor',
+      catalogActive: true,
+      isVisible: true,
+      ...over,
+    });
+
+    const paragraph = (text: string) => ({
+      type: 'paragraph',
+      children: [{ type: 'text', text }],
+    });
+
+    it('answers with ONE request per locale, not one per area', async () => {
+      // The whole reason this endpoint exists: a client searching over details
+      // would otherwise fetch every area separately, on every keystroke.
+      let calls = 0;
+      const client = makeClient(() => {
+        calls += 1;
+        return { data: [area('a'), area('b'), area('c')] };
+      });
+
+      const result = await new ContactsService(client).searchIndex(de);
+
+      expect(calls).toBe(1);
+      expect(result.data).toHaveLength(3);
+    });
+
+    it('carries every visible field the search has to match', async () => {
+      const client = makeClient(() => ({
+        data: [
+          area('ssc', {
+            name: 'Studierendenservice',
+            shortDescription: 'Beratung',
+            generalEmail: 'kontakt@example.org',
+            phone: '+49 000 000',
+            website: 'https://example.org',
+            appointmentUrl: 'https://example.org/termin',
+            address: 'Musterweg 1',
+            openingHours: 'Mo–Fr',
+            description: [paragraph('Wir helfen bei Anträgen.')],
+            rooms: [demoRoom()],
+            persons: [
+              {
+                name: 'Demo Person',
+                role: 'Beratung',
+                description: 'Zuständig für Anträge',
+                email: 'person@example.org',
+                phone: '+49 111',
+                website: 'https://example.org/person',
+                isActive: true,
+                rooms: [demoRoom({ roomKey: 'demo-north-level2-b202', roomNumber: 'B.202' })],
+              },
+            ],
+          }),
+        ],
+      }));
+
+      const entry = (await new ContactsService(client).searchIndex(de)).data[0]!;
+
+      expect(entry).toMatchObject({
+        slug: 'ssc',
+        name: 'Studierendenservice',
+        shortDescription: 'Beratung',
+        generalEmail: 'kontakt@example.org',
+        phone: '+49 000 000',
+        website: 'https://example.org',
+        appointmentUrl: 'https://example.org/termin',
+        address: 'Musterweg 1',
+        openingHours: 'Mo–Fr',
+        descriptionText: 'Wir helfen bei Anträgen.',
+      });
+      expect(entry.rooms[0]!.roomNumber).toBe('B.201');
+      expect(entry.persons[0]).toMatchObject({
+        name: 'Demo Person',
+        role: 'Beratung',
+        description: 'Zuständig für Anträge',
+        email: 'person@example.org',
+      });
+      expect(entry.persons[0]!.rooms[0]!.roomNumber).toBe('B.202');
+    });
+
+    it('flattens the description instead of shipping rich text', async () => {
+      // A search matches words. Formatting carries none, a link contributes its
+      // label rather than its URL, and an image contributes nothing.
+      const client = makeClient(() => ({
+        data: [
+          area('x', {
+            description: [
+              { type: 'heading', level: 2, children: [{ type: 'text', text: 'Überblick' }] },
+              {
+                type: 'paragraph',
+                children: [
+                  { type: 'text', text: 'Mehr auf ' },
+                  {
+                    type: 'link',
+                    url: 'https://example.org/sehr/lang',
+                    children: [{ type: 'text', text: 'der Website' }],
+                  },
+                ],
+              },
+              { type: 'image', image: { url: 'https://example.org/a.png' } },
+            ],
+          }),
+        ],
+      }));
+
+      const entry = (await new ContactsService(client).searchIndex(de)).data[0]!;
+
+      expect(entry.descriptionText).toBe('Überblick\nMehr auf der Website');
+      expect(entry.descriptionText).not.toContain('https://');
+    });
+
+    it('drops a block type the sanitiser does not know', async () => {
+      const client = makeClient(() => ({
+        data: [
+          area('x', {
+            description: [{ type: 'video', url: 'https://example.org/v.mp4' }, paragraph('Text')],
+          }),
+        ],
+      }));
+
+      const entry = (await new ContactsService(client).searchIndex(de)).data[0]!;
+      expect(entry.descriptionText).toBe('Text');
+    });
+
+    it('includes only ACTIVE persons', async () => {
+      const client = makeClient(() => ({
+        data: [
+          area('x', {
+            persons: [
+              { name: 'Aktiv', isActive: true },
+              { name: 'Inaktiv', isActive: false },
+            ],
+          }),
+        ],
+      }));
+
+      const entry = (await new ContactsService(client).searchIndex(de)).data[0]!;
+      expect(entry.persons.map((p) => p.name)).toEqual(['Aktiv']);
+    });
+
+    it('requests only active areas', async () => {
+      const seen: Record<string, unknown>[] = [];
+      const client = makeClient((query) => {
+        seen.push(query);
+        return { data: [] };
+      });
+
+      await new ContactsService(client).searchIndex(de);
+      expect(JSON.stringify(seen[0])).toContain('isActive');
+    });
+
+    it('leaks no Strapi internals', async () => {
+      const client = makeClient(() => ({
+        data: [
+          {
+            id: 7,
+            documentId: 'doc-7',
+            ...area('x', {
+              persons: [{ id: 9, documentId: 'doc-9', name: 'Demo Person', isActive: true }],
+              rooms: [{ ...demoRoom(), id: 42, documentId: 'doc-42' }],
+            }),
+          },
+        ],
+      }));
+
+      const serialised = JSON.stringify((await new ContactsService(client).searchIndex(de)).data);
+
+      expect(serialised).not.toContain('documentId');
+      expect(serialised).not.toContain('doc-7');
+      expect(serialised).not.toContain('attributes');
+    });
+
+    it('carries no profile image — nobody searches for a picture', async () => {
+      const client = makeClient(() => ({
+        data: [
+          area('x', {
+            persons: [
+              {
+                name: 'Demo Person',
+                isActive: true,
+                profileImage: { url: 'https://example.org/face.jpg' },
+              },
+            ],
+          }),
+        ],
+      }));
+
+      const serialised = JSON.stringify((await new ContactsService(client).searchIndex(de)).data);
+      expect(serialised).not.toContain('face.jpg');
+      expect(serialised).not.toContain('profileImage');
+    });
+
+    it('keeps German text and flags the fallback when English is missing', async () => {
+      const client = makeClient((query) =>
+        query['locale'] === 'en' ? { data: [] } : { data: [area('x', { name: 'Deutsch' })] },
+      );
+
+      const result = await new ContactsService(client).searchIndex(en);
+
+      expect(result.data[0]!.name).toBe('Deutsch');
+      expect(result.translationFallback).toBe(true);
+    });
+
+    it('localises room names for en', async () => {
+      const client = makeClient(() => ({ data: [area('x', { rooms: [demoRoom()] })] }));
+      const result = await new ContactsService(client).searchIndex(en);
+
+      expect(result.data[0]!.rooms[0]!.buildingName).toBe('Demo building north (fictional)');
+      expect(result.data[0]!.rooms[0]!.floorName).toBe('Second floor');
+    });
+  });
 });

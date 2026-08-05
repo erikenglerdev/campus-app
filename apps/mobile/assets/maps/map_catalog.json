@@ -1,11 +1,21 @@
 {
   "schemaVersion": 1,
-  "mapVersion": "demo-north-2026-07-31",
+  "mapVersion": "campus-koethen-2026-07-31",
   "generator": "@campus/map",
   "buildings": [
     {
       "buildingKey": "demo-north",
+      "nameDe": "Demogebäude Nord (fiktiv)",
+      "nameEn": "Demo building north (fictional)",
+      "planKind": "fictional",
       "sortOrder": 10
+    },
+    {
+      "buildingKey": "koethen-campus-overview",
+      "nameDe": "Campus Köthen – Übersicht",
+      "nameEn": "Campus Köthen – Overview",
+      "planKind": "schematic",
+      "sortOrder": 20
     }
   ],
   "floors": [
@@ -13,12 +23,29 @@
       "floorKey": "demo-north-level2",
       "buildingKey": "demo-north",
       "level": 2,
+      "nameDe": "2. Obergeschoss",
+      "nameEn": "Second floor",
       "svgAsset": "assets/maps/demo-north/level2.svg",
       "viewBox": {
         "minX": 0,
         "minY": 0,
         "width": 1900,
         "height": 1080
+      },
+      "sortOrder": 10
+    },
+    {
+      "floorKey": "koethen-campus-overview-level",
+      "buildingKey": "koethen-campus-overview",
+      "level": 0,
+      "nameDe": "Campusübersicht",
+      "nameEn": "Campus overview",
+      "svgAsset": "assets/maps/campus/koethen-overview.svg",
+      "viewBox": {
+        "minX": 0,
+        "minY": 0,
+        "width": 1748,
+        "height": 900
       },
       "sortOrder": 10
     }

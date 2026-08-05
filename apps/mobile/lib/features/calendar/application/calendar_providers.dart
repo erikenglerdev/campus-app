@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/loaded.dart';
+import '../../../core/prefs/preference_keys.dart';
+import '../../../core/prefs/settings_controller.dart';
 import '../../moodle/application/moodle_account_controller.dart';
 import '../../moodle/application/moodle_controller.dart';
 import '../../timetable/application/timetable_providers.dart';
@@ -14,17 +16,27 @@ import '../domain/calendar_entry.dart';
 import 'calendar_merge.dart';
 import 'public_calendar_providers.dart';
 
-/// Month grid or agenda list — the two explicit calendar views.
-enum CalendarViewMode { month, list }
+/// Day agenda or month list — the two explicit calendar views.
+///
+/// The day agenda is the default. A month grid used to be, but on a phone it
+/// spends most of the screen answering "which day?" and leaves almost none for
+/// what is actually on that day; the week strip answers the same question in a
+/// fraction of the space. A month is now only reachable as a date picker.
+enum CalendarViewMode { day, week, list }
 
 class CalendarViewModeController extends Notifier<CalendarViewMode> {
   @override
-  CalendarViewMode build() => CalendarViewMode.month;
+  CalendarViewMode build() => CalendarViewMode.day;
 
   void set(CalendarViewMode mode) => state = mode;
-  void toggle() => state = state == CalendarViewMode.month
-      ? CalendarViewMode.list
-      : CalendarViewMode.month;
+
+  /// Cycles through the views. Kept for the keyboard/back affordances that
+  /// call it; the segmented control sets a mode directly.
+  void toggle() => state = switch (state) {
+    CalendarViewMode.day => CalendarViewMode.week,
+    CalendarViewMode.week => CalendarViewMode.list,
+    CalendarViewMode.list => CalendarViewMode.day,
+  };
 }
 
 final NotifierProvider<CalendarViewModeController, CalendarViewMode>
@@ -41,6 +53,13 @@ class CalendarFocusedDayController extends Notifier<DateTime> {
 
   void select(DateTime day) => state = TimetableWeek.dayOf(day);
   void today() => select(DateTime.now());
+
+  /// Moves [weeks] weeks, keeping the weekday.
+  ///
+  /// Whole weeks rather than 7×24 hours: adding a `Duration` across a daylight
+  /// saving change lands an hour off and can fall on the day before.
+  void shiftWeeks(int weeks) =>
+      state = TimetableWeek.shift(state, weeks * TimetableWeek.lengthInDays);
 }
 
 final NotifierProvider<CalendarFocusedDayController, DateTime>
@@ -49,19 +68,81 @@ calendarFocusedDayProvider =
       CalendarFocusedDayController.new,
     );
 
-/// Which sources contribute to the calendar. Both are on by default; the user
-/// can hide either without losing the other's data.
+/// Number of columns the week view draws without the weekend.
+const int kWorkWeekDays = 5;
+
+/// Whether the week view also draws Saturday and Sunday.
+///
+/// Off by default: a teaching week is Monday to Friday, and two empty columns
+/// cost a fifth of the width of a phone. Purely local, like every other view
+/// preference — nothing about it reaches a backend.
+class CalendarWeekendController extends Notifier<bool> {
+  @override
+  bool build() =>
+      ref
+          .watch(keyValueStoreProvider)
+          .getInt(PreferenceKeys.calendarShowWeekend) ==
+      1;
+
+  Future<void> set(bool value) async {
+    state = value;
+    // Written in both directions, so "off" is a decision the store remembers
+    // rather than the absence of one.
+    await ref
+        .read(keyValueStoreProvider)
+        .setInt(PreferenceKeys.calendarShowWeekend, value ? 1 : 0);
+  }
+
+  Future<void> toggle() => set(!state);
+}
+
+final NotifierProvider<CalendarWeekendController, bool>
+calendarShowWeekendProvider = NotifierProvider<CalendarWeekendController, bool>(
+  CalendarWeekendController.new,
+);
+
+/// How many day columns the week view draws.
+final Provider<int> calendarWeekDayCountProvider = Provider<int>(
+  (Ref ref) => ref.watch(calendarShowWeekendProvider)
+      ? TimetableWeek.lengthInDays
+      : kWorkWeekDays,
+);
+
+/// Which sources contribute to the calendar.
+///
+/// Every source is on by default and the user can hide any of them without
+/// losing the others' data. The choice is persisted as the **disabled** set:
+/// a source added in a later version is then visible by default rather than
+/// hidden until someone finds the filter.
 class CalendarEnabledSourcesController extends Notifier<Set<CalendarSource>> {
   @override
-  Set<CalendarSource> build() => <CalendarSource>{
-    CalendarSource.timetable,
-    CalendarSource.moodle,
-  };
+  Set<CalendarSource> build() {
+    final Set<CalendarSource> off =
+        (ref
+                    .watch(keyValueStoreProvider)
+                    .getStringList(PreferenceKeys.calendarDisabledSources) ??
+                const <String>[])
+            .map(CalendarSource.fromStorage)
+            .whereType<CalendarSource>()
+            .toSet();
+    return CalendarSource.values
+        .where((CalendarSource s) => !off.contains(s))
+        .toSet();
+  }
 
-  void toggle(CalendarSource source) {
+  Future<void> toggle(CalendarSource source) async {
     final Set<CalendarSource> next = <CalendarSource>{...state};
     if (!next.remove(source)) next.add(source);
     state = next;
+    await ref
+        .read(keyValueStoreProvider)
+        .setStringList(
+          PreferenceKeys.calendarDisabledSources,
+          CalendarSource.values
+              .where((CalendarSource s) => !next.contains(s))
+              .map((CalendarSource s) => s.storageValue)
+              .toList(growable: false),
+        );
   }
 }
 
@@ -119,12 +200,18 @@ List<DateTime> monthWeekStarts(DateTime day) {
   return starts;
 }
 
-/// The aggregated calendar for the focused month.
-final Provider<CalendarData> calendarDataProvider = Provider<CalendarData>((
+/// The aggregated calendar for the month around [anchor].
+///
+/// Keyed by an explicit anchor date, **not** by the calendar screen's focused
+/// day. The day dashboard asks about today while the calendar screen may be
+/// browsing March; sharing one focus would silently make one of the two show
+/// the wrong month. Callers say which day they mean.
+final calendarDataProvider = Provider.family<CalendarData, DateTime>((
   Ref ref,
+  DateTime anchor,
 ) {
   final Set<CalendarSource> enabled = ref.watch(calendarEnabledSourcesProvider);
-  final DateTime focused = ref.watch(calendarFocusedDayProvider);
+  final DateTime focused = anchor;
 
   // --- Source 1: timetable (Campus API), one week provider per visible week.
   final List<CalendarEntry> timetableEntries = <CalendarEntry>[];
@@ -170,7 +257,7 @@ final Provider<CalendarData> calendarDataProvider = Provider<CalendarData>((
   bool publicLoading = false;
   bool publicError = false;
   ref
-      .watch(publicCalendarMonthEntriesProvider)
+      .watch(publicCalendarMonthEntriesProvider(anchor))
       .when(
         data: (List<CalendarEntry> entries) => publicEntries.addAll(entries),
         loading: () => publicLoading = true,
@@ -193,3 +280,80 @@ final Provider<CalendarData> calendarDataProvider = Provider<CalendarData>((
     hasPublicCalendarError: publicError,
   );
 });
+
+/// The aggregated calendar for the day the calendar screen is focused on.
+///
+/// A thin convenience over [calendarDataProvider] so the screen does not have
+/// to repeat the lookup; everything else passes the date it actually cares
+/// about.
+final Provider<CalendarData> focusedCalendarDataProvider =
+    Provider<CalendarData>(
+      (Ref ref) => ref.watch(
+        calendarDataProvider(ref.watch(calendarFocusedDayProvider)),
+      ),
+    );
+
+/// Every entry of one day, chronologically, across all enabled sources.
+///
+/// This is what the day dashboard reads. All-day items come first, then timed
+/// ones in order — the order a person reads a day in.
+final dayAgendaProvider = Provider.family<DayAgenda, DateTime>((
+  Ref ref,
+  DateTime date,
+) {
+  final DateTime day = DateTime(date.year, date.month, date.day);
+  final CalendarData data = ref.watch(calendarDataProvider(day));
+  final List<CalendarEntry> entries = data.forDay(day);
+  return DayAgenda(date: day, entries: entries, data: data);
+});
+
+/// One day's entries plus the load state of the sources behind them.
+@immutable
+class DayAgenda {
+  const DayAgenda({
+    required this.date,
+    required this.entries,
+    required this.data,
+  });
+
+  final DateTime date;
+  final List<CalendarEntry> entries;
+  final CalendarData data;
+
+  /// Whether any source is still loading. Used to tell "nothing today" apart
+  /// from "not known yet" — showing an empty day while data is in flight would
+  /// state something false.
+  bool get isLoading => data.timetableLoading || data.publicCalendarsLoading;
+
+  /// True when every source that could contribute failed.
+  bool get allSourcesFailed =>
+      entries.isEmpty && data.hasTimetableError && data.hasPublicCalendarError;
+
+  /// The entry happening at [now], or the next one after it.
+  ///
+  /// Returns `null` once the day is over — a dashboard card then says so
+  /// rather than pointing at something that already finished.
+  CalendarEntry? currentOrNext(DateTime now) {
+    CalendarEntry? next;
+    for (final CalendarEntry entry in entries) {
+      if (entry.allDay) continue;
+      final DateTime end = entry.end ?? entry.start;
+      if (!now.isBefore(entry.start) && now.isBefore(end)) return entry;
+      if (entry.start.isAfter(now)) {
+        if (next == null || entry.start.isBefore(next.start)) next = entry;
+      }
+    }
+    return next;
+  }
+
+  /// Everything still ahead at [now], excluding [currentOrNext].
+  List<CalendarEntry> upcomingAfter(DateTime now) {
+    final CalendarEntry? lead = currentOrNext(now);
+    return entries
+        .where(
+          (CalendarEntry e) =>
+              e.id != lead?.id && (e.allDay || (e.end ?? e.start).isAfter(now)),
+        )
+        .toList(growable: false);
+  }
+}

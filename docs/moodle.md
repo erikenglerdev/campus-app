@@ -6,8 +6,9 @@ Zwei zusammenhängende Funktionen der mobilen App:
 
 - **Moodle** (unter „Mehr → Moodle") — native, **lesende** Ansicht von Kursen, Materialien,
   Aufgaben mit Abgabestatus und Ankündigungen.
-- **Kalender** (oberster Tab, ersetzt den bisherigen Stundenplan-Tab) — führt Stundenplan und
-  Moodle-Deadlines **lokal auf dem Gerät** zu einer Ansicht zusammen (Monatsraster **oder** Liste).
+- **Kalender** (eigenes Modul, ersetzt den bisherigen Stundenplan-Tab) — führt Stundenplan,
+  öffentliche Kalender und Moodle-Deadlines **lokal auf dem Gerät** zu einer Ansicht zusammen
+  (Tag, Woche **oder** Liste).
 
 Beide sind bewusst restriktiv gebaut. Maßgeblich ist die Ausnahmeregel in
 [`../CLAUDE.md`](../CLAUDE.md) §2.
@@ -97,8 +98,31 @@ Cache-Schlüssel, Sync-Zeitstempel und alle zugehörigen Riverpod-Zustände.
   trägt unabhängig bei; Fehler werden pro Quelle als Banner angezeigt.
 - **Erweiterbar:** Eine neue Quelle = ein Wert in `CalendarSource`, ein Mapper nach `CalendarEntry`
   und eine Verdrahtung im Aggregator.
-- Explizite Umschaltung **Kalender** (Monatsraster) ↔ **Liste**. Moodle-`timestart` sind absolute
-  Unixzeiten und werden ohne doppelte Zeitzonen-Konvertierung umgerechnet.
+- Explizite Umschaltung **Tag ↔ Woche ↔ Liste**. Moodle-`timestart` sind absolute Unixzeiten und
+  werden ohne doppelte Zeitzonen-Konvertierung umgerechnet.
+- Die Moodle-Quelle wird über das Quellen-Control „Moodle" ein- und ausgeblendet. Ohne Anmeldung
+  erklärt dessen Sheet das und führt zum Moodle-Login; es werden **keine** Moodle-Daten an ein
+  Campus-Köthen-Backend gesendet.
+
+## 6a. Kurssuche und Kursansicht
+
+Die Kursübersicht hat einen **lokalen** Suchknopf. Er filtert ausschließlich die bereits
+geladenen beziehungsweise im verschlüsselten Cache liegenden Kurse — **kein Tastendruck
+erzeugt eine Anfrage**, weder an Moodle noch an ein Campus-Köthen-Backend, das Moodle-Daten
+ohnehin nie sehen darf.
+
+Durchsucht werden `fullName`, `shortName` und `summary`. Die Normalisierung
+(`moodle_course_search.dart`) macht Groß-/Kleinschreibung, die deutschen Umlaute und die
+gängigen lateinischen Diakritika gleichwertig: „Prüfung", „PRUEFUNG" und „prufung" finden
+einander. Ein leeres Suchfeld ist kein Filter; Schließen der Suche leert den Begriff, damit
+ein vergessener Filter nicht dauerhaft Kurse verbirgt. Ohne Treffer erscheint ein eigener
+leerer Zustand mit dem Hinweis, dass nur geladene Kurse durchsucht werden.
+
+Die Kursansicht behält die drei Tabs **Inhalte**, **Aufgaben** und **Ankündigungen**. Die
+TabBar ist `isScrollable`, weil drei gleich breite Drittel eines 320 px breiten Telefons
+„Ankündigungen" bei großer Schrift nicht fassen — und eine Abkürzung, die niemand entziffert,
+ist schlechter als eine Wischgeste. Widgettests prüfen beides bei 320 px und doppelter
+Schrift.
 
 ## 7. Fehlerklassen
 

@@ -9,13 +9,65 @@ import '../../../core/network/json.dart';
 ///
 /// It is produced by `packages/campus-map` and ships as an asset, so the app
 /// never parses the canonical drawing at runtime to discover its structure.
-/// It carries GEOMETRY and stable keys only — every display name comes from the
-/// Campus API per locale, so nothing here needs translating.
+///
+/// It carries geometry, stable keys and the names of the map's own navigation
+/// in both languages. ROOM prose still comes from the Campus API per locale —
+/// but a building without rooms has no room DTO to carry its name, so building
+/// and floor names travel with the bundle and work offline.
+
+/// What kind of drawing a building's plan is.
+///
+/// The app states this to the user, so a wrong value would be a false claim
+/// rather than a cosmetic detail. Unknown values fall back to [fictional],
+/// which is the more cautious of the two: it promises nothing about a real
+/// place.
+enum PlanKind {
+  /// Invented for demonstration; no real building is depicted.
+  fictional,
+
+  /// A simplified, not-to-scale overview of a real site. Explicitly **not** a
+  /// fire, escape or rescue plan.
+  schematic;
+
+  static PlanKind fromName(String? value) => switch (value) {
+    'schematic' => PlanKind.schematic,
+    _ => PlanKind.fictional,
+  };
+}
+
+/// A name that exists in both supported languages.
+///
+/// Kept as one small type so every localised catalogue name is resolved the
+/// same way, and adding a locale later touches one place.
+class LocalisedName {
+  const LocalisedName({required this.de, required this.en});
+
+  final String de;
+  final String en;
+
+  /// German is canonical; anything that is not English falls back to it.
+  String resolve(String localeCode) => localeCode == 'en' ? en : de;
+
+  static LocalisedName fromJson(
+    Map<String, dynamic>? map, {
+    required String fallback,
+  }) {
+    final String de = asString(map?['nameDe']) ?? fallback;
+    return LocalisedName(de: de, en: asString(map?['nameEn']) ?? de);
+  }
+}
 
 class MapBuilding {
-  const MapBuilding({required this.buildingKey, required this.sortOrder});
+  const MapBuilding({
+    required this.buildingKey,
+    required this.name,
+    required this.planKind,
+    required this.sortOrder,
+  });
 
   final String buildingKey;
+  final LocalisedName name;
+  final PlanKind planKind;
   final int sortOrder;
 
   static MapBuilding? fromJson(Object? json) {
@@ -24,6 +76,8 @@ class MapBuilding {
     if (key == null) return null;
     return MapBuilding(
       buildingKey: key,
+      name: LocalisedName.fromJson(map, fallback: key),
+      planKind: PlanKind.fromName(asString(map?['planKind'])),
       sortOrder: asInt(map?['sortOrder']) ?? 0,
     );
   }
@@ -34,6 +88,7 @@ class MapFloor {
     required this.floorKey,
     required this.buildingKey,
     required this.level,
+    required this.name,
     required this.svgAsset,
     required this.viewBox,
     required this.sortOrder,
@@ -42,6 +97,7 @@ class MapFloor {
   final String floorKey;
   final String buildingKey;
   final int level;
+  final LocalisedName name;
   final String svgAsset;
   final Rect viewBox;
   final int sortOrder;
@@ -63,6 +119,7 @@ class MapFloor {
       floorKey: floorKey,
       buildingKey: buildingKey,
       level: asInt(map['level']) ?? 0,
+      name: LocalisedName.fromJson(map, fallback: floorKey),
       svgAsset: svgAsset,
       viewBox: viewBox,
       sortOrder: asInt(map['sortOrder']) ?? 0,
@@ -151,6 +208,23 @@ class MapCatalog {
   MapRoomGeometry? geometryFor(String roomKey) => _roomsByKey[roomKey];
 
   MapFloor? floor(String floorKey) => _floorsByKey[floorKey];
+
+  MapBuilding? building(String? buildingKey) {
+    for (final MapBuilding building in buildings) {
+      if (building.buildingKey == buildingKey) return building;
+    }
+    return null;
+  }
+
+  /// Whether the map offers anything to choose between.
+  ///
+  /// The building picker only appears once this is true, so a single-building
+  /// bundle looks exactly as it did before.
+  bool get hasSeveralBuildings => buildings.length > 1;
+
+  /// The building a floor belongs to, or `null` for an unknown floor.
+  String? buildingOfFloor(String? floorKey) =>
+      floorKey == null ? null : _floorsByKey[floorKey]?.buildingKey;
 
   /// Floors of one building, in display order.
   List<MapFloor> floorsOf(String buildingKey) =>

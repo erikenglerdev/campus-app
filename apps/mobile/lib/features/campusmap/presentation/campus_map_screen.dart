@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/loaded.dart';
+import '../../../core/prefs/settings_controller.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/offline_notice.dart';
 import '../../../core/widgets/state_views.dart';
@@ -45,7 +46,6 @@ class CampusMapScreen extends ConsumerStatefulWidget {
 const double kSearchBarHeight = 56;
 const double kDemoBadgeHeight = 40;
 const double kDetailSheetHeight = 236;
-const double kResultsBarHeight = 76;
 
 class _CampusMapScreenState extends ConsumerState<CampusMapScreen> {
   final TextEditingController _search = TextEditingController();
@@ -142,6 +142,7 @@ class _MapSurface extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final List<Room> allRooms = loaded.value;
     final String? selectedKey = ref.watch(selectedRoomProvider);
+    final String? explicitBuilding = ref.watch(visibleBuildingProvider);
     final String? explicitFloor = ref.watch(visibleFloorProvider);
     final MapCatalog? map = ref.watch(mapCatalogProvider).value;
 
@@ -158,10 +159,27 @@ class _MapSurface extends ConsumerWidget {
         allRooms.isNotEmpty &&
         !map.supportsMapVersion(allRooms.first.mapVersion);
 
-    final String? floorKey =
-        explicitFloor ??
-        selectedRoom?.floorKey ??
-        _defaultFloorKey(map, allRooms);
+    // Derived rather than trusted. The controllers keep building and floor
+    // consistent when they are written, but the map must also survive a state
+    // that never was: a floor from another building would otherwise draw a plan
+    // that contradicts the building shown above it.
+    final String? buildingKey = _visibleBuildingKey(
+      map: map,
+      explicitBuilding: explicitBuilding,
+      explicitFloor: explicitFloor,
+      selectedRoom: selectedRoom,
+      rooms: allRooms,
+      defaultBuildingKey: ref.watch(
+        settingsProvider.select((AppSettings s) => s.defaultBuildingKey),
+      ),
+    );
+    final String? floorKey = _visibleFloorKey(
+      map: map,
+      buildingKey: buildingKey,
+      explicitFloor: explicitFloor,
+      selectedRoom: selectedRoom,
+      rooms: allRooms,
+    );
     final MapFloor? floor = floorKey == null ? null : map?.floor(floorKey);
     final MapRoomGeometry? geometry = selectedKey == null
         ? null
@@ -174,9 +192,9 @@ class _MapSurface extends ConsumerWidget {
     // plan that is actually visible rather than behind a panel.
     final EdgeInsets covered = EdgeInsets.only(
       top: safe.top + kSearchBarHeight + kDemoBadgeHeight + AppSpacing.xl,
-      bottom:
-          safe.bottom +
-          (selectedRoom != null ? kDetailSheetHeight : kResultsBarHeight),
+      // Nothing is drawn at the bottom unless a room is selected, so no space
+      // is reserved for a bar that no longer exists.
+      bottom: safe.bottom + (selectedRoom != null ? kDetailSheetHeight : 0),
     );
 
     return Stack(
@@ -186,9 +204,29 @@ class _MapSurface extends ConsumerWidget {
               ? FloorMapView(
                   key: mapKey,
                   floor: floor,
+                  // Only this floor's rooms, so a room one storey up can never
+                  // answer a tap.
+                  rooms: map == null
+                      ? const <MapRoomGeometry>[]
+                      : map.rooms
+                            .where(
+                              (MapRoomGeometry room) =>
+                                  room.floorKey == floor.floorKey,
+                            )
+                            .toList(growable: false),
                   selected: geometry?.floorKey == floor.floorKey
                       ? geometry
                       : null,
+                  onRoomTap: (String roomKey) {
+                    // Exactly the flow a search result takes. A geometry the
+                    // API knows nothing about is not selectable: there would be
+                    // no name and no details to show.
+                    final Room? room = _firstWhereOrNull(
+                      allRooms,
+                      (Room candidate) => candidate.roomKey == roomKey,
+                    );
+                    if (room != null) onSelect(room);
+                  },
                   visiblePadding: covered,
                 )
               : _MapUnavailable(versionMismatch: versionMismatch),
@@ -202,21 +240,21 @@ class _MapSurface extends ConsumerWidget {
           results: results,
           onSelect: onSelect,
           onQueryChanged: onQueryChanged,
+          planKind: map?.building(buildingKey)?.planKind ?? PlanKind.fictional,
         ),
 
-        // Only worth showing when there is something to choose. The data model
-        // and this control both handle several floors; the demo map has one.
-        if (mapUsable && map != null && map.floors.length > 1 && query.isEmpty)
-          _FloorSelector(
-            floors: map.floors,
-            rooms: allRooms,
-            selectedFloorKey: floor.floorKey,
+        // Hidden while searching so the results overlay keeps the screen.
+        if (mapUsable && map != null && buildingKey != null && query.isEmpty)
+          _MapControls(
+            map: map,
+            buildingKey: buildingKey,
+            floorKey: floor.floorKey,
             top: covered.top,
           ),
 
         if (mapUsable && selectedRoom == null && query.isEmpty)
           _ResetButton(
-            bottom: safe.bottom + kResultsBarHeight + AppSpacing.lg,
+            bottom: safe.bottom + AppSpacing.lg,
             onPressed: () => mapKey.currentState?.resetView(),
           ),
 
@@ -225,16 +263,63 @@ class _MapSurface extends ConsumerWidget {
             room: selectedRoom,
             onMap: geometry != null,
             onClose: onClearSelection,
-          )
-        else if (query.isEmpty)
-          _ResultsBar(rooms: allRooms, onSelect: onSelect),
+          ),
       ],
     );
   }
 
-  static String? _defaultFloorKey(MapCatalog? map, List<Room> rooms) {
-    if (map != null && map.floors.isNotEmpty) return map.floors.first.floorKey;
-    return rooms.isEmpty ? null : rooms.first.floorKey;
+  /// Which building the map is showing.
+  ///
+  /// An explicit choice wins; otherwise the selected room decides, so a deep
+  /// link lands on the right building even before anyone has touched the
+  /// picker — and even while the bundled catalogue is still loading.
+  static String? _visibleBuildingKey({
+    required MapCatalog? map,
+    required String? explicitBuilding,
+    required String? explicitFloor,
+    required Room? selectedRoom,
+    required List<Room> rooms,
+    required String? defaultBuildingKey,
+  }) {
+    if (map == null) return null;
+    if (map.building(explicitBuilding) != null) return explicitBuilding;
+    final String? fromFloor = map.buildingOfFloor(explicitFloor);
+    if (fromFloor != null) return fromFloor;
+    final String? fromRoom =
+        map.geometryFor(selectedRoom?.roomKey ?? '')?.buildingKey ??
+        map.buildingOfFloor(selectedRoom?.floorKey);
+    if (fromRoom != null) return fromRoom;
+    // The user's chosen building, before falling back to the first one in the
+    // catalogue. Without this the setting would be stored, offered in the
+    // onboarding and the settings — and never do anything.
+    if (map.building(defaultBuildingKey) != null) return defaultBuildingKey;
+    return map.buildings.isNotEmpty
+        ? map.buildings.first.buildingKey
+        : map.buildingOfFloor(rooms.isEmpty ? null : rooms.first.floorKey);
+  }
+
+  /// Which floor of that building the map is showing.
+  ///
+  /// Anything that does not belong to [buildingKey] is ignored rather than
+  /// drawn: the picker above the map states a building, and the plan below it
+  /// has to agree.
+  static String? _visibleFloorKey({
+    required MapCatalog? map,
+    required String? buildingKey,
+    required String? explicitFloor,
+    required Room? selectedRoom,
+    required List<Room> rooms,
+  }) {
+    if (map == null || buildingKey == null) {
+      return explicitFloor ?? selectedRoom?.floorKey;
+    }
+    final List<MapFloor> floors = map.floorsOf(buildingKey);
+    bool belongs(String? key) =>
+        key != null && floors.any((MapFloor f) => f.floorKey == key);
+
+    if (belongs(explicitFloor)) return explicitFloor;
+    if (belongs(selectedRoom?.floorKey)) return selectedRoom!.floorKey;
+    return floors.isEmpty ? null : floors.first.floorKey;
   }
 }
 
@@ -276,6 +361,7 @@ class _TopOverlay extends StatelessWidget {
     required this.results,
     required this.onSelect,
     required this.onQueryChanged,
+    required this.planKind,
   });
 
   final Loaded<List<Room>> loaded;
@@ -285,6 +371,7 @@ class _TopOverlay extends StatelessWidget {
   final List<Room> results;
   final ValueChanged<Room> onSelect;
   final ValueChanged<String> onQueryChanged;
+  final PlanKind planKind;
 
   @override
   Widget build(BuildContext context) {
@@ -303,7 +390,30 @@ class _TopOverlay extends StatelessWidget {
               onQueryChanged: onQueryChanged,
             ),
             const SizedBox(height: AppSpacing.sm),
-            const _DemoBadge(),
+            _PlanBadge(kind: planKind),
+            // Without the old bottom bar this is the only place left to say
+            // that the catalogue has no rooms at all — a plan the user cannot
+            // search is otherwise silent about why.
+            if (loaded.value.isEmpty) ...<Widget>[
+              const SizedBox(height: AppSpacing.sm),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Material(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    child: Text(
+                      l10n.campusMapEmpty,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ),
+              ),
+            ],
             if (loaded.fromCache) ...<Widget>[
               const SizedBox(height: AppSpacing.sm),
               OfflineNotice(cachedAt: loaded.cachedAt),
@@ -389,15 +499,30 @@ class _SearchBar extends StatelessWidget {
   }
 }
 
-/// Always-visible reminder that nothing here is real, with the full wording one
-/// tap away. The plan must never be mistaken for an actual building.
-class _DemoBadge extends StatelessWidget {
-  const _DemoBadge();
+/// Always-visible statement of what the plan on screen actually is, with the
+/// full wording one tap away.
+///
+/// The text follows the building, because the two plans make different claims:
+/// the demo floor plan is invented, the campus overview is a simplified view of
+/// a real site and explicitly not an escape or official site plan. A single
+/// fixed badge would be wrong for one of them.
+class _PlanBadge extends StatelessWidget {
+  const _PlanBadge({required this.kind});
+
+  final PlanKind kind;
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
     final ColorScheme colors = Theme.of(context).colorScheme;
+    final String title = switch (kind) {
+      PlanKind.fictional => l10n.campusMapDemoBadge,
+      PlanKind.schematic => l10n.campusMapSchematicBadge,
+    };
+    final String notice = switch (kind) {
+      PlanKind.fictional => l10n.campusMapDemoNotice,
+      PlanKind.schematic => l10n.campusMapSchematicNotice,
+    };
 
     return Align(
       alignment: AlignmentDirectional.centerStart,
@@ -410,8 +535,8 @@ class _DemoBadge extends StatelessWidget {
             context: context,
             builder: (BuildContext dialogContext) => AlertDialog(
               icon: const Icon(Icons.info_outline),
-              title: Text(l10n.campusMapDemoBadge),
-              content: Text(l10n.campusMapDemoNotice),
+              title: Text(title),
+              content: Text(notice),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
@@ -440,7 +565,7 @@ class _DemoBadge extends StatelessWidget {
                   const SizedBox(width: AppSpacing.sm),
                   Flexible(
                     child: Text(
-                      l10n.campusMapDemoBadge,
+                      title,
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: colors.onSecondaryContainer,
                       ),
@@ -504,118 +629,6 @@ class _ResultsOverlay extends StatelessWidget {
   }
 }
 
-/// Resting state at the bottom: how many rooms exist, and a way into the list.
-class _ResultsBar extends StatelessWidget {
-  const _ResultsBar({required this.rooms, required this.onSelect});
-
-  final List<Room> rooms;
-  final ValueChanged<Room> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l10n = context.l10n;
-    final TextTheme text = Theme.of(context).textTheme;
-
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Material(
-        elevation: 8,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppRadius.lg),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: kResultsBarHeight,
-            child: rooms.isEmpty
-                ? Center(
-                    child: Text(l10n.campusMapEmpty, style: text.bodyMedium),
-                  )
-                : InkWell(
-                    onTap: () => showAllRooms(context, rooms, onSelect),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg,
-                      ),
-                      child: Row(
-                        children: <Widget>[
-                          const Icon(Icons.list),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: Text(
-                              l10n.campusMapRoomCount(rooms.length),
-                              style: text.titleSmall,
-                            ),
-                          ),
-                          Text(
-                            l10n.campusMapShowAllRooms,
-                            style: text.labelLarge,
-                          ),
-                          const Icon(Icons.expand_less),
-                        ],
-                      ),
-                    ),
-                  ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The full room list as a draggable sheet.
-Future<void> showAllRooms(
-  BuildContext context,
-  List<Room> rooms,
-  ValueChanged<Room> onSelect,
-) {
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    useSafeArea: true,
-    builder: (BuildContext sheetContext) => DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.7,
-      builder: (BuildContext context, ScrollController controller) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              0,
-              AppSpacing.lg,
-              AppSpacing.sm,
-            ),
-            child: Semantics(
-              header: true,
-              child: Text(
-                context.l10n.campusMapRoomCount(rooms.length),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              controller: controller,
-              itemCount: rooms.length,
-              itemBuilder: (BuildContext context, int index) => _RoomTile(
-                room: rooms[index],
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  onSelect(rooms[index]);
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-/// Details of the selected room, anchored at the bottom like a map app.
 class _RoomDetailSheet extends StatelessWidget {
   const _RoomDetailSheet({
     required this.room,
@@ -724,77 +737,201 @@ class _RoomDetailSheet extends StatelessWidget {
   }
 }
 
-/// Floor picker, floating on the map like a layer switch.
-class _FloorSelector extends ConsumerWidget {
-  const _FloorSelector({
-    required this.floors,
-    required this.rooms,
-    required this.selectedFloorKey,
+/// Building and floor pickers, floating on the map like a layer switch.
+///
+/// Building sits above floor because a floor only means something inside its
+/// building — the wider choice is made first, and the narrower one follows.
+///
+/// Both are driven entirely by the bundled catalogue. There is deliberately no
+/// key-to-label mapping in this file: another building or floor is a catalogue
+/// change, never a Flutter change.
+class _MapControls extends ConsumerWidget {
+  const _MapControls({
+    required this.map,
+    required this.buildingKey,
+    required this.floorKey,
     required this.top,
   });
 
-  final List<MapFloor> floors;
-  final List<Room> rooms;
-  final String selectedFloorKey;
+  final MapCatalog map;
+  final String buildingKey;
+  final String floorKey;
   final double top;
 
-  /// The localised floor name comes from the API; the key is the fallback.
-  String _label(MapFloor floor) {
-    for (final Room room in rooms) {
-      if (room.floorKey == floor.floorKey && room.floorName.isNotEmpty) {
-        return room.floorName;
-      }
-    }
-    return floor.floorKey;
+  /// Long names must not push the control across the map, and the map is
+  /// narrow on a phone — so the label ellipsises instead of growing.
+  ///
+  /// Wider than it used to be, because a building name is rarely short. The
+  /// ceiling is still bounded by the screen: on a 320 px phone the controls may
+  /// not run off the edge, so the available width wins over the preferred one.
+  static const double _preferredLabelWidth = 224;
+
+  static double _maxLabelWidthFor(BuildContext context) {
+    final double available =
+        MediaQuery.sizeOf(context).width -
+        2 * AppSpacing.lg -
+        AppSizes.icon * 3;
+    return available < _preferredLabelWidth ? available : _preferredLabelWidth;
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final MapFloor current = floors.firstWhere(
-      (MapFloor floor) => floor.floorKey == selectedFloorKey,
-      orElse: () => floors.first,
+    final AppLocalizations l10n = context.l10n;
+    final String locale = Localizations.localeOf(context).languageCode;
+    final List<MapFloor> floors = map.floorsOf(buildingKey);
+    final MapBuilding? building = map.building(buildingKey);
+    final MapFloor? current = floors.isEmpty
+        ? null
+        : floors.firstWhere(
+            (MapFloor floor) => floor.floorKey == floorKey,
+            orElse: () => floors.first,
+          );
+
+    final double maxLabelWidth = _maxLabelWidthFor(context);
+
+    // Left-aligned: the controls describe what is drawn below them, and a
+    // left-to-right reader looks there first.
+    return PositionedDirectional(
+      start: AppSpacing.lg,
+      top: top,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          // Only worth a control when there is something to choose.
+          if (map.hasSeveralBuildings && building != null) ...<Widget>[
+            _MapChoice<String>(
+              icon: Icons.apartment_outlined,
+              label: building.name.resolve(locale),
+              tooltip: l10n.campusMapBuildingLabel,
+              semanticLabel: l10n.campusMapBuildingSelectorSemantic(
+                building.name.resolve(locale),
+              ),
+              value: building.buildingKey,
+              options: <({String value, String label})>[
+                for (final MapBuilding candidate in map.buildings)
+                  (
+                    value: candidate.buildingKey,
+                    label: candidate.name.resolve(locale),
+                  ),
+              ],
+              onSelected: (String key) =>
+                  ref.read(visibleBuildingProvider.notifier).show(key),
+              maxLabelWidth: maxLabelWidth,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+
+          // Shown even for a single level, so the structure the map now has is
+          // visible rather than something the user has to discover. With one
+          // option it is a plain, non-interactive chip.
+          if (current != null)
+            _MapChoice<String>(
+              icon: Icons.layers_outlined,
+              label: current.name.resolve(locale),
+              tooltip: l10n.campusMapFloorLabel,
+              semanticLabel: floors.length > 1
+                  ? l10n.campusMapFloorSelectorSemantic(
+                      current.name.resolve(locale),
+                    )
+                  : l10n.campusMapSingleFloorSemantic(
+                      current.name.resolve(locale),
+                    ),
+              value: current.floorKey,
+              options: <({String value, String label})>[
+                for (final MapFloor floor in floors)
+                  (value: floor.floorKey, label: floor.name.resolve(locale)),
+              ],
+              onSelected: (String key) =>
+                  ref.read(visibleFloorProvider.notifier).show(key),
+              maxLabelWidth: maxLabelWidth,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One compact floating chip that either opens a menu or, with a single
+/// option, simply states the current value.
+class _MapChoice<T> extends StatelessWidget {
+  const _MapChoice({
+    required this.icon,
+    required this.label,
+    required this.tooltip,
+    required this.semanticLabel,
+    required this.value,
+    required this.options,
+    required this.onSelected,
+    required this.maxLabelWidth,
+  });
+
+  final IconData icon;
+  final String label;
+  final String tooltip;
+  final String semanticLabel;
+  final T value;
+  final List<({T value, String label})> options;
+  final ValueChanged<T> onSelected;
+  final double maxLabelWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool interactive = options.length > 1;
+
+    final Widget body = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: AppSizes.minTouchTarget),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(icon, size: AppSizes.iconSmall),
+            const SizedBox(width: AppSpacing.sm),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxLabelWidth),
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.labelLarge,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // The affordance is a shape, not a colour: no chevron means there
+            // is nothing to open.
+            if (interactive) ...<Widget>[
+              const SizedBox(width: AppSpacing.xs),
+              const Icon(Icons.arrow_drop_down, size: AppSizes.iconSmall),
+            ],
+          ],
+        ),
+      ),
     );
 
-    return PositionedDirectional(
-      end: AppSpacing.lg,
-      top: top,
+    return Semantics(
+      label: semanticLabel,
+      button: interactive,
+      readOnly: !interactive,
+      excludeSemantics: true,
       child: Material(
         elevation: 3,
         borderRadius: BorderRadius.circular(AppRadius.pill),
         clipBehavior: Clip.antiAlias,
-        child: PopupMenuButton<String>(
-          tooltip: context.l10n.campusMapFloorLabel,
-          initialValue: current.floorKey,
-          onSelected: (String key) =>
-              ref.read(visibleFloorProvider.notifier).show(key),
-          itemBuilder: (BuildContext context) => floors
-              .map(
-                (MapFloor floor) => PopupMenuItem<String>(
-                  value: floor.floorKey,
-                  child: Text(_label(floor)),
-                ),
-              )
-              .toList(),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minHeight: AppSizes.minTouchTarget,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const Icon(Icons.layers_outlined),
-                  const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    _label(current),
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
+        child: interactive
+            ? PopupMenuButton<T>(
+                tooltip: tooltip,
+                initialValue: value,
+                onSelected: onSelected,
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<T>>[
+                  for (final ({T value, String label}) option in options)
+                    PopupMenuItem<T>(
+                      value: option.value,
+                      child: Text(option.label),
+                    ),
                 ],
-              ),
-            ),
-          ),
-        ),
+                child: body,
+              )
+            : body,
       ),
     );
   }

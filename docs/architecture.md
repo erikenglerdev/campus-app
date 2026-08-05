@@ -159,11 +159,27 @@ lib/
     calendar/                                                lokale Zusammenführung + öffentliche Kalender
     mail/  grades/  moodle/                                  Pfad 2, direkt vom Gerät
     todos/                                                   rein lokal, ohne Netz
-    more/                                                    Hub für alles außerhalb der vier Haupttabs
+    requests/                                                Pfad 2, direkt an das Gremiensystem
+    more/                                                    Hub für alles, was nicht angeheftet ist
 ```
 
-Navigation: fünf Tabs mit je eigenem Navigationsstack — **News · Kalender · Mensa · Kontakte ·
-Mehr**. Unter „Mehr“ liegen E-Mail, Noten, Moodle, Aufgaben und Einstellungen.
+Navigation: **vier frei wählbare Module plus ein festes „Mehr"**, jedes mit eigenem
+Navigationsstack. Voreingestellt sind **News · Kalender · Mensa · E-Mail · Mehr**; die ersten vier
+sind in den Einstellungen austauschbar und per Drag-and-drop sortierbar.
+
+Woraus diese Navigation besteht, entscheidet **ein** typisierter Modulkatalog
+(`lib/app/app_modules.dart`): Storage-ID, Route, voller und kurzer Titel, Icons, Kategorie,
+Sortierung und ob ein Modul anheftbar ist. Bottom Navigation, Navigationseinstellungen,
+Onboarding, die Mehr-Ansicht und die Reparatur ungültiger gespeicherter Konfigurationen lesen
+alle denselben Katalog — getrennt gepflegte Listen würden genau so lange übereinstimmen, bis
+jemand eine davon vergisst.
+
+Die Mehr-Ansicht wird daraus abgeleitet: Was angeheftet ist, erscheint dort **nicht** zusätzlich;
+alles andere steht unter seiner kanonischen Kategorie (**Studium**, **Campus**, **App**).
+Einstellungen und „Über die App" sind nicht anheftbar und stehen immer unter **App**. Gespeichert
+werden ausschließlich die vier stabilen Modul-IDs in ihrer Reihenfolge; unbekannte IDs, Duplikate
+oder eine falsche Anzahl werden beim Lesen repariert, sodass keine Konfiguration ein Modul
+unerreichbar machen kann.
 
 `API_BASE_URL` wird über `--dart-define` gesetzt. Die Strapi-URL gelangt **nie** in die App.
 

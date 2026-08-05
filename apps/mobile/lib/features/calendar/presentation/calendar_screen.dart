@@ -3,19 +3,20 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:table_calendar/table_calendar.dart';
 
-import '../../../app/app_routes.dart';
 import '../../../core/locale/formatters.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/status_banner.dart';
 import '../../../l10n/l10n.dart';
 import '../../moodle/application/moodle_account_controller.dart';
 import '../../moodle/application/moodle_controller.dart';
+import '../../timetable/application/timetable_week.dart';
 import '../../timetable/presentation/timetable_group_picker_sheet.dart';
 import '../application/calendar_providers.dart';
 import '../domain/calendar_entry.dart';
+import 'calendar_source_sheets.dart';
+import 'week_grid_view.dart';
+import 'week_strip.dart';
 
 /// The top-level "Kalender" tab: one calendar merged from the timetable and
 /// Moodle deadlines, with an explicit month-grid vs list toggle.
@@ -40,37 +41,28 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final AppLocalizations l10n = context.l10n;
     final CalendarViewMode mode = ref.watch(calendarViewModeProvider);
-    final CalendarData data = ref.watch(calendarDataProvider);
+    final CalendarData data = ref.watch(focusedCalendarDataProvider);
 
+    // No app bar: the screen starts with what it is for. A title saying
+    // "Kalender" above a calendar, next to a row of icons whose meaning had to
+    // be guessed, was a row of a phone's height spent on nothing.
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.calendarTitle),
-        actions: <Widget>[
-          IconButton(
-            tooltip: l10n.calendarManageTooltip,
-            onPressed: () => context.push(AppRoutes.calendarManage),
-            icon: const Icon(Icons.tune_outlined),
-          ),
-          IconButton(
-            tooltip: l10n.calendarToday,
-            onPressed: () =>
-                ref.read(calendarFocusedDayProvider.notifier).today(),
-            icon: const Icon(Icons.today_outlined),
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Column(
           children: <Widget>[
-            // Only the toggle is fixed; everything else scrolls with the view,
-            // so nothing can overflow a short viewport.
+            // Sources first, view second: which calendars you are looking at
+            // is the question you answer once, how you look at them the one
+            // you change all day. Both stay put; everything else scrolls with
+            // the view, so nothing can overflow a short viewport.
+            _SourceControls(data: data),
             _ViewToggle(mode: mode),
             Expanded(
-              child: mode == CalendarViewMode.month
-                  ? _MonthView(data: data)
-                  : _ListView(data: data),
+              child: switch (mode) {
+                CalendarViewMode.day => _DayAgendaView(data: data),
+                CalendarViewMode.week => _WeekView(data: data),
+                CalendarViewMode.list => _ListView(data: data),
+              },
             ),
           ],
         ),
@@ -79,8 +71,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 }
 
-/// The scrollable header shared by both views: source filters, per-source error
-/// banners and (when needed) the "pick a group" hint.
+/// The scrollable header shared by all views: per-source error banners and
+/// (when needed) the "pick a course" hint.
+///
+/// One source failing never removes the others — the banner says which one is
+/// missing and the rest of the calendar keeps its data.
 List<Widget> _calendarHeader(BuildContext context, CalendarData data) {
   final AppLocalizations l10n = context.l10n;
   Widget banner(String message) => Padding(
@@ -98,7 +93,6 @@ List<Widget> _calendarHeader(BuildContext context, CalendarData data) {
     ),
   );
   return <Widget>[
-    _SourceFilters(data: data),
     if (data.hasTimetableError) banner(l10n.calendarTimetableUnavailable),
     if (data.hasMoodleError) banner(l10n.calendarMoodleUnavailable),
     if (data.needsGroup) _GroupHint(),
@@ -113,24 +107,40 @@ class _ViewToggle extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AppLocalizations l10n = context.l10n;
+    // Icon *and* label do not fit two segments onto a 320 px phone once the
+    // user scales text up. The label is what gets dropped, never the control:
+    // the icon keeps its tooltip and its accessible name, so nothing is lost
+    // for a screen reader.
+    final bool roomForLabels =
+        MediaQuery.textScalerOf(context).scale(14) < 20 ||
+        MediaQuery.sizeOf(context).width > 360;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.lg,
-        AppSpacing.sm,
+        0,
         AppSpacing.lg,
         AppSpacing.xs,
       ),
       child: SegmentedButton<CalendarViewMode>(
         segments: <ButtonSegment<CalendarViewMode>>[
           ButtonSegment<CalendarViewMode>(
-            value: CalendarViewMode.month,
+            value: CalendarViewMode.day,
             icon: const Icon(Icons.calendar_month_outlined),
-            label: Text(l10n.calendarViewMonth),
+            tooltip: l10n.calendarViewDay,
+            label: roomForLabels ? Text(l10n.calendarViewDay) : null,
+          ),
+          ButtonSegment<CalendarViewMode>(
+            value: CalendarViewMode.week,
+            icon: const Icon(Icons.grid_on_outlined),
+            tooltip: l10n.calendarViewWeek,
+            label: roomForLabels ? Text(l10n.calendarViewWeek) : null,
           ),
           ButtonSegment<CalendarViewMode>(
             value: CalendarViewMode.list,
             icon: const Icon(Icons.view_agenda_outlined),
-            label: Text(l10n.calendarViewList),
+            tooltip: l10n.calendarViewList,
+            label: roomForLabels ? Text(l10n.calendarViewList) : null,
           ),
         ],
         selected: <CalendarViewMode>{mode},
@@ -141,48 +151,140 @@ class _ViewToggle extends ConsumerWidget {
   }
 }
 
-class _SourceFilters extends ConsumerWidget {
-  const _SourceFilters({required this.data});
+/// The three sources, each a button that opens its own sheet.
+///
+/// Not toggles: what a source needs differs — the timetable needs a course,
+/// Moodle needs an account, the events are a list of calendars — so tapping
+/// opens the place where all of that lives. The state is on the button itself
+/// in words, an icon **and** the accessible state, never in a colour.
+class _SourceControls extends ConsumerWidget {
+  const _SourceControls({required this.data});
 
   final CalendarData data;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AppLocalizations l10n = context.l10n;
+
+    String stateOf(CalendarSource source) {
+      if (source == CalendarSource.moodle && !data.moodleConnected) {
+        return l10n.calendarSourceNotConnected;
+      }
+      return data.enabledSources.contains(source)
+          ? l10n.calendarSourceVisible
+          : l10n.calendarSourceHidden;
+    }
+
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.xs,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.xs,
       ),
-      child: Wrap(
-        spacing: AppSpacing.sm,
-        runSpacing: AppSpacing.xs,
-        children: <Widget>[
-          FilterChip(
-            avatar: const Icon(
-              Icons.schedule_outlined,
-              size: AppSizes.iconSmall,
-            ),
-            label: Text(l10n.calendarSourceTimetable),
-            selected: data.enabledSources.contains(CalendarSource.timetable),
-            onSelected: (_) => ref
-                .read(calendarEnabledSourcesProvider.notifier)
-                .toggle(CalendarSource.timetable),
+      // One row, three equal shares. The buttons stack their own label over
+      // their own state so a third of a phone is enough for both, and each one
+      // takes exactly the same width whatever its label says. IntrinsicHeight
+      // is what keeps the row even when one label needs a second line, instead
+      // of leaving one button taller than its neighbours.
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            for (final CalendarSource source
+                in CalendarSource.values) ...<Widget>[
+              if (source != CalendarSource.values.first)
+                const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _SourceButton(
+                  icon: calendarSourceIcon(source),
+                  label: calendarSourceLabel(l10n, source),
+                  state: stateOf(source),
+                  active:
+                      data.enabledSources.contains(source) &&
+                      (source != CalendarSource.moodle || data.moodleConnected),
+                  onPressed: () => showCalendarSourceSheet(context, source),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SourceButton extends StatelessWidget {
+  const _SourceButton({
+    required this.icon,
+    required this.label,
+    required this.state,
+    required this.active,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final String state;
+  final bool active;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme text = Theme.of(context).textTheme;
+    return Semantics(
+      button: true,
+      // Announced as "Stundenplan, Sichtbar" — the state is part of the name,
+      // not something a screen reader has to infer from a tint.
+      label: '$label, $state',
+      excludeSemantics: true,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xs,
+            vertical: AppSpacing.sm,
           ),
-          FilterChip(
-            avatar: const Icon(
-              Icons.cast_for_education_outlined,
-              size: AppSizes.iconSmall,
+        ),
+        // Stacked, not side by side: a third of a phone's width is not enough
+        // for an icon, a name and a state on one line, and the name is the
+        // part that must never be cut. Filling the height rather than hugging
+        // it is what keeps the three buttons reading as one row when a longer
+        // name takes a second line.
+        child: Column(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Icon(icon, size: AppSizes.iconSmall),
+                const SizedBox(width: AppSpacing.xxs),
+                // The eye is the second, redundant carrier of the state: it
+                // says the same as the word below it, so neither the colour
+                // nor a single glyph has to do the job alone.
+                Icon(
+                  active ? Icons.visibility : Icons.visibility_off,
+                  size: AppSizes.iconSmall,
+                ),
+              ],
             ),
-            label: Text(l10n.calendarSourceMoodle),
-            selected: data.enabledSources.contains(CalendarSource.moodle),
-            onSelected: data.moodleConnected
-                ? (_) => ref
-                      .read(calendarEnabledSourcesProvider.notifier)
-                      .toggle(CalendarSource.moodle)
-                : null,
-          ),
-        ],
+            Text(
+              label,
+              style: text.labelMedium,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              state,
+              style: text.labelSmall,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -198,14 +300,29 @@ class _GroupHint extends ConsumerWidget {
         margin: EdgeInsets.zero,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
+          // A Column rather than a Row: at large text scales the action's
+          // label and the hint cannot share a 320 px line, and a hint that
+          // overflows is worse than one that takes an extra line.
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              const Icon(Icons.schedule_outlined),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(child: Text(l10n.calendarSelectGroupHint)),
-              TextButton(
-                onPressed: () => showTimetableGroupPickerSheet(context),
-                child: Text(l10n.calendarSourceTimetable),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Icon(Icons.schedule_outlined),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(child: Text(l10n.calendarSelectGroupHint)),
+                ],
+              ),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TextButton(
+                  onPressed: () => showTimetableGroupPickerSheet(context),
+                  // Names the action, not the source: "Stundenplan" is what
+                  // the control above already says.
+                  child: Text(l10n.timetableGroupPickerTitle),
+                ),
               ),
             ],
           ),
@@ -215,58 +332,160 @@ class _GroupHint extends ConsumerWidget {
   }
 }
 
-class _MonthView extends ConsumerWidget {
-  const _MonthView({required this.data});
+/// The primary view: a week strip and the chosen day's entries.
+///
+/// Horizontal swiping moves a day at a time, which is how a phone calendar is
+/// expected to behave; the strip above shows where in the week that lands.
+class _DayAgendaView extends ConsumerWidget {
+  const _DayAgendaView({required this.data});
 
   final CalendarData data;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final AppLocalizations l10n = context.l10n;
     final String locale = Localizations.localeOf(context).languageCode;
     final DateTime focused = ref.watch(calendarFocusedDayProvider);
-    final DateTime now = DateTime.now();
-    final List<CalendarEntry> dayEntries = data.forDay(focused);
+    final DateTime today = TimetableWeek.dayOf(DateTime.now());
+    final List<CalendarEntry> entries = data.forDay(focused);
 
-    // The header, grid and day agenda scroll together, so they never overflow a
-    // short viewport.
-    return ListView(
+    final Map<DateTime, int> counts = <DateTime, int>{};
+    for (final CalendarEntry entry in data.entries) {
+      final DateTime day = TimetableWeek.dayOf(entry.start);
+      counts[day] = (counts[day] ?? 0) + 1;
+    }
+
+    return Column(
       children: <Widget>[
-        ..._calendarHeader(context, data),
-        TableCalendar<CalendarEntry>(
-          locale: locale,
-          firstDay: DateTime(now.year - 1),
-          lastDay: DateTime(now.year + 2),
-          focusedDay: focused,
-          startingDayOfWeek: StartingDayOfWeek.monday,
-          availableCalendarFormats: const <CalendarFormat, String>{
-            CalendarFormat.month: '',
-          },
-          headerStyle: const HeaderStyle(formatButtonVisible: false),
-          selectedDayPredicate: (DateTime d) => isSameDay(d, focused),
-          eventLoader: data.forDay,
-          calendarStyle: CalendarStyle(
-            markerDecoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-              shape: BoxShape.circle,
+        WeekStrip(
+          selected: focused,
+          today: today,
+          entryCounts: counts,
+          onSelect: (DateTime day) =>
+              ref.read(calendarFocusedDayProvider.notifier).select(day),
+          // A swipe on the strip is a week; a swipe on the day below is a day.
+          // Two gestures, two areas — neither can swallow the other.
+          onShiftWeeks: (int delta) =>
+              ref.read(calendarFocusedDayProvider.notifier).shiftWeeks(delta),
+          onToday: () => ref.read(calendarFocusedDayProvider.notifier).today(),
+        ),
+        Expanded(
+          child: GestureDetector(
+            // A day per swipe. `primaryVelocity` is negative when the finger
+            // moves left, which means "forward" in a left-to-right calendar.
+            onHorizontalDragEnd: (DragEndDetails details) {
+              final double velocity = details.primaryVelocity ?? 0;
+              if (velocity == 0) return;
+              ref
+                  .read(calendarFocusedDayProvider.notifier)
+                  .select(focused.add(Duration(days: velocity < 0 ? 1 : -1)));
+            },
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+              children: <Widget>[
+                ..._calendarHeader(context, data),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                    AppSpacing.lg,
+                    AppSpacing.xs,
+                  ),
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      AppDateFormats.weekdayDate(focused, locale),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                ),
+                if (entries.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Text(
+                      l10n.calendarNoEntriesForDay,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  )
+                else
+                  for (final CalendarEntry entry in entries)
+                    _EntryTile(entry: entry, locale: locale),
+              ],
             ),
           ),
-          onDaySelected: (DateTime selected, DateTime _) =>
-              ref.read(calendarFocusedDayProvider.notifier).select(selected),
-          onPageChanged: (DateTime page) =>
-              ref.read(calendarFocusedDayProvider.notifier).select(page),
         ),
-        const Divider(height: 1),
-        if (dayEntries.isEmpty)
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            child: Text(
-              context.l10n.calendarNoEntriesForDay,
-              textAlign: TextAlign.center,
-            ),
-          )
-        else
-          for (final CalendarEntry e in dayEntries)
-            _EntryTile(entry: e, locale: locale),
+      ],
+    );
+  }
+}
+
+/// The optional graphical week.
+class _WeekView extends ConsumerWidget {
+  const _WeekView({required this.data});
+
+  final CalendarData data;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final AppLocalizations l10n = context.l10n;
+    final String locale = Localizations.localeOf(context).languageCode;
+    final DateTime focused = ref.watch(calendarFocusedDayProvider);
+    final bool showWeekend = ref.watch(calendarShowWeekendProvider);
+
+    return Column(
+      children: <Widget>[
+        ..._calendarHeader(context, data),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.xs,
+            AppSpacing.lg,
+            AppSpacing.xs,
+          ),
+          // A Wrap, not a Row: at a large text size the month and the switch do
+          // not share a line on a narrow phone, and the switch dropping onto
+          // its own line is better than either of them being cut off.
+          child: Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[
+              Text(
+                AppDateFormats.monthAndYear(focused, locale),
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              // A teaching week is Monday to Friday; the weekend is a local
+              // choice. The chip carries a check mark and its label, so the
+              // state is never the fill colour alone.
+              FilterChip(
+                avatar: const Icon(
+                  Icons.weekend_outlined,
+                  size: AppSizes.iconSmall,
+                ),
+                label: Text(l10n.calendarWeekendLabel),
+                selected: showWeekend,
+                onSelected: (_) =>
+                    ref.read(calendarShowWeekendProvider.notifier).toggle(),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: WeekGridView(
+            weekStart: TimetableWeek.startOf(focused),
+            entries: data.entries,
+            today: TimetableWeek.dayOf(DateTime.now()),
+            selected: focused,
+            dayCount: ref.watch(calendarWeekDayCountProvider),
+            onSelectDay: (DateTime day) {
+              ref.read(calendarFocusedDayProvider.notifier).select(day);
+              // Picking a day in the week grid is how you get to that day.
+              ref
+                  .read(calendarViewModeProvider.notifier)
+                  .set(CalendarViewMode.day);
+            },
+          ),
+        ),
       ],
     );
   }

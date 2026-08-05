@@ -138,6 +138,7 @@ export class NewsService {
     data: NewsListItemDto[];
     pagination: PaginationResult;
     translationFallback: boolean;
+    droppedBlockTypes: string[];
   }> {
     // "?channels=" means the user deliberately deselected everything. Answer
     // with an empty list and do not bother the CMS at all.
@@ -146,6 +147,7 @@ export class NewsService {
         data: [],
         pagination: { page: query.page, pageSize: query.pageSize, total: 0, totalPages: 0 },
         translationFallback: false,
+        droppedBlockTypes: [],
       };
     }
 
@@ -197,6 +199,10 @@ export class NewsService {
     }
 
     let fallbackUsed = false;
+    // Collected across the whole page: a block type the CMS added is a fact
+    // about the response, not about one article, and reporting it once keeps
+    // the meta readable.
+    const dropped = new Set<string>();
     const data = unique.map((raw) => {
       const slug = asString(raw['slug']);
       const localised = translated.get(slug);
@@ -204,9 +210,13 @@ export class NewsService {
         fallbackUsed = true;
       }
       // Relations and media are not localised — always take them from canonical.
-      return mapNewsListItem(
+      const mapped = mapNewsListItem(
         localised ? { ...raw, ...localised, ...NewsService.sharedFields(raw) } : raw,
       );
+      for (const type of mapped.droppedBlockTypes) {
+        dropped.add(type);
+      }
+      return mapped.item;
     });
 
     // Deterministic order, independent of what the CMS returned.
@@ -230,6 +240,8 @@ export class NewsService {
         totalPages: upstream?.pageCount ?? Math.ceil(total / Math.max(pageSize, 1)),
       },
       translationFallback: fallbackUsed,
+      // Sorted so the response is byte-stable for the same input.
+      droppedBlockTypes: [...dropped].sort(),
     };
   }
 

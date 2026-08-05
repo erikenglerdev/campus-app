@@ -82,6 +82,57 @@ export class ContactAreaDetailDto {
   rooms!: RoomReferenceDto[];
 }
 
+/**
+ * One person inside the search index.
+ *
+ * Exactly the visible fields a reader could search for — no Strapi id, no
+ * profile image, no sort order. A search index is a place where "everything we
+ * happen to have" is the wrong default.
+ */
+export class ContactSearchPersonDto {
+  @ApiProperty() name!: string;
+  @ApiProperty({ type: String, nullable: true }) role!: string | null;
+  @ApiProperty({ type: String, nullable: true }) description!: string | null;
+  @ApiProperty({ type: String, nullable: true }) email!: string | null;
+  @ApiProperty({ type: String, nullable: true }) phone!: string | null;
+  @ApiProperty({ type: String, nullable: true }) website!: string | null;
+
+  @ApiProperty({ type: [RoomReferenceDto] })
+  rooms!: RoomReferenceDto[];
+}
+
+/** One area inside the search index, with its active persons. */
+export class ContactSearchAreaDto {
+  @ApiProperty({ example: 'studierendenrat' }) slug!: string;
+  @ApiProperty() name!: string;
+  @ApiProperty() shortDescription!: string;
+  @ApiProperty({ example: 'students-council' }) iconKey!: string;
+
+  @ApiProperty({
+    description:
+      'The sanitised long description as PLAIN TEXT. A search matches words, not formatting; links contribute their label, images nothing.',
+  })
+  descriptionText!: string;
+
+  @ApiProperty({ type: String, nullable: true }) generalEmail!: string | null;
+  @ApiProperty({ type: String, nullable: true }) phone!: string | null;
+  @ApiProperty({ type: String, nullable: true }) website!: string | null;
+  @ApiProperty({ type: String, nullable: true }) appointmentUrl!: string | null;
+  @ApiProperty({ type: String, nullable: true }) address!: string | null;
+  @ApiProperty({ type: String, nullable: true }) openingHours!: string | null;
+
+  @ApiProperty({ type: [RoomReferenceDto] })
+  rooms!: RoomReferenceDto[];
+
+  @ApiProperty({ type: [ContactSearchPersonDto], description: 'Active persons only.' })
+  persons!: ContactSearchPersonDto[];
+}
+
+export class ContactSearchIndexResponseDto {
+  @ApiProperty({ type: [ContactSearchAreaDto] }) data!: ContactSearchAreaDto[];
+  @ApiProperty({ type: ResponseMetaDto }) meta!: ResponseMetaDto;
+}
+
 export class ContactAreasResponseDto {
   @ApiProperty({ type: [ContactAreaListItemDto] }) data!: ContactAreaListItemDto[];
   @ApiProperty({ type: ResponseMetaDto }) meta!: ResponseMetaDto;

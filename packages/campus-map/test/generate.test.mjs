@@ -16,10 +16,14 @@ function outputs() {
 
 const MOBILE_CATALOG = 'apps/mobile/assets/maps/map_catalog.json';
 const MOBILE_SVG = 'apps/mobile/assets/maps/demo-north/level2.svg';
+const MOBILE_CAMPUS_SVG = 'apps/mobile/assets/maps/campus/koethen-overview.svg';
 
 test('emits exactly the expected generated files', () => {
   const { files } = outputs();
-  assert.deepEqual([...files.keys()].sort(), [MOBILE_CATALOG, MOBILE_SVG].sort());
+  assert.deepEqual(
+    [...files.keys()].sort(),
+    [MOBILE_CATALOG, MOBILE_SVG, MOBILE_CAMPUS_SVG].sort(),
+  );
 });
 
 test('generation is deterministic', () => {
@@ -37,8 +41,8 @@ test('the mobile catalogue carries the mapping Flutter needs', () => {
   assert.equal(mobile.mapVersion, catalog.mapVersion);
   assert.equal(mobile.schemaVersion, catalog.schemaVersion);
   assert.equal(mobile.rooms.length, 30);
-  assert.equal(mobile.floors.length, 1);
-  assert.equal(mobile.buildings.length, 1);
+  assert.equal(mobile.floors.length, 2);
+  assert.equal(mobile.buildings.length, 2);
 
   const room = mobile.rooms.find((r) => r.roomNumber === 'B.201');
   assert.ok(room, 'B.201 must be present');
@@ -48,17 +52,105 @@ test('the mobile catalogue carries the mapping Flutter needs', () => {
   assert.ok(Number.isFinite(room.focus.x) && Number.isFinite(room.focus.y));
   assert.ok(room.bounds.width > 0 && room.bounds.height > 0);
 
-  assert.equal(mobile.floors[0].svgAsset, 'assets/maps/demo-north/level2.svg');
-  assert.ok(mobile.floors[0].viewBox.width > 0);
+  const demoFloor = mobile.floors.find((f) => f.floorKey === 'demo-north-level2');
+  assert.equal(demoFloor.svgAsset, 'assets/maps/demo-north/level2.svg');
+  assert.ok(demoFloor.viewBox.width > 0);
 });
 
-test('the mobile catalogue carries no localised prose', () => {
+test('the mobile catalogue carries building and floor names, but no room prose', () => {
   const { files } = outputs();
-  const serialised = files.get(MOBILE_CATALOG);
-  // Names are served by the Campus API per locale; bundling German strings
-  // here would bypass the DE/EN contract.
-  for (const forbidden of ['nameDe', 'nameEn', 'Obergeschoss', 'Demogebäude']) {
-    assert.ok(!serialised.includes(forbidden), `generated catalogue must not contain ${forbidden}`);
+  const mobile = JSON.parse(files.get(MOBILE_CATALOG));
+
+  // Building and floor names are bundled ON PURPOSE. They name the map's own
+  // navigation, and a building without rooms — the campus overview — has no
+  // room DTO through which the Campus API could ever deliver them. Bundling
+  // both languages keeps the picker translated without a network round-trip.
+  for (const building of mobile.buildings) {
+    assert.ok(building.nameDe.length > 0, `${building.buildingKey} is missing nameDe`);
+    assert.ok(building.nameEn.length > 0, `${building.buildingKey} is missing nameEn`);
+  }
+  for (const floor of mobile.floors) {
+    assert.ok(floor.nameDe.length > 0, `${floor.floorKey} is missing nameDe`);
+    assert.ok(floor.nameEn.length > 0, `${floor.floorKey} is missing nameEn`);
+  }
+
+  const overview = mobile.buildings.find((b) => b.buildingKey === 'koethen-campus-overview');
+  assert.equal(overview.nameDe, 'Campus Köthen – Übersicht');
+  assert.equal(overview.nameEn, 'Campus Köthen – Overview');
+
+  // The app shows a different notice per kind of drawing, so the claim travels
+  // with the data and a new building cannot inherit the wrong one.
+  assert.equal(overview.planKind, 'schematic');
+  assert.equal(mobile.buildings.find((b) => b.buildingKey === 'demo-north').planKind, 'fictional');
+  const overviewFloor = mobile.floors.find((f) => f.floorKey === 'koethen-campus-overview-level');
+  assert.equal(overviewFloor.nameDe, 'Campusübersicht');
+  assert.equal(overviewFloor.nameEn, 'Campus overview');
+
+  // Room-level prose stays with the Campus API, which serves it per locale and
+  // lets the editorial team change it without an app release.
+  for (const room of mobile.rooms) {
+    for (const forbidden of ['displayName', 'description', 'nameDe', 'nameEn']) {
+      assert.ok(!(forbidden in room), `room ${room.roomKey} must not carry ${forbidden}`);
+    }
+  }
+});
+
+test('a floor without rooms is generated and carries no rooms', () => {
+  const { files } = outputs();
+  const mobile = JSON.parse(files.get(MOBILE_CATALOG));
+
+  const overviewFloor = mobile.floors.find((f) => f.floorKey === 'koethen-campus-overview-level');
+  assert.ok(overviewFloor, 'the campus overview floor must be generated');
+  assert.equal(overviewFloor.svgAsset, 'assets/maps/campus/koethen-overview.svg');
+  assert.equal(overviewFloor.viewBox.width, 1748);
+  assert.equal(overviewFloor.viewBox.height, 900);
+  assert.equal(
+    mobile.rooms.filter((r) => r.floorKey === 'koethen-campus-overview-level').length,
+    0,
+  );
+  // No invented geometry sneaks in through the second building either.
+  assert.equal(mobile.rooms.filter((r) => r.buildingKey === 'koethen-campus-overview').length, 0);
+});
+
+test('the campus overview keeps its building groups and drops German labels', () => {
+  const { files } = outputs();
+  const svg = files.get(MOBILE_CAMPUS_SVG);
+  const root = parseSvgDocument(svg);
+
+  const keys = [];
+  let uses = 0;
+  let defs = 0;
+  for (const element of walkElements(root)) {
+    if (element.attrs?.['data-building-key']) keys.push(element.attrs['data-building-key']);
+    if (element.name === 'use') uses += 1;
+    if (element.name === 'defs') defs += 1;
+  }
+  assert.equal(keys.length, 21, 'all 21 building groups must survive generation');
+  assert.equal(new Set(keys).size, 21, 'building keys must stay unique');
+
+  // Local fragment references are kept because flutter_svg renders them; a
+  // pixel probe in the Flutter suite is what actually proves that.
+  assert.equal(defs, 1);
+  assert.ok(uses > 0, '<use> references must survive');
+
+  // Language-neutral building codes stay; German category words do not. The
+  // check walks TEXT NODES rather than the raw string: `data-building-number`
+  // still carries "Mensa" as metadata, and metadata renders nothing.
+  const rendered = [];
+  for (const element of walkElements(root)) {
+    assert.ok(!['title', 'desc'].includes(element.name), `<${element.name}> must be stripped`);
+    if (element.name !== 'text' && element.name !== 'tspan') continue;
+    const value = (element.children ?? [])
+      .filter((child) => child.type === 'text')
+      .map((child) => child.value.trim())
+      .join('')
+      .trim();
+    if (value.length > 0) rendered.push(value);
+  }
+  assert.ok(rendered.includes('TZK'), 'neutral building codes must survive');
+  assert.ok(rendered.includes('Bernburger Straße'), 'street proper nouns must survive');
+  for (const german of ['Mensa', 'KITA', 'Richtung City']) {
+    assert.ok(!rendered.includes(german), `"${german}" must not be drawn in the asset`);
   }
 });
 

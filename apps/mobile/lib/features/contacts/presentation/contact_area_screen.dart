@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/links/safe_link_launcher.dart';
 import '../../../core/network/loaded.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_metrics.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/content_blocks_view.dart';
 import '../../../core/widgets/icon_keys.dart';
@@ -63,7 +64,7 @@ class _AreaDetail extends StatelessWidget {
     final ContactArea area = loaded.value;
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: EdgeInsets.all(context.metrics.screenPadding),
       children: <Widget>[
         if (loaded.fromCache) ...<Widget>[
           OfflineNotice(cachedAt: loaded.cachedAt),

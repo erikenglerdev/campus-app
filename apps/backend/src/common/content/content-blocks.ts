@@ -243,3 +243,44 @@ export function sanitizeBlocks(input: unknown): SanitizedContent {
 
   return { blocks, droppedBlockTypes: [...dropped] };
 }
+
+/**
+ * Flattens sanitised blocks into plain, searchable text.
+ *
+ * Used by the contact search index, where the point is to find a word, not to
+ * render it: formatting carries no meaning for a search, a link contributes its
+ * label rather than its URL, and an image contributes nothing at all. Blocks
+ * are separated by a newline so two paragraphs never run into one word.
+ */
+export function blocksToPlainText(blocks: ContentBlock[]): string {
+  const lines: string[] = [];
+
+  const inline = (nodes: InlineNode[]): string =>
+    nodes
+      .map((node) => (node.type === 'link' ? inline(node.children) : node.text))
+      .join('')
+      .trim();
+
+  for (const block of blocks) {
+    switch (block.type) {
+      case 'paragraph':
+      case 'heading':
+      case 'quote': {
+        const text = inline(block.children);
+        if (text) lines.push(text);
+        break;
+      }
+      case 'list':
+        for (const item of block.children) {
+          const text = inline(item.children);
+          if (text) lines.push(text);
+        }
+        break;
+      case 'image':
+        // No text, and the URL is not something anybody searches for.
+        break;
+    }
+  }
+
+  return lines.join('\n');
+}

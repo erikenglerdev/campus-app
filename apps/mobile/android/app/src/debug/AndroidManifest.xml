@@ -4,4 +4,10 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Debug builds talk to a Campus API running on the developer machine over
+         plain HTTP (http://10.0.2.2:3000 from the emulator). Android blocks
+         cleartext by default from API 28 on. This override lives in the debug
+         manifest only, so release builds keep the platform default and can
+         never fall back to an unencrypted connection. -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>

@@ -2,6 +2,8 @@
   "@@locale": "en",
   "appTitle": "Campus Köthen",
   "navNews": "News",
+  "navToday": "Today",
+  "requestsTitle": "Applications & feedback",
   "navTimetable": "Timetable",
   "navCanteen": "Canteen",
   "navContacts": "Contacts",
@@ -34,7 +36,6 @@
     }
   },
   "offlineCachedUnknownTime": "Last loaded: unknown",
-  "newsTitle": "News",
   "newsEmptyTitle": "No articles",
   "newsEmptyMessage": "There are currently no articles in the selected channels.",
   "newsNoChannelsSelectedTitle": "No channels selected",
@@ -42,7 +43,6 @@
   "newsNoChannelsAvailableTitle": "No channels available",
   "newsNoChannelsAvailableMessage": "There are currently no news channels.",
   "newsChannelPickerTitle": "Channels",
-  "newsChannelPickerTooltip": "Select channels",
   "newsChannelSelected": "Channel {name} subscribed",
   "@newsChannelSelected": {
     "placeholders": {
@@ -60,22 +60,6 @@
     }
   },
   "newsPinnedLabel": "Pinned",
-  "newsPublishedAt": "Published on {date}",
-  "@newsPublishedAt": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "newsAuthorsLabel": "By {authors}",
-  "@newsAuthorsLabel": {
-    "placeholders": {
-      "authors": {
-        "type": "String"
-      }
-    }
-  },
   "newsSourceLabel": "Source: {source}",
   "@newsSourceLabel": {
     "placeholders": {
@@ -85,17 +69,6 @@
     }
   },
   "newsOpenSource": "Open source",
-  "newsArticleSemanticLabel": "Article {title}, published on {date}",
-  "@newsArticleSemanticLabel": {
-    "placeholders": {
-      "title": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
   "newsChannelCountLabel": "{count, plural, =0{No channels selected} =1{1 channel selected} other{{count} channels selected}}",
   "@newsChannelCountLabel": {
     "placeholders": {
@@ -105,9 +78,7 @@
     }
   },
   "newsTranslationFallbackHint": "No English version of this content is available yet. The original German text is shown.",
-  "canteenTitle": "Canteen",
   "canteenPickerTitle": "Choose canteen",
-  "canteenPickerTooltip": "Switch canteen",
   "canteenNoCanteensTitle": "No canteen available",
   "canteenNoCanteensMessage": "No canteens are configured at the moment.",
   "canteenNoMealsTitle": "Nothing on offer",
@@ -126,21 +97,8 @@
   "canteenSprintSemanticLabel": "Sprint offer",
   "canteenExtrasLabel": "Sides",
   "canteenMarkersLabel": "Markers",
-  "canteenIngredientsLabel": "Ingredients",
-  "canteenPricesLabel": "Prices",
   "canteenPriceSemanticLabel": "{group}: {price}",
   "@canteenPriceSemanticLabel": {
-    "placeholders": {
-      "group": {
-        "type": "String"
-      },
-      "price": {
-        "type": "String"
-      }
-    }
-  },
-  "canteenPriceStudentSemanticLabel": "Student price, {group}: {price}",
-  "@canteenPriceStudentSemanticLabel": {
     "placeholders": {
       "group": {
         "type": "String"
@@ -278,6 +236,21 @@
   },
   "timetableSourceLanguageHint": "Subject, room and person names come unchanged from the source and are not translated.",
   "contactsTitle": "Contacts",
+  "contactsSearchTooltip": "Search contacts",
+  "contactsSearchLabel": "Search contacts",
+  "contactsSearchHint": "Name, area, room or phone number",
+  "contactsSearchClear": "Clear search",
+  "contactsSearchEmptyTitle": "No matches",
+  "contactsSearchEmptyMessage": "No area and no person match your search. Check the spelling or search for the room number.",
+  "contactsSearchUnavailable": "Contact search is currently unavailable.",
+  "contactsSearchInArea": "in {area}",
+  "@contactsSearchInArea": {
+    "placeholders": { "area": { "type": "String" } }
+  },
+  "contactsSearchResultCount": "{count, plural, =0{No matches} =1{1 match} other{{count} matches}}",
+  "@contactsSearchResultCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "contactsEmptyTitle": "No contact areas",
   "contactsEmptyMessage": "No points of contact are listed at the moment.",
   "contactsDemoBadge": "Demo content",
@@ -558,12 +531,21 @@
   "moodleErrorFileTooLarge": "The file is too large to preview. You can share or save it instead.",
   "moodleErrorDownloadFailed": "The file could not be downloaded.",
   "moodleErrorGeneric": "Something went wrong. Please try again later.",
-  "calendarTitle": "Calendar",
   "calendarViewMonth": "Calendar",
   "calendarViewList": "List",
   "calendarViewToggleSemantic": "Switch view",
   "calendarSourceTimetable": "Timetable",
   "calendarSourceMoodle": "Moodle",
+  "calendarSourceEvents": "Events",
+  "calendarSourceVisible": "Visible",
+  "calendarSourceHidden": "Hidden",
+  "calendarSourceNotConnected": "Not connected",
+  "calendarSourceShowInCalendar": "Show in calendar",
+  "calendarTimetableNoGroup": "No course selected yet",
+  "calendarTimetableGroupLabel": "Course",
+  "calendarConnectMoodle": "Connect Moodle",
+  "calendarOpenMoodle": "Open Moodle",
+  "calendarWeekendLabel": "Weekend",
   "calendarSourcesLabel": "Sources",
   "calendarNoEntries": "No entries.",
   "calendarNoEntriesForDay": "No entries on this day.",
@@ -573,7 +555,6 @@
   "calendarConnectMoodleHint": "Connect Moodle under \"More\" to see your deadlines here.",
   "calendarSelectGroupHint": "Pick a group in the timetable to see events.",
   "calendarManageTitle": "Manage calendars",
-  "calendarManageTooltip": "Manage calendars",
   "calendarSectionPublic": "Public calendars",
   "calendarSourcePublic": "Public calendar",
   "calendarNoPublicCalendars": "No public calendars are available right now.",
@@ -601,6 +582,7 @@
     "description": "Eintrag „Lageplan\" im Mehr-Bereich."
   },
   "moreCampusMapSubtitle": "Fictional demo floor plan with room search",
+  "moreContactsSubtitle": "Points of contact and advisory services",
   "@moreCampusMapSubtitle": {
     "description": "Untertitel des Lageplan-Eintrags im Mehr-Bereich."
   },
@@ -631,15 +613,6 @@
   "campusMapNoResultsHint": "Check the spelling. Room numbers work with and without a dot.",
   "@campusMapNoResultsHint": {
     "description": "Hilfetext im Leerzustand der Suche."
-  },
-  "campusMapRoomCount": "{count, plural, =0{No rooms} =1{1 room} other{{count} rooms}}",
-  "@campusMapRoomCount": {
-    "description": "Anzahl der gefundenen Räume.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
   },
   "campusMapBuildingLabel": "Building",
   "@campusMapBuildingLabel": {
@@ -762,8 +735,375 @@
   "@campusMapDemoBadge": {
     "description": "Immer sichtbarer Kurzhinweis auf der Karte; der vollständige Text erscheint beim Antippen."
   },
-  "campusMapShowAllRooms": "Show all",
-  "@campusMapShowAllRooms": {
-    "description": "Aktion in der unteren Leiste, die die vollständige Raumliste öffnet."
+  "campusMapSchematicBadge": "Schematic overview",
+  "campusMapSchematicNotice": "Simplified campus overview, not to scale. It is not a fire, escape or official site plan. Independent, unofficial project.",
+  "campusMapBuildingSelectorSemantic": "Select building, currently {building}",
+  "@campusMapBuildingSelectorSemantic": {
+    "placeholders": {
+      "building": {
+        "type": "String",
+        "example": "Name of the building currently shown"
+      }
+    }
+  },
+  "campusMapFloorSelectorSemantic": "Select floor, currently {floor}",
+  "@campusMapFloorSelectorSemantic": {
+    "placeholders": {
+      "floor": {
+        "type": "String",
+        "example": "Name of the floor currently shown"
+      }
+    }
+  },
+  "campusMapSingleFloorSemantic": "Only level: {floor}",
+  "@campusMapSingleFloorSemantic": {
+    "placeholders": {
+      "floor": {
+        "type": "String",
+        "example": "Name of the only available level"
+      }
+    }
+  },
+  "todayGreetingMorning": "Good morning",
+  "todayGreetingDay": "Hello",
+  "todayGreetingEvening": "Good evening",
+  "todayTomorrowHint": "A look at tomorrow",
+  "todayNowLabel": "Right now",
+  "todayNextLabel": "Up next",
+  "todayNothingToday": "Nothing is scheduled for today.",
+  "todayAgendaTitle": "Your day",
+  "todayCanteenTitle": "Canteen today",
+  "todayTasksTitle": "Tasks",
+  "todayTasksOpen": "{count, plural, =0{Nothing open} =1{1 open task} other{{count} open tasks}}",
+  "@todayTasksOpen": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayQuickActionsTitle": "Quick actions",
+  "todayFindRoom": "Find a room",
+  "todayFindContact": "Find a contact",
+  "todayCardFailed": "This section could not be loaded.",
+  "todayRefresh": "Refresh",
+  "todayEmptyDashboard": "All cards are hidden. You can switch them back on in the settings.",
+  "todayNoMoreToday": "Nothing more is scheduled for today.",
+  "todayAllDayLabel": "All day",
+  "todaySourceTimetable": "Timetable",
+  "todaySourceMoodle": "Moodle",
+  "todaySourcePublic": "Calendar",
+  "todayMoreEntries": "{count, plural, =1{1 more entry} other{{count} more entries}}",
+  "@todayMoreEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarViewDay": "Day",
+  "calendarPreviousDay": "Previous day",
+  "calendarNextDay": "Next day",
+  "calendarWeekStripSemantic": "Week, {day} selected",
+  "@calendarWeekStripSemantic": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarDayHasEntries": "{count, plural, =1{1 entry} other{{count} entries}}",
+  "@calendarDayHasEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsSectionPersonalisation": "Personalisation",
+  "settingsAccentColor": "Accent colour",
+  "settingsAccentCampusViolet": "Campus violet",
+  "settingsAccentOceanBlue": "Ocean blue",
+  "settingsAccentDeepTeal": "Deep teal",
+  "settingsAccentFreshGreen": "Fresh green",
+  "settingsAccentBrightMagenta": "Bright magenta",
+  "settingsAccentWarmAmber": "Warm amber",
+  "settingsReducedMotion": "Reduce motion",
+  "settingsReducedMotionSubtitle": "Turns animations off. The system setting is honoured regardless.",
+  "settingsNavigation": "Navigation bar",
+  "settingsNavigationSubtitle": "Choose the four modules of the bar",
+  "settingsNavigationHint": "More is fixed. Choose exactly four modules before it and drag to reorder.",
+  "settingsDashboardPending": "Coming in a later version",
+  "settingsDefaultBuilding": "Default building",
+  "settingsDefaultBuildingNone": "Not set",
+  "settingsSectionData": "App data",
+  "settingsReset": "Reset local app data",
+  "settingsResetSubtitle": "Resets appearance and preferences. Mail, grades and Moodle accounts are left untouched.",
+  "settingsResetConfirmTitle": "Reset?",
+  "settingsResetConfirmMessage": "Language, theme, accent colour, density, navigation bar, dashboard cards and your chosen canteen, timetable group and default building are reset. Your accounts and local tasks are kept.",
+  "settingsResetConfirmAction": "Reset",
+  "settingsResetDone": "Reset done.",
+  "settingsCardMoveUp": "Move up",
+  "settingsCardMoveDown": "Move down",
+  "settingsSelectExactlyFour": "Choose exactly four modules",
+  "settingsNavigationActive": "On the bar",
+  "settingsNavigationAvailable": "Available",
+  "settingsNavigationAdd": "Add to the bar",
+  "settingsNavigationRemove": "Remove from the bar",
+  "settingsNavigationReorder": "Drag to reorder",
+  "onboardingWelcomeTitle": "Welcome",
+  "onboardingWelcomeBody": "Set the app up for yourself in a few steps. You can skip any step and change everything later in the settings.",
+  "onboardingSkip": "Skip",
+  "onboardingSkipAll": "Skip all",
+  "onboardingBack": "Back",
+  "onboardingNext": "Next",
+  "onboardingFinish": "Get started",
+  "onboardingStepOf": "Step {current} of {total}",
+  "@onboardingStepOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingAppearanceTitle": "Appearance",
+  "onboardingAppearanceBody": "Choose how the app should look.",
+  "onboardingCampusTitle": "Your campus",
+  "onboardingCampusBody": "So the canteen, timetable and map show the right thing straight away.",
+  "onboardingContentTitle": "Content",
+  "onboardingContentBody": "Which announcements and public calendars interest you.",
+  "onboardingNavigationTitle": "Your bar",
+  "onboardingNavigationBody": "The three middle entries of the bottom bar.",
+  "onboardingSourceUnavailable": "Not available right now. You can do this later in the settings.",
+  "onboardingNoCanteens": "No canteens are listed yet.",
+  "onboardingRestart": "Restart onboarding",
+  "onboardingRestartSubtitle": "Takes you through the setup again.",
+  "onboardingOpenChannels": "Choose news channels",
+  "onboardingOpenCalendars": "Choose public calendars",
+  "onboardingOpenTimetableGroup": "Choose timetable group",
+  "canteenFilterTitle": "Filters",
+  "canteenFilterMustContain": "Must contain",
+  "canteenFilterMustNotContain": "Must not contain",
+  "canteenPriceGroupSection": "Price group",
+  "canteenPriceForGroupMissing": "No price is available for this price group.",
+  "canteenTraitVegetarian": "Vegetarian",
+  "canteenTraitVegan": "Vegan",
+  "canteenTraitMeatless": "Meat-free",
+  "canteenTraitSprint": "Sprint menu",
+  "canteenAllergenGluten": "Contains cereals with gluten",
+  "canteenAllergenGlutenWheat": "Wheat",
+  "canteenAllergenGlutenRye": "Rye",
+  "canteenAllergenGlutenOats": "Oats",
+  "canteenAllergenGlutenBarley": "Barley",
+  "canteenAllergenGlutenSpelt": "Spelt",
+  "canteenAllergenCrustaceans": "Contains crustaceans",
+  "canteenAllergenEgg": "Contains egg",
+  "canteenAllergenPeanuts": "Contains peanuts",
+  "canteenAllergenSoy": "Contains soy",
+  "canteenAllergenMilk": "Contains milk (lactose)",
+  "canteenAllergenNuts": "Contains tree nuts",
+  "canteenAllergenNutsHazelnut": "Hazelnut",
+  "canteenAllergenNutsAlmond": "Almonds",
+  "canteenAllergenNutsWalnut": "Walnut",
+  "canteenAllergenNutsCashew": "Cashews",
+  "canteenAllergenNutsPecan": "Pecans",
+  "canteenAllergenNutsPistachio": "Pistachios",
+  "canteenAllergenNutsMacadamia": "Macadamia",
+  "canteenAllergenCelery": "Contains celery",
+  "canteenAllergenMustard": "Contains mustard",
+  "canteenAllergenSesame": "Contains sesame",
+  "canteenAllergenSulphites": "Contains SO₂/sulphites",
+  "canteenAllergenLupin": "Contains lupin",
+  "canteenAllergenMolluscs": "Contains molluscs",
+  "canteenAllergenFish": "Contains fish",
+  "canteenFilterTooltip": "Filters and favourites",
+  "canteenNoMealsAfterFilterMessage": "Loosen the filter or try another day.",
+  "canteenFilterClear": "Clear filters",
+  "canteenFilterActive": "Filters active",
+  "canteenNoMealsAfterFilter": "No dish matches your filters.",
+  "canteenFavouriteAdd": "Add to favourites",
+  "canteenFavouriteRemove": "Remove from favourites",
+  "canteenUnhideMeal": "Show again",
+  "canteenFavouriteSemantic": "Favourite",
+  "requestsSubtitle": "File a finance application or give feedback",
+  "requestsFinanceTitle": "Finance application",
+  "requestsFinanceSubtitle": "Apply for funding for a project",
+  "requestsFeedbackTitle": "Feedback",
+  "requestsFeedbackSubtitle": "Feedback about the app or the campus",
+  "requestsDevNoticeTitle": "Submission not connected yet",
+  "requestsDevNoticeBody": "This development build cannot submit anything yet — no receiving endpoint has been agreed. You can create, edit and keep drafts; they stay on this device only.",
+  "requestsDrafts": "Drafts",
+  "requestsNoDrafts": "No drafts yet.",
+  "requestsNewDraft": "New draft",
+  "requestsDeleteDraft": "Delete draft",
+  "requestsDeleteConfirm": "Delete this draft?",
+  "requestsSave": "Save draft",
+  "requestsSaved": "Draft saved.",
+  "requestsDeleted": "Draft deleted.",
+  "requestsSubmit": "Submit",
+  "requestsSubmitUnavailable": "This build has no receiving service configured. Nothing was submitted.",
+  "requestsFieldApplicant": "Name of the applicant",
+  "requestsFieldLocation": "Location",
+  "requestsLocationsLoading": "Loading locations …",
+  "requestsLocationsUnavailable": "The locations could not be loaded.",
+  "requestsLocationsEmpty": "No location is available to choose right now.",
+  "requestsErrorLocationMissing": "Please choose a location.",
+  "requestsErrorApplicantMissing": "Please enter a name.",
+  "requestsFilesTitle": "Files",
+  "requestsFilesHint": "The finance request and the student card are mandatory. 25 MB per file at most.",
+  "requestsSlotFinanceRequest": "Finance request",
+  "requestsSlotStudentCard": "Student card",
+  "requestsSlotAnnexA": "Annex A",
+  "requestsSlotAnnexB": "Annex B",
+  "requestsSlotRequired": "Required",
+  "requestsSlotOptional": "Optional",
+  "requestsSlotFormats": "Allowed: {formats}",
+  "requestsSlotChoose": "Choose file",
+  "requestsSlotReplace": "Replace",
+  "requestsSlotWrongType": "This file type does not belong in this field.",
+  "requestsSlotTooLarge": "The file is larger than 25 MB.",
+  "requestsStudentCardPrivacy": "The card is processed internally only and never appears on the public status page.",
+  "requestsSubmitting": "Submitting …",
+  "requestsSubmitIncomplete": "The application is not complete yet.",
+  "requestsSubmitConflict": "This draft was already submitted with different data. Please start a new draft for a new submission.",
+  "requestsSubmitTooLarge": "The files are too large. 25 MB per file at most.",
+  "requestsSubmitRateLimited": "Too many submissions in a short time. Please try again later.",
+  "requestsSubmitUnreachable": "The submission could not be delivered. Your draft is kept — trying again will not file a second application.",
+  "requestsSubmitFailed": "The submission failed.",
+  "requestsResultTitle": "Application submitted",
+  "requestsResultReplayed": "This application was already on file. Nothing was submitted twice.",
+  "requestsResultNumber": "Application number {number}",
+  "requestsResultNoNumber": "This committee does not assign application numbers.",
+  "requestsResultSecretHint": "The status link is the only way into this application. Keep it safe and do not share it.",
+  "requestsResultOpenStatus": "Open status",
+  "requestsResultOpenReceipt": "Receipt (PDF)",
+  "requestsResultDone": "Done",
+  "navMailShort": "Email",
+  "moduleCampusMapTitle": "Rooms & campus map",
+  "moduleContactsTitle": "Points of contact",
+  "moduleCategoryStudy": "Studies",
+  "moduleCategoryCampus": "Campus",
+  "moduleCategoryApp": "App",
+  "newsFeedTitle": "Campus News",
+  "newsShowMore": "Show more",
+  "newsShowLess": "Show less",
+  "newsFilterTooltip": "Filter",
+  "newsFilterTitle": "Filter",
+  "newsLoadMoreFailed": "Could not load more articles.",
+  "newsLoadMoreRetry": "Try again",
+  "newsNoContent": "This article has no text.",
+  "newsAgeJustNow": "just now",
+  "newsAgeMinutes": "{count} min ago",
+  "newsAgeHours": "{count} h ago",
+  "newsAgeDays": "{count, plural, =1{1 day ago} other{{count} days ago}}",
+  "newsAgeWeeks": "{count, plural, =1{1 week ago} other{{count} weeks ago}}",
+  "moodleSearchTooltip": "Search courses",
+  "moodleSearchLabel": "Search course",
+  "moodleSearchHint": "Name, short name or description",
+  "moodleSearchClear": "Clear search",
+  "moodleSearchEmptyTitle": "No matching course",
+  "moodleSearchEmptyMessage": "None of the loaded courses matches your search. Check the spelling or refresh the course list.",
+  "gradesAverageLabel": "Average",
+  "commonCopy": "Copy",
+  "commonCopied": "Copied to the clipboard.",
+  "requestsFieldTitle": "Title",
+  "requestsFieldCategory": "Category",
+  "requestsFieldAmount": "Requested amount",
+  "requestsFieldPurpose": "Purpose",
+  "requestsFieldDescription": "Description",
+  "requestsFieldContactName": "Name (optional)",
+  "requestsFieldContactEmail": "E-mail (optional)",
+  "requestsAttachments": "Attachments",
+  "requestsAttachmentsHint": "Attachments can be prepared. Nothing is uploaded while no receiving endpoint is connected.",
+  "requestsErrorTitleMissing": "Please enter a title.",
+  "requestsErrorTitleTooLong": "The title is too long.",
+  "requestsErrorCategoryMissing": "Please choose a category.",
+  "requestsErrorAmountMissing": "Please enter an amount.",
+  "requestsErrorAmountInvalid": "Please enter an amount such as 120.50.",
+  "requestsErrorAmountZero": "The amount has to be greater than zero.",
+  "requestsErrorPurposeMissing": "Please state the purpose.",
+  "requestsErrorDescriptionMissing": "Please enter a description.",
+  "requestsErrorDescriptionTooLong": "The description is too long.",
+  "requestsErrorEmailInvalid": "That e-mail address does not look valid.",
+  "requestsCategoryGeneral": "General",
+  "requestsCategoryEvent": "Event",
+  "requestsCategoryMaterial": "Materials",
+  "requestsCategoryTravel": "Travel",
+  "requestsCategoryApp": "App",
+  "requestsCategoryCampus": "Campus",
+  "searchTitle": "Search",
+  "searchTooltip": "Search",
+  "searchHint": "Areas, rooms, news, contacts, dishes",
+  "searchClear": "Clear input",
+  "searchStartTyping": "Start typing to search.",
+  "searchScopeHint": "Only public content is searched. Mail, grades and Moodle are excluded and have their own search.",
+  "searchNoResults": "Nothing found",
+  "searchNoResultsHint": "Check the spelling. The search covers content already loaded.",
+  "searchOfflineHint": "Offline, the search covers the most recently loaded content.",
+  "searchCategorySection": "Areas",
+  "searchCategoryNews": "News",
+  "searchCategoryEvent": "Events",
+  "searchCategoryTimetable": "Timetable",
+  "searchCategoryRoom": "Rooms",
+  "searchCategoryContact": "Contacts",
+  "searchCategoryMeal": "Canteen",
+  "searchResultCount": "{count, plural, =1{1 result} other{{count} results}}",
+  "@searchResultCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "canteenNextOpenDay": "Next day with an offer",
+  "canteenShowingToday": "Today",
+  "canteenJumpToNextOpen": "Go to the next offer",
+  "todayMailStatusUnread": "{count, plural, =0{No unread messages} =1{1 unread message} other{{count} unread messages}}",
+  "@todayMailStatusUnread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayGradesChecked": "Last checked: {when}",
+  "@todayGradesChecked": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGradesNeverChecked": "Not fetched yet",
+  "todayGradesPrivacyHint": "Grades are not shown here.",
+  "todayTasksMoodleDue": "{count, plural, =1{1 submission in the next 7 days} other{{count} submissions in the next 7 days}}",
+  "@todayTasksMoodleDue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "requestsAddAttachment": "Add file",
+  "requestsRemoveAttachment": "Remove attachment",
+  "requestsNoAttachments": "No attachments.",
+  "calendarViewWeek": "Week",
+  "calendarWeekAllDay": "All day",
+  "calendarWeekSemantic": "{title}, {start} to {end}",
+  "@calendarWeekSemantic": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
   }
 }

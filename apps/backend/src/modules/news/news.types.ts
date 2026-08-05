@@ -91,17 +91,23 @@ export class NewsListItemDto {
     description: 'Validated https URL of the original source, or null.',
   })
   sourceUrl!: string | null;
-}
 
-export class NewsDetailDto extends NewsListItemDto {
   @ApiProperty({
     type: 'array',
     items: { type: 'object', additionalProperties: true },
     description:
-      'Sanitised content blocks. Only paragraph, heading, list, quote and image survive; anything else is removed server-side and reported in meta.droppedBlockTypes.',
+      'Sanitised content blocks, delivered with the LIST entry so a feed can render the article inline without a request per card. Only paragraph, heading, list, quote and image survive; anything else is removed server-side and reported in meta.droppedBlockTypes.',
   })
   content!: ContentBlock[];
 }
+
+/**
+ * Identical to the list entry.
+ *
+ * The detail endpoint stays for compatibility; it no longer carries anything
+ * the list does not.
+ */
+export class NewsDetailDto extends NewsListItemDto {}
 
 // --- Response envelopes ------------------------------------------------------
 

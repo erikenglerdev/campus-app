@@ -9,7 +9,23 @@ import 'package:meta/meta.dart';
 /// new source means adding a value here, a mapper to [CalendarEntry], and wiring
 /// one contribution in the aggregator. Nothing merges on any server — every
 /// source stays in its own feature and is combined only here, on-device.
-enum CalendarSource { timetable, moodle, publicCalendar }
+enum CalendarSource {
+  timetable('timetable'),
+  moodle('moodle'),
+  publicCalendar('public-calendar');
+
+  const CalendarSource(this.storageValue);
+
+  /// Stable identifier for local storage, never the enum index.
+  final String storageValue;
+
+  static CalendarSource? fromStorage(String? value) {
+    for (final CalendarSource source in CalendarSource.values) {
+      if (source.storageValue == value) return source;
+    }
+    return null;
+  }
+}
 
 /// One unified item on the calendar, independent of its source.
 @immutable

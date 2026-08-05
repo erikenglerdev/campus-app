@@ -52,4 +52,60 @@ abstract final class PreferenceKeys {
 
   /// Current schema version of the public-calendar selection store.
   static const int publicCalendarStoreCurrentVersion = 1;
+
+  // --- Personalisation (mobile-first redesign) -----------------------------
+
+  /// Storage value of the chosen [AccentPalette].
+  static const String accentPalette = 'settings.accentPalette.v1';
+
+  /// `1` when the user asked for reduced motion locally. The operating
+  /// system's own setting is honoured independently of this flag.
+  static const String reducedMotion = 'settings.reducedMotion.v1';
+
+  /// The four user-chosen modules of the bottom navigation bar, as module
+  /// storage values in bar order.
+  ///
+  /// `v2`: the bar used to be a fixed first tab, three configurable middles and
+  /// More. It is now four free slots and More, over a different catalogue, so a
+  /// `v1` list would repair into something the user never chose. A new key lets
+  /// the old value be ignored rather than misread.
+  static const String navigationTabs = 'settings.navigation.tabs.v2';
+
+  /// buildingKey of the building the campus map opens on.
+  static const String defaultBuilding = 'settings.defaultBuilding.v1';
+
+  /// `1` once the first-run onboarding has been completed or skipped.
+  static const String onboardingCompleted = 'settings.onboarding.completed.v1';
+
+  /// Semantic properties a dish must have, as `MealTrait` keys.
+  ///
+  /// A new key rather than the old `canteen.filter.required.v1`: that one held
+  /// the source's own marker codes. Those are a different vocabulary, and
+  /// adopting them unchecked would turn "avoid code 52" into "avoid something
+  /// else entirely" the day the source renumbers.
+  static const String canteenTraits = 'canteen.filter.traits.v1';
+
+  /// Allergens to avoid, as `MealAllergen` keys. New key for the same reason.
+  static const String canteenAllergens = 'canteen.filter.allergens.v1';
+
+  /// The one price group the cards show. Version 2: the value is no longer
+  /// optional, and an absent key now means "student" rather than "the API's
+  /// own emphasis".
+  static const String canteenPriceGroup = 'canteen.filter.priceGroup.v2';
+
+  /// Names of starred dishes. Names, not upstream ids — those change weekly.
+  static const String canteenFavourites = 'canteen.favourites.v1';
+
+  /// Calendar sources the user switched OFF, as source storage values.
+  ///
+  /// Stored as the disabled set rather than the enabled one on purpose: a
+  /// source added in a later version is then on by default instead of
+  /// invisible until the user finds the filter.
+  static const String calendarDisabledSources = 'calendar.sources.off.v1';
+
+  /// `1` while the week view also draws Saturday and Sunday.
+  ///
+  /// Default off: a teaching week is Monday to Friday, and two empty columns
+  /// cost a fifth of the width of a phone.
+  static const String calendarShowWeekend = 'calendar.weekend.v1';
 }

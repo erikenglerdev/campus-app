@@ -69,24 +69,6 @@ class NewsRepository {
       ),
     );
   }
-
-  Future<Loaded<NewsArticle>> fetchArticle({
-    required String locale,
-    required String slug,
-  }) async {
-    return _endpoint.load<NewsArticle>(
-      path: '/news/$slug',
-      cacheKey: CacheKeys.newsArticle(locale, slug),
-      locale: locale,
-      parse: (Object? data) {
-        final NewsArticle? article = NewsArticle.fromJson(data);
-        if (article == null) {
-          throw const FormatException('Malformed news article payload');
-        }
-        return article;
-      },
-    );
-  }
 }
 
 final Provider<NewsRepository> newsRepositoryProvider =

@@ -44,7 +44,7 @@ export class NewsController {
   @ApiOperation({
     summary: 'List published news articles.',
     description:
-      'An absent `channels` parameter means all active channels. A present but empty `channels=` means the user deselected everything and yields an empty list.',
+      'An absent `channels` parameter means all active channels. A present but empty `channels=` means the user deselected everything and yields an empty list. Each entry carries its sanitised `content`, so a feed can render articles inline without a request per card; unknown block types are removed server-side and reported once in `meta.droppedBlockTypes`.',
   })
   @ApiQuery({ name: 'channels', required: false, description: 'Comma-separated channel slugs.' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -71,6 +71,7 @@ export class NewsController {
         ...locale,
         translationFallback: result.translationFallback,
         pagination: result.pagination,
+        droppedBlockTypes: result.droppedBlockTypes,
       }),
     };
   }

@@ -3,9 +3,11 @@
 
 /// All route paths and names of the app in one place.
 abstract final class AppRoutes {
+  /// The news feed — the app's entry point and the first default tab.
+  ///
+  /// It has no detail route: the feed carries the full article and expands it
+  /// in place.
   static const String news = '/news';
-  static const String newsDetailName = 'news-detail';
-  static const String newsDetailPath = ':slug';
 
   /// The second top-level destination is the cross-source calendar. The
   /// timetable is no longer a tab of its own — it is the calendar's first source.
@@ -21,8 +23,8 @@ abstract final class AppRoutes {
   static const String contactAreaName = 'contact-area';
   static const String contactAreaPath = ':slug';
 
-  /// "Mehr" is the fifth top-level destination. Settings and the student email
-  /// client both live underneath it — neither is a tab of its own.
+  /// "Mehr" is the fixed fifth destination. Settings and the about page live
+  /// underneath it and can never be pinned to the bar.
   static const String more = '/more';
 
   // Student email client, nested under More.
@@ -58,10 +60,22 @@ abstract final class AppRoutes {
   static String campusMapForRoom(String roomKey) =>
       '$campusMap?$campusMapRoomParam=${Uri.encodeQueryComponent(roomKey)}';
 
+  // Applications and feedback, nested under More.
+  static const String requestsPath = 'requests';
+  static const String requests = '/more/requests';
+  static const String requestDraftName = 'request-draft';
+
+  /// Draft editor. The id is the local draft's identifier; `new` starts one.
+  static const String requestDraftPath = 'draft/:id';
+
+  /// First-run onboarding. A top-level route, outside the navigation shell.
+  static const String onboarding = '/onboarding';
+
   // Settings is a sub-page of More.
   static const String settings = '/more/settings';
   static const String about = '/more/settings/about';
   static const String imprint = '/more/settings/imprint';
   static const String privacy = '/more/settings/privacy';
   static const String channels = '/more/settings/channels';
+  static const String settingsNavigation = '/more/settings/navigation';
 }

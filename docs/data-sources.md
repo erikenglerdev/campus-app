@@ -23,15 +23,20 @@ abgeschaltet, bis die Nutzung organisatorisch entschieden ist. Details in §4 un
 
 ### 1.2 Geräteseitige Quellen (Pfad 2)
 
-Diese drei Dienste spricht die App **direkt** an — ausdrücklich beschlossene, eng begrenzte
+Diese vier Dienste spricht die App **direkt** an — ausdrücklich beschlossene, eng begrenzte
 Ausnahmen von G1, damit weder Campus API noch Strapi noch Worker Zugangsdaten oder persönliche
-Inhalte erhalten (siehe [`../CLAUDE.md`](../CLAUDE.md) §2, Grenzen G10–G12).
+Inhalte erhalten (siehe [`../CLAUDE.md`](../CLAUDE.md) §2).
 
-| Quelle                     | Art                            | Verbraucher | Status |
-| -------------------------- | ------------------------------ | ----------- | ------ |
-| `mail.hs-anhalt.de`        | IMAP/SMTP                      | Flutter     | aktiv  |
-| `service.ssc.hs-anhalt.de` | HIS-QIS, HTML (keine JSON-API) | Flutter     | aktiv  |
-| `moodle.hs-anhalt.de`      | Moodle-Webservice, nur lesend  | Flutter     | aktiv  |
+| Quelle                     | Art                                 | Verbraucher | Status |
+| -------------------------- | ----------------------------------- | ----------- | ------ |
+| `mail.hs-anhalt.de`        | IMAP/SMTP                           | Flutter     | aktiv  |
+| `service.ssc.hs-anhalt.de` | HIS-QIS, HTML (keine JSON-API)      | Flutter     | aktiv  |
+| `moodle.hs-anhalt.de`      | Moodle-Webservice, nur lesend       | Flutter     | aktiv  |
+| `REQUESTS_BASE_URL`        | Gremiensystem, Finanzanträge (POST) | Flutter     | aktiv  |
+
+Die ersten drei sind nutzerauthentifiziert. Der vierte ist es **nicht** — ausschlaggebend ist der
+Inhalt: Eine Einreichung trägt den Namen der antragstellenden Person und eine Kopie des
+Studierendenausweises. Genau solche Daten sollen kein Campus-Köthen-Backend erreichen.
 
 Details in §6. Für sie gilt umgekehrt: **kein** Backend darf sie jemals abrufen.
 
@@ -143,7 +148,41 @@ Diese Punkte sind der Grund für die strikte Schema-Validierung:
    niemals bestehende Daten.
 6. `extra_1` bis `extra_4` sind häufig leere Strings und werden vor dem Speichern gefiltert.
 
-### 3.5 Preisgruppen
+### 3.5 Semantische Zuordnung (Traits und Allergene)
+
+Die App filtert **nie** über die Codes der Quelle. Sie sind nirgends dokumentiert, mischen zwei
+Namensräume und können sich ändern. Stattdessen ordnet
+`apps/backend/src/modules/canteen/meal-semantics.ts` sie einmalig stabilen Schlüsseln zu, die die
+API in `traits` und `allergens` ausliefert (siehe [api.md](api.md)).
+
+Zwei Regeln gelten für jeden Eintrag dieser Tabelle:
+
+- **Nichts wird erfunden.** Ein Schlüssel entsteht nur dort, wo die Quelle die Eigenschaft
+  tatsächlich erklärt. Ein unbekannter Code bleibt ein normaler Marker ohne Schlüssel.
+- **Nichts wird über die deklarierte Hierarchie hinaus abgeleitet.** Die beiden Elternfacetten
+  (`gluten`, `nuts`) folgen aus ihren Untertypen, weil die Quelle sie selbst so modelliert. Ein
+  veganes Gericht wird **nicht** stillschweigend zu einem vegetarischen: die Küche markiert beides,
+  wenn sie beides meint.
+
+| Quelle                                             | Schlüssel                                                                                                               |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `50`, `51`, `52`                                   | `meatless`, `vegetarian`, `vegan`                                                                                       |
+| `is_sprint` des Planeintrags                       | `sprint` (**nicht** Marker `53`)                                                                                        |
+| `A!` / `A1`–`A5`                                   | `gluten` / `gluten_wheat`, `gluten_rye`, `gluten_oats`, `gluten_barley`, `gluten_spelt`                                 |
+| `G!` / `G1`–`G7`                                   | `nuts` / `nuts_hazelnut`, `nuts_almond`, `nuts_walnut`, `nuts_cashew`, `nuts_pecan`, `nuts_pistachio`, `nuts_macadamia` |
+| `B`, `C`, `D`, `E`, `F`                            | `crustaceans`, `egg`, `peanuts`, `soy`, `milk`                                                                          |
+| `H`, `I`, `J`, `K`, `L`, `M`, `N`                  | `celery`, `mustard`, `sesame`, `sulphites`, `lupin`, `molluscs`, `fish`                                                 |
+| `45`–`49`, `56` (Fleischarten), Zusatzstoffnummern | **kein** Schlüssel — bleiben reine Marker                                                                               |
+
+Der Code ist der primäre Schlüssel. Zusätzlich greift eine geprüfte **Label-Normalisierung**
+(Kleinschreibung, Umlaute ausgeschrieben, Diakritika entfernt, Satzzeichen zu Leerzeichen): Wird ein
+Code umnummeriert, heißt aber weiterhin „enthält Erdnüsse", bleibt die Zuordnung erhalten. Beide
+Wege sind in `meal-semantics.spec.ts` gegen das reale Wörterbuch der Quelle abgesichert.
+
+Bewusst **nicht** zugeordnet ist `48` „Fisch": das ist die Fleischart, nicht die Allergendeklaration
+`N` „enthält Fisch".
+
+### 3.6 Preisgruppen
 
 | Feld      | Slug       | Label DE    | Label EN  |
 | --------- | ---------- | ----------- | --------- |
@@ -155,7 +194,7 @@ Diese Punkte sind der Grund für die strikte Schema-Validierung:
 Feld → Bedeutung ist Backend-Wissen; die Labels sind API-eigene, zweisprachige Texte.
 Der Studierendenpreis wird in der App hervorgehoben.
 
-### 3.6 Abrufregeln
+### 3.7 Abrufregeln
 
 | Regel             | Wert                                                                                        |
 | ----------------- | ------------------------------------------------------------------------------------------- |
@@ -166,7 +205,7 @@ Der Studierendenpreis wird in der App hervorgehoben.
 | Manueller Sync    | administratives CLI-Kommando — **kein** öffentlicher Sync-Endpunkt                          |
 | Tests             | ausschließlich gegen anonymisierte Fixtures unter `apps/backend/test/fixtures/meine-mensa/` |
 
-### 3.7 Rechtliches
+### 3.8 Rechtliches
 
 - Daten werden inhaltlich unverändert übernommen und der Quelle zugeordnet.
 - **Keine Mensabilder.** `food.image_url` wird nicht persistiert und nicht ausgeliefert.
@@ -331,15 +370,20 @@ Vollständige Beschreibung inklusive Redaktionshandbuch: [public-calendars.md](p
 Diese Quellen erreicht **ausschließlich die App**. Ein Backend darf sie nie abrufen; es gibt für
 sie keine API-Route, keine Strapi-Collection, keinen Worker-Job und keine Datenbanktabelle.
 
-| Quelle                     | Zweck                                                  | Besonderheit                                                      | Doku                               |
-| -------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------- | ---------------------------------- |
-| `mail.hs-anhalt.de`        | Studentisches Postfach                                 | IMAPS 993, SMTP 587 mit **Pflicht**-STARTTLS, kein Klartext       | [student-mail.md](student-mail.md) |
-| `service.ssc.hs-anhalt.de` | HIS-QIS-Notenspiegel                                   | **keine** offizielle API — HTML-Parsing über Spaltenüberschriften | [grades.md](grades.md)             |
-| `moodle.hs-anhalt.de`      | Kurse, Materialien, Aufgaben, Ankündigungen, Deadlines | feste, rein **lesende** Whitelist von `wsfunction`s               | [moodle.md](moodle.md)             |
+| Quelle                     | Zweck                                                   | Besonderheit                                                                           | Doku                               |
+| -------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------- |
+| `mail.hs-anhalt.de`        | Studentisches Postfach                                  | IMAPS 993, SMTP 587 mit **Pflicht**-STARTTLS, kein Klartext                            | [student-mail.md](student-mail.md) |
+| `service.ssc.hs-anhalt.de` | HIS-QIS-Notenspiegel                                    | **keine** offizielle API — HTML-Parsing über Spaltenüberschriften                      | [grades.md](grades.md)             |
+| `moodle.hs-anhalt.de`      | Kurse, Materialien, Aufgaben, Ankündigungen, Deadlines  | feste, rein **lesende** Whitelist von `wsfunction`s                                    | [moodle.md](moodle.md)             |
+| `REQUESTS_BASE_URL`        | Finanzanträge an das Gremiensystem des Studierendenrats | Adresse **nie** als Quellcode-Konstante; `multipart/form-data` mit Idempotenzschlüssel | —                                  |
 
 Gemeinsame Regeln: feste Host-Allowlist vor jedem Request · Redirects auf fremde Hosts oder auf
 Klartext werden abgebrochen · Zertifikatsprüfung nie deaktiviert · Zugangsdaten und Token nur im
 Keychain/Keystore · Inhalte nur verschlüsselt lokal · nichts davon in Logs oder Fehlermeldungen.
+
+Für die **Antragstellung** gilt zusätzlich: Der zurückgegebene **Statuslink ist ein Geheimnis** —
+er ist der einzige Zugang zum Vorgang, wird nur lokal gespeichert und **niemals** geloggt, gemeldet
+oder an Dritte weitergegeben. Entwürfe, Anhänge und Ergebnis bleiben auf dem Gerät.
 
 **Bekannte Fragilität:** HIS-QIS bietet keine JSON-API. Ändert die Hochschule das Portal, greift
 `portalStructureChanged` — mit lokalisierter Meldung, **ohne** den Cache zu überschreiben und

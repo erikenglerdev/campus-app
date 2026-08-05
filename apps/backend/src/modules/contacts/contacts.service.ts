@@ -1,9 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { sanitizeBlocks } from '../../common/content/content-blocks';
+import { blocksToPlainText, sanitizeBlocks } from '../../common/content/content-blocks';
 import { ApiError } from '../../common/errors/api-error';
 import { LocaleResolution } from '../../common/locale/locale';
 import { StrapiClient, StrapiListResponse, StrapiRequestError } from '../strapi/strapi.client';
-import { ContactAreaDetailDto, ContactAreaListItemDto, ContactPersonDto } from './contacts.types';
+import {
+  ContactAreaDetailDto,
+  ContactAreaListItemDto,
+  ContactPersonDto,
+  ContactSearchAreaDto,
+  ContactSearchPersonDto,
+} from './contacts.types';
 import { ROOM_REFERENCE_FIELDS, mapRoomReferences } from '../rooms/rooms.service';
 import { Locale } from '../../common/locale/locale';
 import { asString } from '../../common/util/coerce';
@@ -114,6 +120,33 @@ function sharedFields(canonical: Raw): Raw {
   };
 }
 
+/**
+ * Only the fields a reader could actually search for.
+ *
+ * `profileImage` is deliberately absent: nobody searches for a picture, and an
+ * index is the wrong place to hand out more than the question needs.
+ */
+const SEARCH_POPULATE = {
+  persons: {
+    fields: ['name', 'role', 'description', 'email', 'phone', 'website', 'sortOrder', 'isActive'],
+    populate: { rooms: { fields: [...ROOM_REFERENCE_FIELDS] } },
+  },
+  rooms: { fields: [...ROOM_REFERENCE_FIELDS] },
+} as const;
+
+/** Drops the fields the search has no use for. */
+function toSearchPerson(person: ContactPersonDto): ContactSearchPersonDto {
+  return {
+    name: person.name,
+    role: person.role,
+    description: person.description,
+    email: person.email,
+    phone: person.phone,
+    website: person.website,
+    rooms: person.rooms,
+  };
+}
+
 @Injectable()
 export class ContactsService {
   constructor(private readonly strapi: StrapiClient) {}
@@ -178,6 +211,74 @@ export class ContactsService {
     });
 
     data.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+
+    return { data, translationFallback: fallbackUsed };
+  }
+
+  /**
+   * Everything the contact search can match, in **one** response.
+   *
+   * The list endpoint deliberately carries no detail, so a client searching
+   * over names, descriptions and rooms would otherwise have to fetch every area
+   * separately — an N+1 on every keystroke. This endpoint exists so the app can
+   * load the index once, cache it, and search locally.
+   *
+   * Two Strapi requests at most (canonical plus the requested locale), exactly
+   * like the detail endpoint.
+   */
+  async searchIndex(locale: LocaleResolution): Promise<{
+    data: ContactSearchAreaDto[];
+    translationFallback: boolean;
+  }> {
+    const query = {
+      filters: { isActive: { $eq: true } },
+      sort: ['sortOrder:asc', 'name:asc'],
+      pagination: { pageSize: 100 },
+      populate: SEARCH_POPULATE,
+    };
+
+    const canonical = await this.fetch({ ...query, locale: CANONICAL_LOCALE });
+
+    let translated = new Map<string, Raw>();
+    if (locale.resolvedLocale !== CANONICAL_LOCALE) {
+      translated = ContactsService.bySlug(
+        await this.fetch({ ...query, locale: locale.resolvedLocale }),
+      );
+    }
+
+    let fallbackUsed = false;
+    const data = canonical.map((raw) => {
+      const slug = asString(raw['slug']);
+      const localised = translated.get(slug);
+      if (locale.resolvedLocale !== CANONICAL_LOCALE && !localised) {
+        fallbackUsed = true;
+      }
+      const merged = localised ? { ...raw, ...localised, ...sharedFields(raw) } : raw;
+
+      const base = mapAreaBase(merged);
+      // Rooms are not localised in Strapi, so the canonical entry is the
+      // reliable source for them — same rule as the detail endpoint.
+      const areaRooms = mapRoomReferences(raw['rooms'], locale.resolvedLocale);
+      if (areaRooms.fallback) {
+        fallbackUsed = true;
+      }
+
+      return {
+        slug: base.slug,
+        name: base.name,
+        shortDescription: base.shortDescription,
+        iconKey: base.iconKey,
+        descriptionText: blocksToPlainText(sanitizeBlocks(merged['description']).blocks),
+        generalEmail: base.generalEmail,
+        phone: base.phone,
+        website: base.website,
+        appointmentUrl: base.appointmentUrl,
+        address: base.address,
+        openingHours: base.openingHours,
+        rooms: areaRooms.rooms,
+        persons: activePersons(localised ?? raw, locale.resolvedLocale).map(toSearchPerson),
+      };
+    });
 
     return { data, translationFallback: fallbackUsed };
   }

@@ -7,10 +7,17 @@
  * Two outputs per map:
  *
  *  1. `map_catalog.json` — the roomKey → geometry mapping. Flutter must NOT
- *     have to parse the canonical SVG at runtime to discover the structure,
- *     and this file deliberately carries no localised prose: display names are
- *     served per locale by the Campus API, so bundling German strings here
- *     would quietly bypass the DE/EN contract.
+ *     have to parse the canonical SVG at runtime to discover the structure.
+ *
+ *     ROOM prose stays out of this file: display names and descriptions are
+ *     served per locale by the Campus API, so bundling them would bypass the
+ *     DE/EN contract and freeze editorial text into a release.
+ *
+ *     BUILDING and FLOOR names are bundled in both languages, because they
+ *     name the map's own navigation rather than editorial content — and a
+ *     building without rooms, such as the campus overview, has no room DTO
+ *     through which the API could ever deliver them. Bundling both languages
+ *     keeps the picker translated and works offline.
  *
  *  2. A cleaned SVG carrying geometry and language-neutral room numbers only.
  *     The canonical drawing contains German headings, a German legend and
@@ -43,8 +50,17 @@ const DROPPED_GROUP_IDS = new Set(['header', 'legend']);
  * listed (`entrance-text`), so anything unrecognised is now dropped by default
  * and rendered from Flutter l10n instead.
  */
-const KEPT_TEXT_CLASSES = new Set(['room-number']);
+const KEPT_TEXT_CLASSES = new Set(['room-number', 'map-label']);
 const DROPPED_ELEMENTS = new Set(['title', 'desc']);
+
+/**
+ * `map-label` marks the cartographic labels of the campus overview that carry
+ * no language: building codes (`01`, `W VII`, `TZK`), street proper nouns and
+ * scale-bar distances. The German category words on that drawing — `Mensa`,
+ * `KITA`, `Richtung City` — deliberately do NOT carry the class and therefore
+ * never reach the bundle, exactly as `Hörsaal` and `Aufzug` do not reach it
+ * from the floor plan.
+ */
 
 /**
  * Elements and attributes the Flutter renderer cannot handle.
@@ -239,6 +255,9 @@ export function buildMobileCatalog(catalog) {
     buildings: catalog.buildings
       .map((building) => ({
         buildingKey: building.buildingKey,
+        nameDe: building.nameDe,
+        nameEn: building.nameEn,
+        planKind: building.planKind,
         sortOrder: building.sortOrder ?? 0,
       }))
       .sort((a, b) => a.sortOrder - b.sortOrder || a.buildingKey.localeCompare(b.buildingKey)),
@@ -247,6 +266,8 @@ export function buildMobileCatalog(catalog) {
         floorKey: floor.floorKey,
         buildingKey: floor.buildingKey,
         level: floor.level,
+        nameDe: floor.nameDe,
+        nameEn: floor.nameEn,
         svgAsset: `${FLUTTER_ASSET_PREFIX}/${floor.svgPath.replace(/^buildings\//, '')}`,
         viewBox: {
           minX: floor.viewBox.minX,

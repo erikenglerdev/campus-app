@@ -184,6 +184,7 @@ Sortierung: `isPinned` DESC, dann `publishedAt` DESC, dann `slug` ASC (determini
       "authors": [{ "name": "Redaktion Campus News", "role": "Redaktion" }],
       "sourceName": "Hochschule Anhalt",
       "sourceUrl": "https://www.hs-anhalt.de/…",
+      "content": [{ "type": "paragraph", "children": [{ "type": "text", "text": "…" }] }],
     },
   ],
   "meta": {
@@ -198,9 +199,22 @@ Sortierung: `isPinned` DESC, dann `publishedAt` DESC, dann `slug` ASC (determini
 `heroImage` ist `null`, wenn kein freigegebenes Bild hinterlegt ist.
 `sourceUrl` ist immer eine validierte **HTTPS**-URL oder `null`.
 
+**`content` in der Liste.** Jeder Listeneintrag trägt seinen **serverseitig bereinigten**
+Inhalt. Die App stellt Artikel im Feed direkt dar; ohne Content in der Liste bräuchte jede
+sichtbare Karte einen eigenen Detailrequest. Die Bereinigung passiert an derselben Stelle wie
+beim Detail — unbereinigte Strapi-Blocks erreichen nie einen Client. Unbekannte Blocktypen
+werden entfernt und **einmal pro Antwort** in `meta.droppedBlockTypes` gemeldet, dedupliziert
+und sortiert; ein neuer CMS-Blocktyp ist eine Eigenschaft der Antwort, nicht jedes einzelnen
+Artikels, der ihn zufällig verwendet.
+
+`teaser` und `authors` bleiben im Vertrag, damit CMS und API kompatibel bleiben. Die mobile
+App stellt beide **nicht** dar.
+
 ### `GET /v1/news/:slug`
 
-Wie ein Listeneintrag, zusätzlich `content`. Unbekannter Slug ⇒ `404 NEWS_ARTICLE_NOT_FOUND`.
+Liefert genau denselben Aufbau wie ein Listeneintrag. Der Endpunkt bleibt aus
+Kompatibilitätsgründen bestehen, enthält aber nichts mehr, was die Liste nicht auch hat.
+Unbekannter Slug ⇒ `404 NEWS_ARTICLE_NOT_FOUND`.
 
 ```jsonc
 {
@@ -321,6 +335,61 @@ Personen, sortiert nach `sortOrder`, dann `name`.
 
 Eine Person kann in **mehreren** Bereichen erscheinen.
 
+### `GET /v1/contact-areas/search-index`
+
+Alles, was die Kontaktsuche treffen kann, in **einer** Antwort.
+
+Der Listenendpunkt trägt bewusst keine Detaildaten. Eine Suche über Beschreibungen, Telefonnummern
+oder Raumnummern müsste deshalb jeden Bereich einzeln nachladen — ein N+1 bei jedem Tastendruck.
+Stattdessen lädt der Client diesen Index **einmal**, cacht ihn und sucht lokal.
+
+```jsonc
+{
+  "data": [
+    {
+      "slug": "studierendenrat",
+      "name": "…",
+      "shortDescription": "…",
+      "iconKey": "…",
+      "descriptionText": "Wir helfen bei Anträgen.\nSprechzeiten nach Vereinbarung.",
+      "generalEmail": null,
+      "phone": null,
+      "website": null,
+      "appointmentUrl": null,
+      "address": null,
+      "openingHours": null,
+      "rooms": [{ "roomKey": "…", "roomNumber": "B.201", "…": "…" }],
+      "persons": [
+        {
+          "name": "…",
+          "role": "…",
+          "description": null,
+          "email": null,
+          "phone": null,
+          "website": null,
+          "rooms": [],
+        },
+      ],
+    },
+  ],
+  "meta": { "…": "…" },
+}
+```
+
+Verbindliche Regeln:
+
+- **Nur aktive** Bereiche und **nur aktive** Personen.
+- Ausschließlich **explizit gemappte, öffentliche** Felder. Keine Strapi-Internas, keine IDs.
+- **Kein `profileImage`:** Nach einem Bild sucht niemand, und ein Index ist der falsche Ort, um
+  mehr herauszugeben als die Frage braucht.
+- `descriptionText` ist die **bereinigte** Beschreibung als Klartext. Eine Suche trifft Wörter,
+  keine Formatierung: Links steuern ihren Linktext bei, ihre URL nicht, Bilder gar nichts.
+  Blöcke sind durch `\n` getrennt.
+- Locale-Auflösung und Raum-Mapping verhalten sich exakt wie beim Detailendpunkt; fehlt die
+  englische Fassung, bleibt der deutsche Text und `translationFallback` ist `true`.
+- Höchstens **zwei** Strapi-Anfragen (kanonisch plus angeforderte Sprache), unabhängig von der
+  Anzahl der Bereiche.
+
 ## 7. Mensa
 
 ### `GET /v1/canteens`
@@ -373,6 +442,8 @@ Ausschließlich aus Backend-Daten. Der Client kennt **keine** `location_id`.
               { "code": "53", "label": "Sprint-Menü", "kind": "marker" },
               { "code": "A1", "label": "enthält Weizengluten", "kind": "ingredient" },
             ],
+            "traits": ["vegan", "sprint"],
+            "allergens": ["gluten", "gluten_wheat"],
             "prices": [
               { "group": "student", "label": "Studierende", "amount": "1.95", "currency": "EUR" },
               { "group": "employee", "label": "Bedienstete", "amount": "4.95", "currency": "EUR" },
@@ -405,6 +476,24 @@ Verbindliche Regeln:
 - `group` ist ein stabiler technischer Schlüssel, `label` der übersetzte Anzeigetext.
 - `markers` führt Zutaten und Marker in **einer** Liste mit unterscheidendem `kind`, weil die
   Quelle beide Namensräume in `food.ingredients` mischt.
+- `traits` und `allergens` sind **stabile semantische Schlüssel**. Clients filtern ausschließlich
+  darüber — **nie** über `markers[].code` oder `markers[].label`. Der Codenamensraum gehört der
+  Quelle: er ist nirgends dokumentiert, mischt zwei Namensräume und darf sich jederzeit ändern.
+  Details zur Zuordnung: [data-sources.md](data-sources.md).
+
+  | Feld        | Werte                                                                                                                                                                                                                                                                                                                                         |
+  | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `traits`    | `vegetarian`, `vegan`, `meatless`, `sprint`                                                                                                                                                                                                                                                                                                   |
+  | `allergens` | `gluten` (+ `gluten_wheat`, `gluten_rye`, `gluten_oats`, `gluten_barley`, `gluten_spelt`), `crustaceans`, `egg`, `peanuts`, `soy`, `milk`, `nuts` (+ `nuts_hazelnut`, `nuts_almond`, `nuts_walnut`, `nuts_cashew`, `nuts_pecan`, `nuts_pistachio`, `nuts_macadamia`), `celery`, `mustard`, `sesame`, `sulphites`, `lupin`, `molluscs`, `fish` |
+
+  Ein Untertyp wird **immer** zusammen mit seiner Elternfacette ausgeliefert: Wer Gluten meidet,
+  muss nicht wissen, dass `A1` Weizen bedeutet. Beide Arrays sind nach dieser Taxonomie sortiert,
+  nicht nach der Reihenfolge der Quelle.
+
+- Ein Marker, den die API **nicht** einordnen kann, bleibt in `markers` sichtbar und bekommt
+  **keinen** erfundenen Schlüssel. `traits` und `allergens` sagen damit nur aus, was die Quelle
+  tatsächlich erklärt hat.
+- `sprint` stammt aus dem `is_sprint`-Feld des Planeintrags, nicht aus einem Marker-Code.
 - `sourceLanguage: "de"` zeigt an, dass `name`, `subtitle`, `extras` und `markers[].label` aus der
   deutschsprachigen Quelle stammen und **nicht** übersetzt wurden.
 - Ein Tag **ohne** Gerichte erscheint als leeres `meals`-Array — ein echter leerer Tag ist damit

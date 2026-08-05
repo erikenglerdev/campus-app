@@ -79,7 +79,7 @@
     },
     "/v1/news": {
       "get": {
-        "description": "An absent `channels` parameter means all active channels. A present but empty `channels=` means the user deselected everything and yields an empty list.",
+        "description": "An absent `channels` parameter means all active channels. A present but empty `channels=` means the user deselected everything and yields an empty list. Each entry carries its sanitised `content`, so a feed can render articles inline without a request per card; unknown block types are removed server-side and reported once in `meta.droppedBlockTypes`.",
         "operationId": "NewsController_list_v1",
         "parameters": [
           {
@@ -212,6 +212,42 @@
           }
         },
         "summary": "List active contact areas.",
+        "tags": [
+          "contacts"
+        ]
+      }
+    },
+    "/v1/contact-areas/search-index": {
+      "get": {
+        "description": "Exists so a client can search over areas, persons, descriptions and rooms without one request per area — and without a request per keystroke. Only active areas and active persons, only explicitly mapped public fields.",
+        "operationId": "ContactsController_searchIndex_v1",
+        "parameters": [
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "de",
+                "en"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactSearchIndexResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Everything the contact search can match, in one response.",
         "tags": [
           "contacts"
         ]
@@ -1109,6 +1145,14 @@
             "type": "string",
             "nullable": true,
             "description": "Validated https URL of the original source, or null."
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "description": "Sanitised content blocks, delivered with the LIST entry so a feed can render the article inline without a request per card. Only paragraph, heading, list, quote and image survive; anything else is removed server-side and reported in meta.droppedBlockTypes."
           }
         },
         "required": [
@@ -1121,7 +1165,8 @@
           "channels",
           "authors",
           "sourceName",
-          "sourceUrl"
+          "sourceUrl",
+          "content"
         ]
       },
       "NewsListResponseDto": {
@@ -1199,7 +1244,7 @@
               "type": "object",
               "additionalProperties": true
             },
-            "description": "Sanitised content blocks. Only paragraph, heading, list, quote and image survive; anything else is removed server-side and reported in meta.droppedBlockTypes."
+            "description": "Sanitised content blocks, delivered with the LIST entry so a feed can render the article inline without a request per card. Only paragraph, heading, list, quote and image survive; anything else is removed server-side and reported in meta.droppedBlockTypes."
           }
         },
         "required": [
@@ -1362,6 +1407,142 @@
           "floorKey",
           "floorLevel",
           "floorName"
+        ]
+      },
+      "ContactSearchPersonDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "website": {
+            "type": "string",
+            "nullable": true
+          },
+          "rooms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoomReferenceDto"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "role",
+          "description",
+          "email",
+          "phone",
+          "website",
+          "rooms"
+        ]
+      },
+      "ContactSearchAreaDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "example": "studierendenrat"
+          },
+          "name": {
+            "type": "string"
+          },
+          "shortDescription": {
+            "type": "string"
+          },
+          "iconKey": {
+            "type": "string",
+            "example": "students-council"
+          },
+          "descriptionText": {
+            "type": "string",
+            "description": "The sanitised long description as PLAIN TEXT. A search matches words, not formatting; links contribute their label, images nothing."
+          },
+          "generalEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "website": {
+            "type": "string",
+            "nullable": true
+          },
+          "appointmentUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
+          },
+          "openingHours": {
+            "type": "string",
+            "nullable": true
+          },
+          "rooms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoomReferenceDto"
+            }
+          },
+          "persons": {
+            "description": "Active persons only.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactSearchPersonDto"
+            }
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "shortDescription",
+          "iconKey",
+          "descriptionText",
+          "generalEmail",
+          "phone",
+          "website",
+          "appointmentUrl",
+          "address",
+          "openingHours",
+          "rooms",
+          "persons"
+        ]
+      },
+      "ContactSearchIndexResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactSearchAreaDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
         ]
       },
       "ContactPersonDto": {
@@ -1691,9 +1872,58 @@
             }
           },
           "markers": {
+            "description": "Everything the source declared, including codes with no semantic meaning to this API.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/MealMarkerDto"
+            }
+          },
+          "traits": {
+            "type": "array",
+            "description": "Stable semantic properties of the dish, derived from the source. Filter on these, never on marker codes or labels.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "vegetarian",
+                "vegan",
+                "meatless",
+                "sprint"
+              ]
+            }
+          },
+          "allergens": {
+            "type": "array",
+            "description": "Declared allergens as stable keys. A subtype (e.g. \"gluten_wheat\") always comes with its parent (\"gluten\"). A marker the API cannot classify appears in `markers` only and never gets an invented key.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "gluten",
+                "gluten_wheat",
+                "gluten_rye",
+                "gluten_oats",
+                "gluten_barley",
+                "gluten_spelt",
+                "crustaceans",
+                "egg",
+                "peanuts",
+                "soy",
+                "milk",
+                "nuts",
+                "nuts_hazelnut",
+                "nuts_almond",
+                "nuts_walnut",
+                "nuts_cashew",
+                "nuts_pecan",
+                "nuts_pistachio",
+                "nuts_macadamia",
+                "celery",
+                "mustard",
+                "sesame",
+                "sulphites",
+                "lupin",
+                "molluscs",
+                "fish"
+              ]
             }
           },
           "prices": {
@@ -1713,6 +1943,8 @@
           "isSprint",
           "extras",
           "markers",
+          "traits",
+          "allergens",
           "prices"
         ]
       },

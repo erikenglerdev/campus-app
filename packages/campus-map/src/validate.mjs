@@ -33,6 +33,19 @@ export const ROOM_TYPES = Object.freeze([
   'service',
 ]);
 
+/**
+ * What kind of drawing a building's plan is — a claim the app makes VISIBLE, so
+ * it belongs in the catalogue rather than in a widget.
+ *
+ * `fictional`: invented for demonstration; no real building is depicted.
+ * `schematic`: a simplified, not-to-scale overview of a real site. It is not a
+ *              fire, escape or rescue plan and must never be labelled as one.
+ *
+ * The app picks its notice from this value, so a new building can never
+ * silently inherit the wrong claim.
+ */
+export const PLAN_KINDS = Object.freeze(['fictional', 'schematic']);
+
 const SUPPORTED_SCHEMA_VERSION = 1;
 const KEY_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -74,6 +87,11 @@ function checkKeys(catalog, problems) {
       if (typeof building[field] !== 'string' || building[field].length === 0) {
         problems.push(`building "${building.buildingKey}" is missing ${field}`);
       }
+    }
+    if (!PLAN_KINDS.includes(building.planKind)) {
+      problems.push(
+        `building "${building.buildingKey}" has an unsupported planKind "${building.planKind}"`,
+      );
     }
   }
 

@@ -104,29 +104,48 @@ function mapList<T>(value: unknown, map: (entry: unknown) => T | null): T[] {
   return value.map(map).filter((entry): entry is T => entry !== null);
 }
 
-export function mapNewsListItem(raw: Raw): NewsListItemDto {
-  return {
-    slug: asString(raw['slug']),
-    title: asString(raw['title']),
-    teaser: asString(raw['teaser']),
-    publishedAt: str(raw['publishedAt']),
-    isPinned: raw['isPinned'] === true,
-    heroImage: mapImage(raw['heroImage']),
-    channels: mapList(raw['channels'], mapChannelRef),
-    authors: mapList(raw['authors'], mapAuthor),
-    sourceName: str(raw['sourceName']),
-    // A source link is only useful if it is safe to open.
-    sourceUrl: httpsUrl(raw['sourceUrl']),
-  };
-}
-
-export function mapNewsDetail(raw: Raw): {
-  article: NewsDetailDto;
+/**
+ * Maps one article, content included.
+ *
+ * The content travels with the LIST entry, not only with the detail: the app's
+ * feed renders each article inline, so fetching them one by one would be a
+ * request per visible card. Sanitising happens here, once — unsanitised Strapi
+ * blocks never reach a client.
+ */
+export function mapNewsListItem(raw: Raw): {
+  item: NewsListItemDto;
   droppedBlockTypes: string[];
 } {
   const { blocks, droppedBlockTypes } = sanitizeBlocks(raw['content']);
   return {
-    article: { ...mapNewsListItem(raw), content: blocks },
+    item: {
+      slug: asString(raw['slug']),
+      title: asString(raw['title']),
+      teaser: asString(raw['teaser']),
+      publishedAt: str(raw['publishedAt']),
+      isPinned: raw['isPinned'] === true,
+      heroImage: mapImage(raw['heroImage']),
+      channels: mapList(raw['channels'], mapChannelRef),
+      authors: mapList(raw['authors'], mapAuthor),
+      sourceName: str(raw['sourceName']),
+      // A source link is only useful if it is safe to open.
+      sourceUrl: httpsUrl(raw['sourceUrl']),
+      content: blocks,
+    },
     droppedBlockTypes,
   };
+}
+
+/**
+ * The detail shape is the list shape.
+ *
+ * Kept as its own function because the endpoint is part of the published
+ * contract and callers of it read better this way.
+ */
+export function mapNewsDetail(raw: Raw): {
+  article: NewsDetailDto;
+  droppedBlockTypes: string[];
+} {
+  const { item, droppedBlockTypes } = mapNewsListItem(raw);
+  return { article: item, droppedBlockTypes };
 }

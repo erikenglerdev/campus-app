@@ -9,15 +9,41 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../l10n/l10n.dart';
 import '../data/canteen_models.dart';
 
-/// One meal with all of its price groups.
+/// One meal with the price of the chosen group.
 ///
 /// There are deliberately **no meal images** — neither stored nor rendered.
-/// The student price group is emphasised typographically *and* with an icon, so
-/// the emphasis survives greyscale and colour blindness.
+///
+/// Only **one** price is shown: the one for the group the reader selected. The
+/// other groups are somebody else's price, and three numbers on a card mean
+/// three numbers to read past every time.
+///
+/// The ingredient declarations are not listed either: they are what the filter
+/// works on, and a dozen chips under every dish buried the two lines that
+/// actually differ between one meal and the next. The remaining markers — Bio,
+/// Klima-Teller and the like — stay, because no filter covers them and nothing
+/// else on the screen says them.
 class MealCard extends StatelessWidget {
-  const MealCard({required this.meal, super.key});
+  const MealCard({
+    required this.meal,
+    required this.priceGroup,
+    this.isFavourite = false,
+    this.onToggleFavourite,
+    super.key,
+  });
 
   final Meal meal;
+
+  /// The one price group whose price this card shows.
+  final String priceGroup;
+
+  /// Whether the user starred this dish. Marked by a filled star **and** a
+  /// semantic label, never by colour alone.
+  ///
+  /// A favourite is not a filter and does not move the dish: the list keeps the
+  /// counter order, which is the order the food is served in.
+  final bool isFavourite;
+
+  final VoidCallback? onToggleFavourite;
 
   @override
   Widget build(BuildContext context) {
@@ -56,9 +82,28 @@ class MealCard extends StatelessWidget {
                   ),
                 ),
               ),
-            Semantics(
-              header: true,
-              child: Text(meal.name, style: text.titleMedium),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    label: isFavourite
+                        ? '${l10n.canteenFavouriteSemantic}. ${meal.name}'
+                        : meal.name,
+                    child: Text(meal.name, style: text.titleMedium),
+                  ),
+                ),
+                if (onToggleFavourite != null)
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    tooltip: isFavourite
+                        ? l10n.canteenFavouriteRemove
+                        : l10n.canteenFavouriteAdd,
+                    onPressed: onToggleFavourite,
+                    icon: Icon(isFavourite ? Icons.star : Icons.star_border),
+                  ),
+              ],
             ),
             if (meal.subtitle != null) ...<Widget>[
               const SizedBox(height: AppSpacing.xxs),
@@ -83,17 +128,8 @@ class MealCard extends StatelessWidget {
                     .toList(growable: false),
               ),
             ],
-            if (meal.ingredients.isNotEmpty) ...<Widget>[
-              const SizedBox(height: AppSpacing.md),
-              _LabelledWrap(
-                label: l10n.canteenIngredientsLabel,
-                values: meal.ingredients
-                    .map((MealMarker marker) => marker.label)
-                    .toList(growable: false),
-              ),
-            ],
             const SizedBox(height: AppSpacing.md),
-            _PriceList(prices: meal.orderedPrices),
+            _Price(price: meal.priceFor(priceGroup)),
           ],
         ),
       ),
@@ -132,12 +168,14 @@ class _LabelledWrap extends StatelessWidget {
   }
 }
 
-/// Renders **every** price group the API delivered. Nothing is estimated and
-/// nothing is hidden; a missing group simply does not appear.
-class _PriceList extends StatelessWidget {
-  const _PriceList({required this.prices});
+/// The price of the selected group, or a clear statement that there is none.
+///
+/// A missing price is never replaced by another group's: that would be a
+/// different number for a different person, presented as if it were theirs.
+class _Price extends StatelessWidget {
+  const _Price({required this.price});
 
-  final List<MealPrice> prices;
+  final MealPrice? price;
 
   @override
   Widget build(BuildContext context) {
@@ -145,69 +183,37 @@ class _PriceList extends StatelessWidget {
     final AppColors colors = context.colors;
     final TextTheme text = Theme.of(context).textTheme;
     final String locale = Localizations.localeOf(context).languageCode;
+    final MealPrice? price = this.price;
 
-    if (prices.isEmpty) {
-      return Text(l10n.canteenPriceMissing, style: text.bodySmall);
+    if (price == null) {
+      return Text(
+        l10n.canteenPriceForGroupMissing,
+        style: text.bodySmall?.copyWith(color: colors.textSecondary),
+      );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(l10n.canteenPricesLabel, style: text.labelMedium),
-        const SizedBox(height: AppSpacing.xs),
-        for (final MealPrice price in prices)
-          Builder(
-            builder: (BuildContext context) {
-              final String formatted =
-                  MoneyFormatter.format(
-                    amount: price.amount,
-                    currencyCode: price.currency,
-                    locale: locale,
-                  ) ??
-                  l10n.canteenPriceMissing;
-              final bool emphasised = price.isStudentGroup;
-              return Semantics(
-                label: emphasised
-                    ? l10n.canteenPriceStudentSemanticLabel(
-                        price.label,
-                        formatted,
-                      )
-                    : l10n.canteenPriceSemanticLabel(price.label, formatted),
-                excludeSemantics: true,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
-                  child: Row(
-                    children: <Widget>[
-                      if (emphasised) ...<Widget>[
-                        Icon(
-                          Icons.star_outline,
-                          size: AppSpacing.lg,
-                          color: colors.primary,
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                      ] else
-                        const SizedBox(width: AppSpacing.xl),
-                      Expanded(
-                        child: Text(
-                          price.label,
-                          style: emphasised
-                              ? text.titleSmall?.copyWith(color: colors.primary)
-                              : text.bodyMedium,
-                        ),
-                      ),
-                      Text(
-                        formatted,
-                        style: emphasised
-                            ? text.titleSmall?.copyWith(color: colors.primary)
-                            : text.bodyMedium,
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
+    final String formatted =
+        MoneyFormatter.format(
+          amount: price.amount,
+          currencyCode: price.currency,
+          locale: locale,
+        ) ??
+        l10n.canteenPriceMissing;
+
+    return Semantics(
+      label: l10n.canteenPriceSemanticLabel(price.label, formatted),
+      excludeSemantics: true,
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Text(
+              price.label,
+              style: text.bodyMedium?.copyWith(color: colors.textSecondary),
+            ),
           ),
-      ],
+          Text(formatted, style: text.titleSmall),
+        ],
+      ),
     );
   }
 }

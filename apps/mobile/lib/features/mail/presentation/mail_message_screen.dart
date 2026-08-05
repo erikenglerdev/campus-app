@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../core/locale/formatters.dart';
+import '../../../core/theme/app_metrics.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
@@ -123,7 +124,7 @@ class _MessageBody extends StatelessWidget {
         : detail.from.display;
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: EdgeInsets.all(context.metrics.screenPadding),
       children: <Widget>[
         Text(subject, style: text.titleLarge),
         const SizedBox(height: AppSpacing.md),

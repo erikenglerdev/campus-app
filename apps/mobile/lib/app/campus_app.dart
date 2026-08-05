@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/locale/locale_mode.dart';
 import '../core/locale/locale_providers.dart';
 import '../core/prefs/settings_controller.dart';
+import '../core/theme/app_motion.dart';
 import '../core/theme/app_theme.dart';
 import '../features/mail/application/mail_account_controller.dart';
 import '../features/mail/application/mail_sync_controller.dart';
@@ -75,11 +76,19 @@ class _CampusAppState extends ConsumerState<CampusApp>
       }
     });
 
+    // Reduced motion has two sources and either one is enough. The operating
+    // system's own accessibility switch is read here, at the root, so a change
+    // to it takes effect without restarting the app.
+    final AppMotion motion = AppMotion.resolve(
+      systemDisablesAnimations: MediaQuery.disableAnimationsOf(context),
+      userPrefersReducedMotion: settings.reducedMotion,
+    );
+
     return MaterialApp.router(
       onGenerateTitle: (BuildContext context) => context.l10n.appTitle,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
+      theme: AppTheme.light(accent: settings.accentPalette, motion: motion),
+      darkTheme: AppTheme.dark(accent: settings.accentPalette, motion: motion),
       themeMode: settings.themeMode,
       locale: settings.localeMode.locale,
       supportedLocales: AppLocales.supported,

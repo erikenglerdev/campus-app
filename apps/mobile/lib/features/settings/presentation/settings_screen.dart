@@ -10,6 +10,7 @@ import '../../../core/locale/locale_mode.dart';
 import '../../../core/prefs/settings_controller.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../l10n/l10n.dart';
+import 'personalisation_tiles.dart';
 import '../../canteen/application/canteen_providers.dart';
 import '../../canteen/data/canteen_models.dart';
 import '../../canteen/presentation/canteen_picker_sheet.dart';
@@ -61,6 +62,17 @@ class SettingsScreen extends ConsumerWidget {
           _SectionHeader(title: l10n.settingsSectionAppearance),
           _LanguageTile(settings: settings),
           _ThemeTile(settings: settings),
+          const AccentColorTile(),
+          const ReducedMotionTile(),
+          const Divider(),
+          _SectionHeader(title: l10n.settingsSectionPersonalisation),
+          ListTile(
+            leading: const Icon(Icons.space_dashboard_outlined),
+            title: Text(l10n.settingsNavigation),
+            subtitle: Text(l10n.settingsNavigationSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(AppRoutes.settingsNavigation),
+          ),
           const Divider(),
           _SectionHeader(title: l10n.settingsSectionContent),
           ListTile(
@@ -95,6 +107,22 @@ class SettingsScreen extends ConsumerWidget {
                 .read(settingsProvider.notifier)
                 .setMailDownloadAttachments(value),
           ),
+          const Divider(),
+          _SectionHeader(title: l10n.settingsSectionData),
+          ListTile(
+            leading: const Icon(Icons.restart_alt_outlined),
+            title: Text(l10n.onboardingRestart),
+            subtitle: Text(l10n.onboardingRestartSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () async {
+              await ref
+                  .read(settingsProvider.notifier)
+                  .setOnboardingCompleted(false);
+              if (!context.mounted) return;
+              context.go(AppRoutes.onboarding);
+            },
+          ),
+          const _ResetTile(),
           const Divider(),
           _SectionHeader(title: l10n.settingsSectionLegal),
           ListTile(
@@ -229,6 +257,59 @@ class _ThemeTile extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Resets appearance and preferences after an explicit confirmation.
+///
+/// Deliberately scoped and says so: the secure stores behind mail, grades and
+/// Moodle are untouched, because half-deleting an account from a settings
+/// screen would leave credentials without their data — those have their own
+/// "remove account" action.
+class _ResetTile extends ConsumerWidget {
+  const _ResetTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final AppLocalizations l10n = context.l10n;
+    return ListTile(
+      leading: Icon(
+        Icons.restart_alt,
+        color: Theme.of(context).colorScheme.error,
+      ),
+      title: Text(l10n.settingsReset),
+      subtitle: Text(l10n.settingsResetSubtitle),
+      onTap: () async {
+        final bool confirmed =
+            await showDialog<bool>(
+              context: context,
+              builder: (BuildContext dialogContext) => AlertDialog(
+                icon: const Icon(Icons.restart_alt),
+                title: Text(l10n.settingsResetConfirmTitle),
+                content: Text(l10n.settingsResetConfirmMessage),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: Text(
+                      MaterialLocalizations.of(dialogContext).cancelButtonLabel,
+                    ),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    child: Text(l10n.settingsResetConfirmAction),
+                  ),
+                ],
+              ),
+            ) ??
+            false;
+        if (!confirmed || !context.mounted) return;
+        await ref.read(settingsProvider.notifier).resetLocalPreferences();
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.settingsResetDone)));
+      },
     );
   }
 }

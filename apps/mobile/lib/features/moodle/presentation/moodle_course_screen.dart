@@ -46,7 +46,12 @@ class MoodleCourseScreen extends ConsumerWidget {
               icon: const Icon(Icons.refresh),
             ),
           ],
+          // Scrollable, so all three labels stay whole. Three equal thirds of
+          // a 320 px phone cannot hold "Ankündigungen" at a large text size,
+          // and an abbreviation nobody can decode is worse than a swipe.
           bottom: TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             tabs: <Widget>[
               Tab(text: l10n.moodleTabContents),
               Tab(text: l10n.moodleTabAssignments),

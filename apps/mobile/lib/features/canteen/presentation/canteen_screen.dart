@@ -11,7 +11,10 @@ import '../../../core/widgets/offline_notice.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/status_banner.dart';
 import '../../../l10n/l10n.dart';
+import '../application/canteen_filter_controller.dart';
 import '../application/canteen_providers.dart';
+import '../domain/canteen_filter.dart';
+import 'canteen_filter_sheet.dart';
 import '../application/canteen_refresh_scheduler.dart';
 import '../data/canteen_models.dart';
 import 'canteen_picker_sheet.dart';
@@ -64,31 +67,25 @@ class _CanteenScreenState extends ConsumerState<CanteenScreen>
     );
     final String? slug = ref.watch(selectedCanteenSlugProvider);
 
+    // No app bar: the name of the canteen says where you are, and it is part
+    // of the content rather than a title bar repeating the word "Mensa".
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.canteenTitle),
-        actions: <Widget>[
-          IconButton(
-            tooltip: l10n.canteenPickerTooltip,
-            onPressed: () => showCanteenPickerSheet(context),
-            icon: const Icon(Icons.restaurant_outlined),
+      body: SafeArea(
+        child: switch (canteens) {
+          AsyncLoading<Loaded<List<Canteen>>>() when !canteens.hasValue =>
+            const LoadingView(),
+          AsyncError<Loaded<List<Canteen>>>(:final Object error) => ErrorView(
+            failure: error,
+            onRetry: () => ref.invalidate(canteensProvider),
           ),
-        ],
+          _ when slug == null => EmptyView(
+            icon: Icons.restaurant_outlined,
+            title: l10n.canteenNoCanteensTitle,
+            message: l10n.canteenNoCanteensMessage,
+          ),
+          _ => _MenuBody(slug: slug, onRefresh: _refresh),
+        },
       ),
-      body: switch (canteens) {
-        AsyncLoading<Loaded<List<Canteen>>>() when !canteens.hasValue =>
-          const LoadingView(),
-        AsyncError<Loaded<List<Canteen>>>(:final Object error) => ErrorView(
-          failure: error,
-          onRetry: () => ref.invalidate(canteensProvider),
-        ),
-        _ when slug == null => EmptyView(
-          icon: Icons.restaurant_outlined,
-          title: l10n.canteenNoCanteensTitle,
-          message: l10n.canteenNoCanteensMessage,
-        ),
-        _ => _MenuBody(slug: slug, onRefresh: _refresh),
-      },
     );
   }
 }
@@ -133,7 +130,17 @@ class _MenuContent extends ConsumerWidget {
     final DateTime selectedDay = ref.watch(selectedMenuDayProvider);
     final CanteenMenu menu = loaded.value;
     final MenuDay? day = menu.dayFor(selectedDay);
-    final List<Meal> meals = day?.meals ?? const <Meal>[];
+    final List<Meal> allMeals = day?.meals ?? const <Meal>[];
+    final CanteenFilter filter = ref.watch(canteenFilterProvider);
+    final List<Meal> meals = filter.apply(allMeals);
+
+    // The filter's trait and allergen vocabulary is fixed; only the price
+    // groups come from the data, because a canteen cannot be asked for a group
+    // it does not have.
+    final Map<String, MealPrice> priceVocabulary = <String, MealPrice>{
+      for (final Meal meal in allMeals)
+        for (final MealPrice price in meal.prices) price.group: price,
+    };
 
     final DateTime? lastSync = loaded.meta.lastSuccessfulSyncAt;
     final bool stale = loaded.meta.dataStale;
@@ -150,6 +157,35 @@ class _MenuContent extends ConsumerWidget {
                 : '${menu.displayName} · ${menu.campusLabel}',
             style: Theme.of(context).textTheme.titleLarge,
           ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        // A Wrap, not a Row: two buttons with their labels do not share a line
+        // on a narrow phone at a large text size.
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.xs,
+          children: <Widget>[
+            OutlinedButton.icon(
+              onPressed: () => showCanteenFilterSheet(
+                context,
+                priceVocabulary.values.toList(growable: false),
+              ),
+              icon: const Icon(Icons.tune, size: AppSizes.iconSmall),
+              label: Text(
+                filter.isActive
+                    ? l10n.canteenFilterActive
+                    : l10n.canteenFilterTitle,
+              ),
+            ),
+            OutlinedButton.icon(
+              onPressed: () => showCanteenPickerSheet(context),
+              icon: const Icon(
+                Icons.restaurant_outlined,
+                size: AppSizes.iconSmall,
+              ),
+              label: Text(l10n.canteenPickerTitle),
+            ),
+          ],
         ),
         const SizedBox(height: AppSpacing.md),
         _DayNavigator(date: selectedDay),
@@ -176,18 +212,62 @@ class _MenuContent extends ConsumerWidget {
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: AppSpacing.md),
-        if (meals.isEmpty)
+        // "Nothing on offer" and "nothing matches your filter" are different
+        // answers, and only the second one has an obvious remedy.
+        if (meals.isEmpty && allMeals.isNotEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
             child: EmptyView(
-              icon: Icons.no_meals_outlined,
-              title: l10n.canteenNoMealsTitle,
-              message: l10n.canteenNoMealsMessage,
+              icon: Icons.filter_alt_off_outlined,
+              title: l10n.canteenNoMealsAfterFilter,
+              message: l10n.canteenNoMealsAfterFilterMessage,
+              action: FilledButton.icon(
+                onPressed: () =>
+                    ref.read(canteenFilterProvider.notifier).clear(),
+                icon: const Icon(Icons.filter_alt_off_outlined),
+                label: Text(l10n.canteenFilterClear),
+              ),
+            ),
+          )
+        else if (meals.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
+            child: Builder(
+              builder: (BuildContext context) {
+                // Closed at the weekend and in the holidays, so an empty day is
+                // normal. Offering the next day that HAS something beats making
+                // the user tap forward until they find it.
+                final MenuDay? next = menu.nextOpenDayFrom(selectedDay);
+                return EmptyView(
+                  icon: Icons.no_meals_outlined,
+                  title: l10n.canteenNoMealsTitle,
+                  message: l10n.canteenNoMealsMessage,
+                  action: next == null
+                      ? null
+                      : FilledButton.icon(
+                          onPressed: () => ref
+                              .read(selectedMenuDayProvider.notifier)
+                              .select(next.date),
+                          icon: const Icon(Icons.skip_next_outlined),
+                          label: Text(
+                            '${l10n.canteenJumpToNextOpen} · '
+                            '${AppDateFormats.shortWeekdayDate(next.date, locale)}',
+                          ),
+                        ),
+                );
+              },
             ),
           )
         else
           for (final Meal meal in meals) ...<Widget>[
-            MealCard(meal: meal),
+            MealCard(
+              meal: meal,
+              priceGroup: filter.priceGroup,
+              isFavourite: filter.isFavourite(meal),
+              onToggleFavourite: () => ref
+                  .read(canteenFilterProvider.notifier)
+                  .toggleFavourite(meal),
+            ),
             const SizedBox(height: AppSpacing.md),
           ],
         if (meals.any((Meal meal) => meal.sourceLanguage == 'de'))

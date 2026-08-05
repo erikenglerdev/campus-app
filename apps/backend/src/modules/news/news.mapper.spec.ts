@@ -73,7 +73,7 @@ describe('news mappers', () => {
     };
 
     it('maps the public listing shape', () => {
-      const result = mapNewsListItem(raw);
+      const result = mapNewsListItem(raw).item;
       expect(result).toEqual({
         slug: 'semesterstart-2026',
         title: 'Semesterstart',
@@ -90,20 +90,25 @@ describe('news mappers', () => {
         authors: [{ name: 'Redaktion', role: 'Redaktion' }],
         sourceName: 'Hochschule Anhalt',
         sourceUrl: 'https://www.hs-anhalt.de/news',
+        // The fixture has no content; an article without blocks is not an
+        // error, it is an article nobody has written a body for yet.
+        content: [],
       });
     });
 
     it('drops a non-https source url rather than forwarding it', () => {
       expect(
-        mapNewsListItem({ ...raw, sourceUrl: 'http://insecure.example' }).sourceUrl,
+        mapNewsListItem({ ...raw, sourceUrl: 'http://insecure.example' }).item.sourceUrl,
       ).toBeNull();
 
-      expect(mapNewsListItem({ ...raw, sourceUrl: 'javascript:alert(1)' }).sourceUrl).toBeNull();
+      expect(
+        mapNewsListItem({ ...raw, sourceUrl: 'javascript:alert(1)' }).item.sourceUrl,
+      ).toBeNull();
     });
 
     it('drops a hero image that is not served over https', () => {
       expect(
-        mapNewsListItem({ ...raw, heroImage: { url: 'http://cdn.example/x.jpg' } }).heroImage,
+        mapNewsListItem({ ...raw, heroImage: { url: 'http://cdn.example/x.jpg' } }).item.heroImage,
       ).toBeNull();
     });
 
@@ -113,17 +118,38 @@ describe('news mappers', () => {
         heroImage: null,
         authors: undefined,
         channels: null,
-      });
+      }).item;
       expect(result.heroImage).toBeNull();
       expect(result.authors).toEqual([]);
       expect(result.channels).toEqual([]);
     });
 
     it('never leaks Strapi internals including nested relations', () => {
-      const serialized = JSON.stringify(mapNewsListItem(raw));
+      const serialized = JSON.stringify(mapNewsListItem(raw).item);
       for (const leak of ['documentId', 'formats', 'attributes', '"id"']) {
         expect(serialized).not.toContain(leak);
       }
+    });
+
+    it('carries the sanitised content, so the list needs no detail request', () => {
+      // The feed renders the article inline. Fetching each one separately
+      // would be a request per visible card.
+      const result = mapNewsListItem({
+        ...raw,
+        content: [
+          { type: 'paragraph', children: [{ type: 'text', text: 'Hallo' }] },
+          { type: 'future-embed', payload: 1 },
+        ],
+      });
+
+      expect(result.item.content).toEqual([
+        { type: 'paragraph', children: [{ type: 'text', text: 'Hallo' }] },
+      ]);
+      expect(result.droppedBlockTypes).toEqual(['future-embed']);
+    });
+
+    it('yields empty content rather than throwing when there is none', () => {
+      expect(mapNewsListItem({ ...raw, content: null }).item.content).toEqual([]);
     });
   });
 

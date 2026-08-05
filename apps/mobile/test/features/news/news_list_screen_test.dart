@@ -5,15 +5,18 @@ import 'package:campus_koethen/core/locale/locale_mode.dart';
 import 'package:campus_koethen/core/network/network_providers.dart';
 import 'package:campus_koethen/core/prefs/key_value_store.dart';
 import 'package:campus_koethen/core/prefs/preference_keys.dart';
-import 'package:campus_koethen/features/news/application/news_providers.dart';
+import 'package:campus_koethen/features/news/application/news_feed_controller.dart';
+import 'package:campus_koethen/features/news/presentation/news_card.dart';
 import 'package:campus_koethen/features/news/presentation/news_list_screen.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_http_adapter.dart';
 import '../../support/fixtures.dart';
+import '../../support/news_harness.dart';
 import '../../support/pump_app.dart';
 import '../../support/throwing_content_cache.dart';
 
@@ -38,19 +41,102 @@ FakeHttpAdapter workingApi({List<Map<String, dynamic>>? articles}) {
   });
 }
 
-void main() {
-  testWidgets('renders the article list', (WidgetTester tester) async {
-    await pumpScreen(
-      tester,
-      const NewsListScreen(),
-      overrides: <Override>[
-        apiClientProvider.overrideWithValue(fakeApiClient(workingApi())),
+/// An article with a title long enough to give the card a real height.
+Map<String, dynamic> _article(String slug) => <String, dynamic>{
+  'slug': slug,
+  'title': 'Meldung $slug',
+  'teaser': null,
+  'publishedAt': '2026-08-04T09:00:00.000Z',
+  'isPinned': false,
+  'heroImage': null,
+  'channels': <Object>[],
+  'authors': <Object>[],
+  'content': <Object>[
+    <String, dynamic>{
+      'type': 'paragraph',
+      'children': <Object>[
+        <String, dynamic>{'type': 'text', 'text': 'Der Text von $slug.'},
       ],
-    );
-    await tester.pumpAndSettle();
+    },
+  ],
+};
 
+/// Serves scripted pages; a `null` page fails the request.
+class _PagedApi {
+  _PagedApi(this.pages);
+
+  final Map<int, List<String>?> pages;
+  final List<int> requested = <int>[];
+
+  FakeHttpAdapter get adapter => FakeHttpAdapter((RequestOptions options) {
+    if (options.path.endsWith('/news/channels')) {
+      return FakeHttpResponse(envelope(channelsFixture));
+    }
+    final int page =
+        int.tryParse('${options.queryParameters['page'] ?? 1}') ?? 1;
+    requested.add(page);
+    final List<String>? slugs = pages[page];
+    if (slugs == null) {
+      throw DioException(
+        requestOptions: options,
+        type: DioExceptionType.connectionError,
+      );
+    }
+    return FakeHttpResponse(
+      envelope(
+        slugs.map(_article).toList(),
+        meta: <String, dynamic>{
+          'pagination': <String, dynamic>{
+            'page': page,
+            'pageSize': slugs.length,
+            'total': pages.length * slugs.length,
+            'totalPages': pages.length,
+          },
+        },
+      ),
+    );
+  });
+}
+
+Future<ProviderContainer> _pumpFeed(
+  WidgetTester tester, {
+  required FakeHttpAdapter adapter,
+  KeyValueStore? store,
+  Size size = const Size(390, 1200),
+}) async {
+  tester.view.physicalSize = size;
+  tester.view.devicePixelRatio = 1;
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
+
+  final ProviderContainer container = await pumpScreen(
+    tester,
+    const NewsListScreen(),
+    keyValueStore: store ?? InMemoryKeyValueStore(<String, Object>{}),
+    overrides: <Override>[
+      frozenNewsClock(),
+      apiClientProvider.overrideWithValue(fakeApiClient(adapter)),
+    ],
+  );
+  await tester.pumpAndSettle();
+  return container;
+}
+
+void main() {
+  testWidgets('renders the article list under one centred title', (
+    WidgetTester tester,
+  ) async {
+    await _pumpFeed(tester, adapter: workingApi());
+
+    expect(find.text('Campus News'), findsOneWidget);
     expect(find.text('Semesterstart 2026'), findsOneWidget);
     expect(find.text('Angepinnt'), findsOneWidget);
+    // Exactly one action at the top, and no search.
+    expect(find.byType(IconButton), findsOneWidget);
+    expect(find.byTooltip('Filter'), findsOneWidget);
+    expect(find.byType(AppBar), findsNothing);
   });
 
   testWidgets('a throwing cache still yields a working screen', (
@@ -63,6 +149,7 @@ void main() {
       const NewsListScreen(),
       contentCache: cache,
       overrides: <Override>[
+        frozenNewsClock(),
         apiClientProvider.overrideWithValue(fakeApiClient(workingApi())),
       ],
     );
@@ -85,6 +172,7 @@ void main() {
       const NewsListScreen(),
       contentCache: ThrowingContentCache(),
       overrides: <Override>[
+        frozenNewsClock(),
         apiClientProvider.overrideWithValue(
           fakeApiClient(
             FakeHttpAdapter((RequestOptions _) => throw Exception('offline')),
@@ -114,15 +202,7 @@ void main() {
         articles: <Map<String, dynamic>>[],
       );
 
-      await pumpScreen(
-        tester,
-        const NewsListScreen(),
-        keyValueStore: store,
-        overrides: <Override>[
-          apiClientProvider.overrideWithValue(fakeApiClient(adapter)),
-        ],
-      );
-      await tester.pumpAndSettle();
+      await _pumpFeed(tester, adapter: adapter, store: store);
 
       expect(find.text('Keine Kanäle ausgewählt'), findsOneWidget);
 
@@ -143,16 +223,10 @@ void main() {
   testWidgets('shows the empty state when a channel has no articles', (
     WidgetTester tester,
   ) async {
-    await pumpScreen(
+    await _pumpFeed(
       tester,
-      const NewsListScreen(),
-      overrides: <Override>[
-        apiClientProvider.overrideWithValue(
-          fakeApiClient(workingApi(articles: <Map<String, dynamic>>[])),
-        ),
-      ],
+      adapter: workingApi(articles: <Map<String, dynamic>>[]),
     );
-    await tester.pumpAndSettle();
 
     expect(find.text('Keine Beiträge'), findsOneWidget);
   });
@@ -165,6 +239,7 @@ void main() {
       const NewsListScreen(),
       locale: AppLocales.english,
       overrides: <Override>[
+        frozenNewsClock(),
         apiClientProvider.overrideWithValue(
           fakeApiClient(workingApi(articles: <Map<String, dynamic>>[])),
         ),
@@ -186,21 +261,130 @@ void main() {
       return FakeHttpResponse(envelope(articlesFixture));
     });
 
-    final ProviderContainer container = await pumpScreen(
+    final ProviderContainer container = await _pumpFeed(
       tester,
-      const NewsListScreen(),
-      overrides: <Override>[
-        apiClientProvider.overrideWithValue(fakeApiClient(adapter)),
-      ],
+      adapter: adapter,
     );
-    await tester.pumpAndSettle();
     expect(find.text('Offline gespeicherte Inhalte'), findsNothing);
 
     offline = true;
-    container.invalidate(newsFeedProvider);
+    container.invalidate(newsFeedControllerProvider);
     await tester.pumpAndSettle();
 
     expect(find.text('Offline gespeicherte Inhalte'), findsOneWidget);
     expect(find.text('Semesterstart 2026'), findsOneWidget);
+  });
+
+  testWidgets('says once when an article is only available in German', (
+    WidgetTester tester,
+  ) async {
+    // The contract reports the fallback per response, and the reader is told
+    // once — not once per card.
+    final FakeHttpAdapter adapter = FakeHttpAdapter((RequestOptions options) {
+      if (options.path.endsWith('/news/channels')) {
+        return FakeHttpResponse(envelope(channelsFixture));
+      }
+      return FakeHttpResponse(
+        envelope(
+          articlesFixture,
+          meta: <String, dynamic>{'translationFallback': true},
+        ),
+      );
+    });
+
+    await _pumpFeed(tester, adapter: adapter);
+
+    expect(
+      find.textContaining('keine englische Fassung'),
+      findsOneWidget,
+      reason: 'the hint belongs to the response, not to a card',
+    );
+  });
+
+  group('infinite scrolling', () {
+    testWidgets('loads the next page when the end comes into view', (
+      WidgetTester tester,
+    ) async {
+      final _PagedApi api = _PagedApi(<int, List<String>?>{
+        1: <String>['a01', 'a02', 'a03', 'a04', 'a05', 'a06', 'a07', 'a08'],
+        2: <String>['b01', 'b02'],
+      });
+
+      await _pumpFeed(tester, adapter: api.adapter, size: const Size(390, 600));
+      // Only the first page so far — the end of the list is far below.
+      expect(api.requested, <int>[1]);
+
+      await tester.drag(find.byType(NewsCard).first, const Offset(0, -4000));
+      await tester.pumpAndSettle();
+
+      expect(api.requested, <int>[1, 2]);
+
+      // The appended page sits below the current position; scrolling on shows
+      // it, and the list has not started over.
+      await tester.drag(find.byType(NewsCard).first, const Offset(0, -4000));
+      await tester.pumpAndSettle();
+      expect(find.text('Meldung b02'), findsOneWidget);
+      expect(api.requested, <int>[1, 2], reason: 'the last page is final');
+    });
+
+    testWidgets('a failed next page keeps what is already there', (
+      WidgetTester tester,
+    ) async {
+      // Losing a screenful because the next request timed out is far worse
+      // than a retry button at the bottom.
+      final _PagedApi api = _PagedApi(<int, List<String>?>{
+        1: <String>['a01', 'a02'],
+        2: null,
+      });
+
+      await _pumpFeed(tester, adapter: api.adapter);
+
+      expect(find.text('Meldung a01'), findsOneWidget);
+      expect(
+        find.text('Weitere Beiträge konnten nicht geladen werden.'),
+        findsOneWidget,
+      );
+      expect(find.text('Erneut versuchen'), findsOneWidget);
+    });
+
+    testWidgets('the retry appends the page it failed on', (
+      WidgetTester tester,
+    ) async {
+      final _PagedApi api = _PagedApi(<int, List<String>?>{
+        1: <String>['a01', 'a02'],
+        2: null,
+      });
+
+      await _pumpFeed(tester, adapter: api.adapter);
+      api.pages[2] = <String>['b01', 'b02'];
+
+      await tester.tap(find.text('Erneut versuchen'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Meldung a01'), findsOneWidget);
+      expect(find.text('Meldung b01'), findsOneWidget);
+      expect(
+        find.text('Weitere Beiträge konnten nicht geladen werden.'),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a failed page is not retried by itself', (
+      WidgetTester tester,
+    ) async {
+      // An endpoint that has just said no must not be hammered.
+      final _PagedApi api = _PagedApi(<int, List<String>?>{
+        1: <String>['a01'],
+        2: null,
+      });
+
+      await _pumpFeed(tester, adapter: api.adapter);
+      final int attempts = api.requested.where((int page) => page == 2).length;
+
+      await tester.pump(const Duration(seconds: 5));
+
+      expect(api.requested.where((int page) => page == 2).length, attempts);
+      expect(attempts, 1);
+    });
   });
 }

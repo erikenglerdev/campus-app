@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_metrics.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../l10n/l10n.dart';
 import '../application/moodle_account_controller.dart';
@@ -71,7 +72,7 @@ class _MoodleSetupScreenState extends ConsumerState<MoodleSetupScreen> {
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: EdgeInsets.all(context.metrics.screenPadding),
             children: <Widget>[
               Text(l10n.moodleSetupHeadline, style: text.titleLarge),
               const SizedBox(height: AppSpacing.md),
