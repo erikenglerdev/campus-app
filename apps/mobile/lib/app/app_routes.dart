@@ -4,9 +4,10 @@
 /// All route paths and names of the app in one place.
 abstract final class AppRoutes {
   /// The news feed — the app's entry point and the first default tab.
+  ///
+  /// It has no detail route: the feed carries the full article and expands it
+  /// in place.
   static const String news = '/news';
-  static const String newsDetailName = 'news-detail';
-  static const String newsDetailPath = ':slug';
 
   /// The second top-level destination is the cross-source calendar. The
   /// timetable is no longer a tab of its own — it is the calendar's first source.

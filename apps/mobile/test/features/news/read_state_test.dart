@@ -11,10 +11,10 @@ void main() {
       expect(NewsReadState.empty.initialised, isFalse);
     });
 
-    test('treats the first feed as already read', () {
+    test('adopts the first feed as already read', () {
       // Announcing "23 unread" to someone opening the app for the first time
       // would be noise, not information.
-      final NewsReadState state = NewsReadState.empty.withFeed(<String>[
+      final NewsReadState state = NewsReadState.empty.adopt(<String>[
         'a',
         'b',
         'c',
@@ -23,12 +23,23 @@ void main() {
       expect(state.initialised, isTrue);
     });
 
+    test(
+      'adopting a second page adds to the first, it does not replace it',
+      () {
+        // The feed arrives page by page. On a fresh install every page that
+        // scrolls in is older than the last, so it counts as read too — a state
+        // that replaced the previous page would make page one unread again.
+        final NewsReadState state = NewsReadState.empty
+            .adopt(<String>['a', 'b'])
+            .adopt(<String>['c', 'd']);
+
+        expect(state.unreadCount(<String>['a', 'b', 'c', 'd']), 0);
+      },
+    );
+
     test('marks genuinely new articles unread on the next feed', () {
-      final NewsReadState first = NewsReadState.empty.withFeed(<String>[
-        'a',
-        'b',
-      ]);
-      final NewsReadState second = first.withFeed(<String>['a', 'b', 'new']);
+      final NewsReadState first = NewsReadState.empty.adopt(<String>['a', 'b']);
+      final NewsReadState second = first.prune(<String>['a', 'b', 'new']);
 
       expect(second.isUnread('new'), isTrue);
       expect(second.isRead('a'), isTrue);
@@ -39,8 +50,8 @@ void main() {
   group('reading', () {
     test('marking one read leaves the others alone', () {
       final NewsReadState state = NewsReadState.empty
-          .withFeed(<String>['a'])
-          .withFeed(<String>['a', 'b', 'c'])
+          .adopt(<String>['a'])
+          .prune(<String>['a', 'b', 'c'])
           .markRead('b');
 
       expect(state.isRead('b'), isTrue);
@@ -49,8 +60,8 @@ void main() {
 
     test('marking all read clears the count', () {
       final NewsReadState state = NewsReadState.empty
-          .withFeed(<String>['a'])
-          .withFeed(<String>['a', 'b', 'c']);
+          .adopt(<String>['a'])
+          .prune(<String>['a', 'b', 'c']);
       expect(state.unreadCount(<String>['a', 'b', 'c']), 2);
 
       final NewsReadState after = state.markAllRead(<String>['a', 'b', 'c']);
@@ -59,7 +70,7 @@ void main() {
 
     test('an article can be marked unread again', () {
       final NewsReadState state = NewsReadState.empty
-          .withFeed(<String>['a'])
+          .adopt(<String>['a'])
           .markUnread('a');
       expect(state.isUnread('a'), isTrue);
       expect(
@@ -75,17 +86,17 @@ void main() {
       // A deactivated channel, or an unpublished post. Keeping its marker
       // forever would grow the store without bound.
       final NewsReadState state = NewsReadState.empty
-          .withFeed(<String>['a', 'b', 'gone'])
-          .withFeed(<String>['a', 'b']);
+          .adopt(<String>['a', 'b', 'gone'])
+          .prune(<String>['a', 'b']);
 
       expect(state.readSlugs, <String>{'a', 'b'});
     });
 
     test('an article that comes back is new again', () {
       final NewsReadState state = NewsReadState.empty
-          .withFeed(<String>['a', 'temporarily-gone'])
-          .withFeed(<String>['a'])
-          .withFeed(<String>['a', 'temporarily-gone']);
+          .adopt(<String>['a', 'temporarily-gone'])
+          .prune(<String>['a'])
+          .prune(<String>['a', 'temporarily-gone']);
 
       expect(
         state.isUnread('temporarily-gone'),
@@ -94,15 +105,8 @@ void main() {
       );
     });
 
-    test('an empty feed does not wipe an initialised install', () {
-      // An outage or an empty response must not silently reset read state.
-      final NewsReadState state = NewsReadState.empty
-          .withFeed(<String>['a', 'b'])
-          .withFeed(<String>['a', 'b'])
-          .markAllRead(<String>['a', 'b']);
-
-      expect(state.initialised, isTrue);
-      expect(state.unreadCount(<String>[]), 0);
+    test('pruning never claims an install is new', () {
+      expect(NewsReadState.empty.prune(<String>['a']).initialised, isFalse);
     });
   });
 
@@ -121,7 +125,7 @@ void main() {
   group('storage', () {
     test('round-trips', () {
       final NewsReadState state = NewsReadState.empty
-          .withFeed(<String>['b', 'a'])
+          .adopt(<String>['b', 'a'])
           .markRead('c');
       final NewsReadState reloaded = NewsReadState.fromStorage(
         readSlugs: state.toStorage(),
@@ -131,7 +135,7 @@ void main() {
     });
 
     test('is written in a stable order so the store does not churn', () {
-      final NewsReadState state = NewsReadState.empty.withFeed(<String>[
+      final NewsReadState state = NewsReadState.empty.adopt(<String>[
         'c',
         'a',
         'b',

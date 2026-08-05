@@ -22,6 +22,7 @@ class NewsFeedState {
     this.loadMoreFailed = false,
     this.fromCache = false,
     this.cachedAt,
+    this.translationFallback = false,
   });
 
   /// Every article loaded so far, in server order, without repeats.
@@ -43,6 +44,12 @@ class NewsFeedState {
   final bool fromCache;
   final DateTime? cachedAt;
 
+  /// At least one article is shown in German because no translation exists.
+  ///
+  /// Read from the first page only: the locale contract is a property of the
+  /// request, and a reader is told once, not once per page.
+  final bool translationFallback;
+
   bool get hasMore => page < totalPages;
 
   NewsFeedState copyWith({
@@ -59,6 +66,7 @@ class NewsFeedState {
     loadMoreFailed: loadMoreFailed ?? this.loadMoreFailed,
     fromCache: fromCache,
     cachedAt: cachedAt,
+    translationFallback: translationFallback,
   );
 }
 
@@ -116,6 +124,7 @@ class NewsFeedController extends AsyncNotifier<NewsFeedState> {
       totalPages: first.value.totalPages,
       fromCache: first.fromCache,
       cachedAt: first.cachedAt,
+      translationFallback: first.meta.translationFallback,
     );
   }
 

@@ -47,6 +47,19 @@ List<Map<String, dynamic>> get articlesFixture => <Map<String, dynamic>>[
     'authors': <Object>[],
     'sourceName': null,
     'sourceUrl': null,
+    // The list endpoint carries the sanitised article, which is what lets the
+    // feed render it inline without a request per card.
+    'content': <Object>[
+      <String, dynamic>{
+        'type': 'paragraph',
+        'children': <Object>[
+          <String, dynamic>{
+            'type': 'text',
+            'text': 'Das Wintersemester beginnt im Oktober.',
+          },
+        ],
+      },
+    ],
   },
 ];
 

@@ -13,25 +13,14 @@ import '../application/channel_subscriptions.dart';
 import '../application/news_providers.dart';
 import '../data/news_models.dart';
 
-/// Opens the channel picker as a modal bottom sheet.
-Future<void> showChannelPickerSheet(BuildContext context) {
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    builder: (BuildContext context) => const SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(bottom: AppSpacing.lg),
-        child: ChannelPickerList(showTitle: true),
-      ),
-    ),
-  );
-}
-
 /// Lets the user subscribe to and unsubscribe from channels.
 ///
 /// The list is built entirely from the API response — there is no hard-coded
 /// channel anywhere in the app.
+///
+/// Used in two places: inside the feed's filter sheet, and full-screen from the
+/// settings. It is the channel part only — the unread controls live next to it
+/// in the filter sheet, not in here.
 class ChannelPickerList extends ConsumerWidget {
   const ChannelPickerList({this.showTitle = false, super.key});
 

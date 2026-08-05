@@ -7,7 +7,6 @@ import 'package:campus_koethen/core/network/network_providers.dart';
 import 'package:campus_koethen/core/prefs/key_value_store.dart';
 import 'package:campus_koethen/core/prefs/preference_keys.dart';
 import 'package:campus_koethen/features/news/application/news_read_controller.dart';
-import 'package:campus_koethen/features/news/presentation/news_card.dart';
 import 'package:campus_koethen/features/news/presentation/news_list_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -16,18 +15,26 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_http_adapter.dart';
+import '../../support/news_harness.dart';
 import '../../support/pump_app.dart';
 
 Map<String, dynamic> _article(String slug, String title) => <String, dynamic>{
   'slug': slug,
   'title': title,
   'teaser': null,
-  'publishedAt': '2026-05-12T09:00:00.000Z',
+  'publishedAt': '2026-08-04T09:00:00.000Z',
   'isPinned': false,
   'heroImage': null,
   'channels': <Object>[],
   'authors': <Object>[],
-  'content': <Object>[],
+  'content': <Object>[
+    <String, dynamic>{
+      'type': 'paragraph',
+      'children': <Object>[
+        <String, dynamic>{'type': 'text', 'text': 'Der Text von $slug.'},
+      ],
+    },
+  ],
 };
 
 Map<String, dynamic> _channel(String slug, String name) => <String, dynamic>{
@@ -70,6 +77,7 @@ Future<ProviderContainer> pumpNews(
     locale: locale,
     keyValueStore: store,
     overrides: <Override>[
+      frozenNewsClock(),
       apiClientProvider.overrideWithValue(
         _api(
           articles ??
@@ -83,6 +91,36 @@ Future<ProviderContainer> pumpNews(
   );
   await tester.pumpAndSettle();
   return container;
+}
+
+/// Opens the one filter button at the top of the feed.
+Future<void> _openFilters(
+  WidgetTester tester, {
+  String tooltip = 'Filter',
+}) async {
+  await tester.tap(find.byTooltip(tooltip));
+  await tester.pumpAndSettle();
+}
+
+/// Closes the modal sheet by tapping its barrier.
+Future<void> _closeSheet(WidgetTester tester) async {
+  await tester.tapAt(const Offset(10, 10));
+  await tester.pumpAndSettle();
+}
+
+/// Lets the visibility dwell of any unread card elapse.
+///
+/// Every test that renders an unread article has to do this before it ends —
+/// the timer is the feature, and a test that left it pending would fail.
+Future<void> _letDwellElapse(WidgetTester tester) async {
+  await tester.pump(const Duration(seconds: 2));
+}
+
+InMemoryKeyValueStore _knownInstall({List<String> read = const <String>[]}) {
+  return InMemoryKeyValueStore(<String, Object>{
+    PreferenceKeys.newsReadSlugs: read,
+    PreferenceKeys.newsReadInitialised: 1,
+  });
 }
 
 void main() {
@@ -101,60 +139,93 @@ void main() {
   testWidgets('an article added later is marked unread', (
     WidgetTester tester,
   ) async {
-    final InMemoryKeyValueStore store = InMemoryKeyValueStore();
     // The install has already seen 'a'.
-    await store.setStringList(PreferenceKeys.newsReadSlugs, <String>['a']);
-    await store.setInt(PreferenceKeys.newsReadInitialised, 1);
-
-    await pumpNews(tester, store: store);
+    await pumpNews(tester, store: _knownInstall(read: <String>['a']));
 
     expect(find.text('Neu'), findsOneWidget);
-    final NewsCard fresh = tester.widget<NewsCard>(
-      find.ancestor(
-        of: find.text('Zweite Meldung'),
-        matching: find.byType(NewsCard),
+    expect(
+      find.descendant(
+        of: find.ancestor(
+          of: find.text('Zweite Meldung'),
+          matching: find.byType(Card),
+        ),
+        matching: find.text('Neu'),
       ),
+      findsOneWidget,
     );
-    expect(fresh.isUnread, isTrue);
+
+    await _letDwellElapse(tester);
   });
 
   testWidgets('unread is stated in words, not only by colour', (
     WidgetTester tester,
   ) async {
-    final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-    await store.setStringList(PreferenceKeys.newsReadSlugs, <String>['a']);
-    await store.setInt(PreferenceKeys.newsReadInitialised, 1);
-
-    await pumpNews(tester, store: store);
+    await pumpNews(tester, store: _knownInstall(read: <String>['a']));
 
     // A visible badge…
     expect(find.text('Neu'), findsOneWidget);
     // …and an accessible name that says so too.
     expect(find.bySemanticsLabel(RegExp('Ungelesen')), findsOneWidget);
+
+    await _letDwellElapse(tester);
+  });
+
+  testWidgets('an article that stays on screen is marked read by itself', (
+    WidgetTester tester,
+  ) async {
+    // Not the moment the list builds the card — a card is built shortly before
+    // it scrolls into view, and building is not reading.
+    final InMemoryKeyValueStore store = _knownInstall();
+    final ProviderContainer container = await pumpNews(tester, store: store);
+    expect(container.read(newsReadProvider).unreadCount(<String>['a', 'b']), 2);
+
+    await _letDwellElapse(tester);
+
+    expect(container.read(newsReadProvider).unreadCount(<String>['a', 'b']), 0);
+    expect(find.text('Neu'), findsNothing);
+  });
+
+  testWidgets('the filter sheet holds the unread switch', (
+    WidgetTester tester,
+  ) async {
+    // One button at the top, everything behind it: channels and unread live in
+    // the same sheet.
+    final InMemoryKeyValueStore store = _knownInstall(read: <String>['a']);
+    await pumpNews(tester, store: store);
+
+    await _openFilters(tester);
+    expect(find.text('Kanäle'), findsOneWidget);
+    await tester.tap(find.text('Nur ungelesene'));
+    await tester.pumpAndSettle();
+
+    expect(store.getInt(PreferenceKeys.newsUnreadOnly), 1);
+
+    await _closeSheet(tester);
   });
 
   testWidgets('the unread-only filter hides read articles', (
     WidgetTester tester,
   ) async {
-    final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-    await store.setStringList(PreferenceKeys.newsReadSlugs, <String>['a']);
-    await store.setInt(PreferenceKeys.newsReadInitialised, 1);
+    final InMemoryKeyValueStore store = _knownInstall(read: <String>['a']);
+    await store.setInt(PreferenceKeys.newsUnreadOnly, 1);
 
     await pumpNews(tester, store: store);
-    expect(find.text('Erste Meldung'), findsOneWidget);
-
-    await tester.tap(find.byTooltip('Nur ungelesene'));
-    await tester.pumpAndSettle();
 
     expect(find.text('Erste Meldung'), findsNothing);
     expect(find.text('Zweite Meldung'), findsOneWidget);
-    expect(store.getInt(PreferenceKeys.newsUnreadOnly), 1);
+
+    await _letDwellElapse(tester);
+
+    // With the filter on nothing is marked read by looking at it, or the
+    // article would vanish from under the reader's finger.
+    expect(find.text('Neu'), findsOneWidget);
+    expect(find.text('Zweite Meldung'), findsOneWidget);
   });
 
   testWidgets('filtering to unread with nothing unread explains itself', (
     WidgetTester tester,
   ) async {
-    final InMemoryKeyValueStore store = InMemoryKeyValueStore();
+    final InMemoryKeyValueStore store = _knownInstall(read: <String>['a', 'b']);
     await store.setInt(PreferenceKeys.newsUnreadOnly, 1);
 
     await pumpNews(tester, store: store);
@@ -167,15 +238,14 @@ void main() {
   testWidgets('mark all as read clears every badge', (
     WidgetTester tester,
   ) async {
-    final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-    await store.setStringList(PreferenceKeys.newsReadSlugs, <String>[]);
-    await store.setInt(PreferenceKeys.newsReadInitialised, 1);
-
+    final InMemoryKeyValueStore store = _knownInstall();
     final ProviderContainer container = await pumpNews(tester, store: store);
     expect(find.text('Neu'), findsNWidgets(2));
 
-    await tester.tap(find.byTooltip('Alle als gelesen markieren'));
+    await _openFilters(tester);
+    await tester.tap(find.text('Alle als gelesen markieren'));
     await tester.pumpAndSettle();
+    await _closeSheet(tester);
 
     expect(find.text('Neu'), findsNothing);
     expect(container.read(newsReadProvider).unreadCount(<String>['a', 'b']), 0);
@@ -189,9 +259,7 @@ void main() {
     WidgetTester tester,
   ) async {
     // An outage must never reset what the user has already read.
-    final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-    await store.setStringList(PreferenceKeys.newsReadSlugs, <String>['a', 'b']);
-    await store.setInt(PreferenceKeys.newsReadInitialised, 1);
+    final InMemoryKeyValueStore store = _knownInstall(read: <String>['a', 'b']);
 
     final ProviderContainer container = await pumpNews(
       tester,
@@ -208,8 +276,10 @@ void main() {
 
   testWidgets('renders in English', (WidgetTester tester) async {
     await pumpNews(tester, locale: AppLocales.english);
-    expect(find.byTooltip('Unread only'), findsOneWidget);
-    expect(find.byTooltip('Mark all as read'), findsOneWidget);
+
+    await _openFilters(tester);
+    expect(find.text('Unread only'), findsOneWidget);
+    expect(find.text('Mark all as read'), findsOneWidget);
   });
 
   testWidgets('survives a narrow phone with doubled text', (
@@ -222,16 +292,13 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    final InMemoryKeyValueStore store = InMemoryKeyValueStore();
-    await store.setStringList(PreferenceKeys.newsReadSlugs, <String>[]);
-    await store.setInt(PreferenceKeys.newsReadInitialised, 1);
-
     await pumpScreen(
       tester,
       const NewsListScreen(),
-      keyValueStore: store,
+      keyValueStore: _knownInstall(),
       textScaler: const TextScaler.linear(2),
       overrides: <Override>[
+        frozenNewsClock(),
         apiClientProvider.overrideWithValue(
           _api(<Map<String, dynamic>>[
             _article(
@@ -245,5 +312,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
+
+    await _letDwellElapse(tester);
   });
 }

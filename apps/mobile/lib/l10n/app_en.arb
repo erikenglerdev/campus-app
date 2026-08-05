@@ -36,7 +36,6 @@
     }
   },
   "offlineCachedUnknownTime": "Last loaded: unknown",
-  "newsTitle": "News",
   "newsEmptyTitle": "No articles",
   "newsEmptyMessage": "There are currently no articles in the selected channels.",
   "newsNoChannelsSelectedTitle": "No channels selected",
@@ -44,7 +43,6 @@
   "newsNoChannelsAvailableTitle": "No channels available",
   "newsNoChannelsAvailableMessage": "There are currently no news channels.",
   "newsChannelPickerTitle": "Channels",
-  "newsChannelPickerTooltip": "Select channels",
   "newsChannelSelected": "Channel {name} subscribed",
   "@newsChannelSelected": {
     "placeholders": {
@@ -62,22 +60,6 @@
     }
   },
   "newsPinnedLabel": "Pinned",
-  "newsPublishedAt": "Published on {date}",
-  "@newsPublishedAt": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "newsAuthorsLabel": "By {authors}",
-  "@newsAuthorsLabel": {
-    "placeholders": {
-      "authors": {
-        "type": "String"
-      }
-    }
-  },
   "newsSourceLabel": "Source: {source}",
   "@newsSourceLabel": {
     "placeholders": {
@@ -87,17 +69,6 @@
     }
   },
   "newsOpenSource": "Open source",
-  "newsArticleSemanticLabel": "Article {title}, published on {date}",
-  "@newsArticleSemanticLabel": {
-    "placeholders": {
-      "title": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
   "newsChannelCountLabel": "{count, plural, =0{No channels selected} =1{1 channel selected} other{{count} channels selected}}",
   "@newsChannelCountLabel": {
     "placeholders": {
@@ -1006,6 +977,13 @@
   "moduleCategoryCampus": "Campus",
   "moduleCategoryApp": "App",
   "newsFeedTitle": "Campus News",
+  "newsShowMore": "Show more",
+  "newsShowLess": "Show less",
+  "newsFilterTooltip": "Filter",
+  "newsFilterTitle": "Filter",
+  "newsLoadMoreFailed": "Could not load more articles.",
+  "newsLoadMoreRetry": "Try again",
+  "newsNoContent": "This article has no text.",
   "newsAgeJustNow": "just now",
   "newsAgeMinutes": "{count} min ago",
   "newsAgeHours": "{count} h ago",

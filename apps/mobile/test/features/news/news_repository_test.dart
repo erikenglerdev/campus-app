@@ -150,38 +150,5 @@ void main() {
         throwsA(isA<ApiFailure>()),
       );
     });
-
-    test('maps a 404 to a not-found failure', () async {
-      final FakeHttpAdapter adapter = FakeHttpAdapter(
-        (_) => const FakeHttpResponse(<String, dynamic>{
-          'error': <String, dynamic>{
-            'status': 404,
-            'code': 'NEWS_ARTICLE_NOT_FOUND',
-            'message': 'nicht gefunden',
-          },
-        }, statusCode: 404),
-      );
-      final NewsRepository repository = NewsRepository(
-        client: fakeApiClient(adapter),
-        cache: SafeContentCache(MemoryContentCache()),
-      );
-
-      await expectLater(
-        repository.fetchArticle(locale: 'de', slug: 'missing'),
-        throwsA(
-          isA<ApiFailure>()
-              .having(
-                (ApiFailure failure) => failure.kind,
-                'kind',
-                ApiFailureKind.notFound,
-              )
-              .having(
-                (ApiFailure failure) => failure.code,
-                'code',
-                'NEWS_ARTICLE_NOT_FOUND',
-              ),
-        ),
-      );
-    });
   });
 }

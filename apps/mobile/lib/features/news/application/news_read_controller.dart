@@ -16,25 +16,47 @@ import '../domain/read_state.dart';
 class NewsReadController extends Notifier<NewsReadState> {
   KeyValueStore get _store => ref.read(keyValueStoreProvider);
 
+  /// Whether this run started on an installation that had never seen a feed.
+  ///
+  /// It stays set for the whole run, so every page the user scrolls into is
+  /// adopted as read — on a fresh install the articles further down the feed
+  /// are older still, and none of them is news to somebody who has just
+  /// arrived. The next launch reads `initialised` from the store and stops
+  /// adopting.
+  bool _adopting = false;
+
   @override
   NewsReadState build() {
     final KeyValueStore store = ref.watch(keyValueStoreProvider);
-    return NewsReadState.fromStorage(
+    final NewsReadState stored = NewsReadState.fromStorage(
       readSlugs: store.getStringList(PreferenceKeys.newsReadSlugs),
       initialised: store.getInt(PreferenceKeys.newsReadInitialised) == 1,
     );
+    _adopting = !stored.initialised;
+    return stored;
   }
 
-  /// Reconciles the stored state with a freshly loaded feed.
+  /// Reconciles the stored state with what the feed currently holds.
   ///
-  /// Deliberately ignores an **empty** feed: an outage or a failed response
-  /// would otherwise prune every marker and make the whole archive unread the
-  /// next time it loads. The project rule that a failed response never
-  /// destroys the last good state applies here too.
-  Future<void> syncWithFeed(Iterable<String> feedSlugs) async {
+  /// [complete] says whether [feedSlugs] is the **whole** feed rather than the
+  /// pages loaded so far. Pruning against a partial feed would drop the marker
+  /// of every article below it and make the archive unread again, so a partial
+  /// feed only ever leaves the state alone.
+  ///
+  /// An **empty** feed is ignored outright: an outage or a failed response must
+  /// not prune anything. The project rule that a failed response never destroys
+  /// the last good state applies here too.
+  Future<void> syncWithFeed(
+    Iterable<String> feedSlugs, {
+    required bool complete,
+  }) async {
     final List<String> slugs = feedSlugs.toList(growable: false);
     if (slugs.isEmpty) return;
-    final NewsReadState next = state.withFeed(slugs);
+    final NewsReadState next = _adopting
+        ? state.adopt(slugs)
+        : complete
+        ? state.prune(slugs)
+        : state;
     if (next == state) return;
     await _write(next);
   }

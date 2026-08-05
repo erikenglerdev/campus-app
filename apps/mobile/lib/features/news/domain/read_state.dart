@@ -19,7 +19,9 @@ import 'package:flutter/foundation.dart';
 /// **Read markers are pruned against the feed.** An article that is no longer
 /// served — a deactivated channel, an unpublished post — drops out, which both
 /// bounds the stored set and keeps it honest: if that article ever comes back
-/// it is new again.
+/// it is new again. Pruning is only ever valid against the **whole** feed,
+/// which is why [adopt] and [prune] are two separate operations rather than one
+/// "apply this feed" method: the feed arrives page by page.
 @immutable
 class NewsReadState {
   const NewsReadState({required this.readSlugs, required this.initialised});
@@ -46,21 +48,25 @@ class NewsReadState {
   int unreadCount(Iterable<String> feedSlugs) =>
       feedSlugs.where(isUnread).length;
 
-  /// Applies a freshly loaded feed.
+  /// Takes everything in [feedSlugs] as already read.
   ///
-  /// On the very first feed everything counts as read; afterwards only the
-  /// pruning happens, so new articles stay unread.
-  NewsReadState withFeed(Iterable<String> feedSlugs) {
-    final Set<String> feed = feedSlugs.toSet();
-    if (!initialised) {
-      return NewsReadState(readSlugs: feed, initialised: true);
-    }
-    return NewsReadState(
-      // Keep only what the feed still knows about.
-      readSlugs: readSlugs.intersection(feed),
-      initialised: true,
-    );
-  }
+  /// This is what an installation that has never seen a feed does with what it
+  /// finds: nothing published before the app existed on this device is news.
+  /// Slugs are **added**, because the feed arrives one page at a time and each
+  /// further page is older than the last.
+  NewsReadState adopt(Iterable<String> feedSlugs) => NewsReadState(
+    readSlugs: <String>{...readSlugs, ...feedSlugs},
+    initialised: true,
+  );
+
+  /// Drops markers for articles the feed no longer serves.
+  ///
+  /// [feedSlugs] must be the **complete** feed — a partial page would take
+  /// every article below it with it.
+  NewsReadState prune(Iterable<String> feedSlugs) => NewsReadState(
+    readSlugs: readSlugs.intersection(feedSlugs.toSet()),
+    initialised: initialised,
+  );
 
   NewsReadState markRead(String slug) =>
       NewsReadState(readSlugs: <String>{...readSlugs, slug}, initialised: true);

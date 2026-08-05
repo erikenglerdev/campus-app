@@ -22,7 +22,6 @@ import '../features/grades/presentation/grades_screen.dart';
 import '../features/moodle/presentation/moodle_course_screen.dart';
 import '../features/moodle/presentation/moodle_screen.dart';
 import '../features/more/presentation/more_screen.dart';
-import '../features/news/presentation/news_detail_screen.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/news/presentation/news_list_screen.dart';
 import '../features/requests/domain/request_models.dart';
@@ -182,16 +181,6 @@ GoRouter createAppRouter({
                 path: AppRoutes.news,
                 builder: (BuildContext _, GoRouterState _) =>
                     const NewsListScreen(),
-                routes: <RouteBase>[
-                  GoRoute(
-                    path: AppRoutes.newsDetailPath,
-                    name: AppRoutes.newsDetailName,
-                    builder: (BuildContext _, GoRouterState state) =>
-                        NewsDetailScreen(
-                          slug: state.pathParameters['slug'] ?? '',
-                        ),
-                  ),
-                ],
               ),
             ],
           ),

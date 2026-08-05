@@ -79,8 +79,6 @@
   },
   "offlineCachedUnknownTime": "Zuletzt geladen: unbekannt",
   "@offlineCachedUnknownTime": {},
-  "newsTitle": "News",
-  "@newsTitle": {},
   "newsEmptyTitle": "Keine Beiträge",
   "@newsEmptyTitle": {},
   "newsEmptyMessage": "In den ausgewählten Kanälen gibt es derzeit keine Beiträge.",
@@ -95,8 +93,6 @@
   "@newsNoChannelsAvailableMessage": {},
   "newsChannelPickerTitle": "Kanäle",
   "@newsChannelPickerTitle": {},
-  "newsChannelPickerTooltip": "Kanäle auswählen",
-  "@newsChannelPickerTooltip": {},
   "newsChannelSelected": "Kanal {name} abonniert",
   "@newsChannelSelected": {
     "placeholders": {
@@ -115,23 +111,6 @@
   },
   "newsPinnedLabel": "Angepinnt",
   "@newsPinnedLabel": {},
-  "newsPublishedAt": "Veröffentlicht am {date}",
-  "@newsPublishedAt": {
-    "description": "date wird von AppDateFormats locale-gerecht vorformatiert.",
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "newsAuthorsLabel": "Von {authors}",
-  "@newsAuthorsLabel": {
-    "placeholders": {
-      "authors": {
-        "type": "String"
-      }
-    }
-  },
   "newsSourceLabel": "Quelle: {source}",
   "@newsSourceLabel": {
     "placeholders": {
@@ -142,17 +121,6 @@
   },
   "newsOpenSource": "Quelle öffnen",
   "@newsOpenSource": {},
-  "newsArticleSemanticLabel": "Beitrag {title}, veröffentlicht am {date}",
-  "@newsArticleSemanticLabel": {
-    "placeholders": {
-      "title": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
   "newsChannelCountLabel": "{count, plural, =0{Keine Kanäle ausgewählt} =1{1 Kanal ausgewählt} other{{count} Kanäle ausgewählt}}",
   "@newsChannelCountLabel": {
     "placeholders": {
@@ -1514,6 +1482,20 @@
   "moduleCategoryCampus": "Campus",
   "moduleCategoryApp": "App",
   "newsFeedTitle": "Campus News",
+  "newsShowMore": "Mehr anzeigen",
+  "@newsShowMore": {},
+  "newsShowLess": "Weniger anzeigen",
+  "@newsShowLess": {},
+  "newsFilterTooltip": "Filter",
+  "@newsFilterTooltip": {},
+  "newsFilterTitle": "Filter",
+  "@newsFilterTitle": {},
+  "newsLoadMoreFailed": "Weitere Beiträge konnten nicht geladen werden.",
+  "@newsLoadMoreFailed": {},
+  "newsLoadMoreRetry": "Erneut versuchen",
+  "@newsLoadMoreRetry": {},
+  "newsNoContent": "Für diesen Beitrag liegt kein Text vor.",
+  "@newsNoContent": {},
   "newsAgeJustNow": "gerade eben",
   "newsAgeMinutes": "vor {count} min",
   "@newsAgeMinutes": {

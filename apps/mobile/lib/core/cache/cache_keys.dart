@@ -16,10 +16,6 @@ abstract final class CacheKeys {
     return 'news.page1.$locale.${sorted.join('+')}';
   }
 
-  /// A single news article.
-  static String newsArticle(String locale, String slug) =>
-      'news.article.$locale.$slug';
-
   /// Full contact area list.
   static String contactAreas(String locale) => 'contacts.areas.$locale';
 
