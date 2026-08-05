@@ -12,7 +12,7 @@
 # ---------------------------------------------------------------------------
 # Stage 1 — install workspace dependencies (cached on manifests alone)
 # ---------------------------------------------------------------------------
-FROM node:22.23.1-alpine AS deps
+FROM node:22.23.2-alpine AS deps
 
 RUN corepack enable
 WORKDIR /repo
@@ -52,7 +52,7 @@ RUN pnpm --filter @campus/backend deploy --prod --legacy /opt/deploy
 # ---------------------------------------------------------------------------
 # Stage 3 — runtime
 # ---------------------------------------------------------------------------
-FROM node:22.23.1-alpine AS runtime
+FROM node:22.23.2-alpine AS runtime
 
 # openssl is required by Prisma; tini gives us correct signal handling so the
 # worker's SIGTERM shutdown path actually runs.
