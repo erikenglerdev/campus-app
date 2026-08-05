@@ -12,6 +12,7 @@ import '../../../l10n/l10n.dart';
 import '../application/grade_account_controller.dart';
 import '../application/grades_controller.dart';
 import '../domain/grade.dart';
+import '../domain/grade_projection.dart';
 import '../domain/grade_failure.dart';
 import 'grade_detail_sheet.dart';
 import 'grade_messages.dart';
@@ -155,12 +156,16 @@ class _GradesOverviewScreenState extends ConsumerState<GradesOverviewScreen> {
       return EmptyView(title: l10n.gradesTitle, message: l10n.gradesEmpty);
     }
 
-    final List<GradeEntry> entries = _sorted(view.report!.entries);
+    // HIS-QIS mixes an average and an administrative row into the same table.
+    // The projection separates them; the encrypted cache keeps the raw report.
+    final GradeProjection projection = GradeProjection.of(view.report!);
+    final List<GradeEntry> entries = _sorted(projection.exams);
     return RefreshIndicator(
       onRefresh: () => ref.read(gradesControllerProvider.notifier).refresh(),
       child: ListView(
         children: <Widget>[
           _Header(view: view, locale: locale),
+          if (projection.hasAverage) _AverageTile(average: projection.average!),
           if (view.error != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -219,6 +224,35 @@ class _Header extends StatelessWidget {
       child: Semantics(
         liveRegion: true,
         child: Text(when, style: Theme.of(context).textTheme.bodySmall),
+      ),
+    );
+  }
+}
+
+/// The average, as HIS-QIS itself keeps it in the credit account.
+///
+/// Labelled "Durchschnitt" rather than "Credit-Sammelkonto": that is what the
+/// number means to a student. The value is taken over unchanged — the app never
+/// computes an average of its own, which would disagree with the official
+/// transcript.
+class _AverageTile extends StatelessWidget {
+  const _AverageTile({required this.average});
+
+  final Grade average;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
+    final String locale = Localizations.localeOf(context).languageCode;
+    final String value = gradeText(l10n, locale, average);
+
+    return Semantics(
+      label: '${l10n.gradesAverageLabel}: $value',
+      excludeSemantics: true,
+      child: ListTile(
+        leading: const Icon(Icons.functions),
+        title: Text(l10n.gradesAverageLabel),
+        trailing: Text(value, style: Theme.of(context).textTheme.titleMedium),
       ),
     );
   }

@@ -1,6 +1,7 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
+import 'package:campus_koethen/features/grades/domain/grade.dart';
 import 'package:campus_koethen/features/grades/application/grades_providers.dart';
 import 'package:campus_koethen/features/grades/domain/grade_credentials.dart';
 import 'package:campus_koethen/features/grades/presentation/grades_screen.dart';
@@ -43,6 +44,55 @@ void main() {
     await pumpScreen(tester, const MoreScreen());
     await tester.pumpAndSettle();
     expect(find.text('Noten'), findsOneWidget);
+  });
+
+  testWidgets('the credit account is shown as the average, not as a row', (
+    WidgetTester tester,
+  ) async {
+    // The number comes from HIS-QIS unchanged, and the administrative
+    // admission row has no business on a list of results.
+    _tall(tester);
+    await pumpScreen(
+      tester,
+      const GradesScreen(),
+      overrides: _grades(
+        gateway: FakeGradesGateway(
+          report: GradeReport(<GradeEntry>[
+            const GradeEntry(
+              examNumber: '1',
+              title: 'Analysis I',
+              grade: Grade.graded(1.7),
+              status: ExamStatus.passed,
+              statusText: 'bestanden',
+            ),
+            const GradeEntry(
+              examNumber: '2',
+              title: 'Credit-Sammelkonto',
+              grade: Grade.graded(2.4),
+              status: ExamStatus.passed,
+              statusText: 'bestanden',
+            ),
+            const GradeEntry(
+              examNumber: '3',
+              title: 'Zulassung zur Abschlussarbeit',
+              grade: Grade.none(),
+              status: ExamStatus.passed,
+              statusText: 'bestanden',
+            ),
+          ]),
+        ),
+        store: InMemoryGradeCredentialStore()..write(_creds),
+        cache: InMemoryGradeCacheStore(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Durchschnitt'), findsOneWidget);
+    expect(find.text('2,4'), findsOneWidget);
+    expect(find.text('Credit-Sammelkonto'), findsNothing);
+    expect(find.text('Zulassung zur Abschlussarbeit'), findsNothing);
+    // The real exam is untouched.
+    expect(find.text('Analysis I'), findsOneWidget);
   });
 
   testWidgets('gate shows the setup screen when signed out', (

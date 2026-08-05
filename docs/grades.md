@@ -61,6 +61,32 @@ Gerät** aus dem HIS-QIS-Prüfungsportal der Hochschule Anhalt abruft. Es gibt b
 - Die UI zeigt transparent **„Zuletzt aktualisiert …"**. Bei einem Fehler bleibt der letzte
   erfolgreiche Stand sichtbar (Banner) und ein erneuter Versuch ist möglich.
 
+## Darstellung: Durchschnitt und ausgeblendete Zeilen
+
+HIS-QIS mischt drei verschiedene Dinge in dieselbe Tabelle: echte Prüfungsergebnisse, ein
+laufendes **Credit-Sammelkonto** und die administrative Zeile **Zulassung zur
+Abschlussarbeit**. Die App trennt das einmal fachlich, in
+`features/grades/domain/grade_projection.dart`, statt in der Oberfläche gegen Zeichenketten
+zu vergleichen.
+
+- **Credit-Sammelkonto → „Durchschnitt" / „Average".** Der Wert dieser Zeile **ist** der
+  Durchschnitt. Die App übernimmt ihn unverändert und **berechnet keinen eigenen** — ein
+  selbst gerechneter Schnitt würde dem offiziellen Zeugnis widersprechen. Angezeigt wird er
+  als eigene Zeile über der Liste, nicht als Prüfung.
+- **Zulassung zur Abschlussarbeit** wird nicht angezeigt. Das ist ein Verwaltungszustand,
+  kein Ergebnis.
+- **Alles andere bleibt stehen**, auch unbekannte Zeilentypen. Eine Zeile zu verwerfen, die
+  die App nicht verstanden hat, würde ein Ergebnis verbergen, auf das Studierende Anspruch
+  haben.
+
+Die Zuordnung ist unempfindlich gegen Groß- und Kleinschreibung, mehrfache Leerzeichen und
+die verschiedenen Bindestriche, die HIS synonym verwendet (`Credit-Sammelkonto`,
+`credit sammelkonto`, `Credit – Sammelkonto`).
+
+Der **verschlüsselte Cache speichert den Rohbericht unverändert**. Die Ausblendung und die
+Umbenennung sind reine Darstellung, sodass eine spätere Fassung die Projektion ändern kann,
+ohne erneut bei HIS-QIS anzufragen.
+
 ## Bekannte Fragilität (inoffizielle HTML-Integration)
 
 HIS-QIS bietet **keine** offizielle JSON-API; Login und Notenspiegel sind HTML. Die

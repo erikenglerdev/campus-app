@@ -1527,6 +1527,10 @@
   "moduleCategoryCampus": "Campus",
   "moduleCategoryApp": "App",
   "newsFeedTitle": "Campus News",
+  "gradesAverageLabel": "Durchschnitt",
+  "@gradesAverageLabel": {
+    "description": "Anzeigename der HIS-QIS-Zeile „Credit-Sammelkonto“. Der Wert stammt unverändert von dort und wird nicht selbst berechnet."
+  },
   "commonCopy": "Kopieren",
   "commonCopied": "In die Zwischenablage kopiert.",
   "requestsFieldTitle": "Titel",
