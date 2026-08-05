@@ -1527,6 +1527,15 @@
   "moduleCategoryCampus": "Campus",
   "moduleCategoryApp": "App",
   "newsFeedTitle": "Campus News",
+  "moodleSearchTooltip": "Kurse durchsuchen",
+  "moodleSearchLabel": "Kurs suchen",
+  "moodleSearchHint": "Name, Kurzname oder Beschreibung",
+  "moodleSearchClear": "Suche leeren",
+  "moodleSearchEmptyTitle": "Kein passender Kurs",
+  "moodleSearchEmptyMessage": "Kein geladener Kurs passt zur Suche. Prüfe die Schreibweise oder aktualisiere die Kursliste.",
+  "@moodleSearchEmptyMessage": {
+    "description": "Die Suche läuft ausschließlich über die bereits geladenen Kurse; deshalb der Hinweis aufs Aktualisieren."
+  },
   "gradesAverageLabel": "Durchschnitt",
   "@gradesAverageLabel": {
     "description": "Anzeigename der HIS-QIS-Zeile „Credit-Sammelkonto“. Der Wert stammt unverändert von dort und wird nicht selbst berechnet."

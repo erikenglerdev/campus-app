@@ -13,6 +13,7 @@ import '../../../l10n/l10n.dart';
 import '../application/moodle_account_controller.dart';
 import '../application/moodle_controller.dart';
 import '../domain/moodle_course.dart';
+import '../domain/moodle_course_search.dart';
 import 'moodle_messages.dart';
 
 /// The connected Moodle home: the course list with a "last updated" line, a
@@ -27,6 +28,26 @@ class MoodleOverviewScreen extends ConsumerStatefulWidget {
 }
 
 class _MoodleOverviewScreenState extends ConsumerState<MoodleOverviewScreen> {
+  final TextEditingController _search = TextEditingController();
+  bool _searching = false;
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  /// Opens or closes the search field.
+  ///
+  /// Closing clears the term, so reopening never shows a stale filter the user
+  /// has forgotten about.
+  void _toggleSearch() {
+    setState(() {
+      _searching = !_searching;
+      if (!_searching) _search.clear();
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -73,6 +94,11 @@ class _MoodleOverviewScreenState extends ConsumerState<MoodleOverviewScreen> {
         title: Text(l10n.moodleTitle),
         actions: <Widget>[
           IconButton(
+            onPressed: _toggleSearch,
+            tooltip: l10n.moodleSearchTooltip,
+            icon: Icon(_searching ? Icons.search_off : Icons.search),
+          ),
+          IconButton(
             onPressed: view.isSyncing
                 ? null
                 : () => ref.read(moodleControllerProvider.notifier).refresh(),
@@ -101,7 +127,38 @@ class _MoodleOverviewScreenState extends ConsumerState<MoodleOverviewScreen> {
           ),
         ],
       ),
-      body: _body(context, l10n, locale, view),
+      body: Column(
+        children: <Widget>[
+          if (_searching)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                0,
+              ),
+              child: TextField(
+                controller: _search,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: l10n.moodleSearchLabel,
+                  hintText: l10n.moodleSearchHint,
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.clear),
+                    tooltip: l10n.moodleSearchClear,
+                    onPressed: () => setState(_search.clear),
+                  ),
+                ),
+                // Filters the list already on the device. No keystroke turns
+                // into a request — not to Moodle, and certainly not to a
+                // Campus Köthen backend, which never sees Moodle data.
+                onChanged: (String _) => setState(() {}),
+              ),
+            ),
+          Expanded(child: _body(context, l10n, locale, view)),
+        ],
+      ),
     );
   }
 
@@ -147,6 +204,11 @@ class _MoodleOverviewScreenState extends ConsumerState<MoodleOverviewScreen> {
       );
     }
 
+    final List<MoodleCourse> visible = searchMoodleCourses(
+      view.courses,
+      _search.text,
+    );
+
     return RefreshIndicator(
       onRefresh: () => ref.read(moodleControllerProvider.notifier).refresh(),
       child: ListView(
@@ -167,10 +229,20 @@ class _MoodleOverviewScreenState extends ConsumerState<MoodleOverviewScreen> {
                 message: moodleFailureMessage(l10n, view.error),
               ),
             ),
-          for (final MoodleCourse course in view.courses) ...<Widget>[
-            _CourseTile(course: course),
-            const Divider(height: 1),
-          ],
+          if (visible.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: EmptyView(
+                icon: Icons.search_off,
+                title: l10n.moodleSearchEmptyTitle,
+                message: l10n.moodleSearchEmptyMessage,
+              ),
+            )
+          else
+            for (final MoodleCourse course in visible) ...<Widget>[
+              _CourseTile(course: course),
+              const Divider(height: 1),
+            ],
         ],
       ),
     );
