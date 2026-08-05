@@ -10,11 +10,11 @@ import '../../timetable/application/timetable_week.dart';
 import '../domain/calendar_entry.dart';
 import '../domain/week_layout.dart';
 
-/// A week as a time grid: seven day columns over an hour axis.
+/// A week as a time grid: one column per drawn day over an hour axis.
 ///
-/// The grid scrolls **horizontally**. Seven columns squeezed into a 320 px
-/// phone would be 40 px each — narrower than a touch target and too narrow for
-/// a single word — so each column keeps a usable minimum width and the week
+/// The grid scrolls **horizontally**. Five or seven columns squeezed into a
+/// 320 px phone would be far narrower than a touch target and too narrow for a
+/// single word — so each column keeps a usable minimum width and the week
 /// scrolls, the way phone calendars have solved this for years. The hour
 /// gutter stays put so you never lose the time while scrolling sideways.
 ///
@@ -27,6 +27,7 @@ class WeekGridView extends StatefulWidget {
     required this.entries,
     required this.today,
     required this.selected,
+    required this.dayCount,
     required this.onSelectDay,
     super.key,
   });
@@ -35,6 +36,11 @@ class WeekGridView extends StatefulWidget {
   final List<CalendarEntry> entries;
   final DateTime today;
   final DateTime selected;
+
+  /// How many days from [weekStart] are drawn — five for the teaching week,
+  /// seven once the reader switches the weekend on.
+  final int dayCount;
+
   final ValueChanged<DateTime> onSelectDay;
 
   /// Minimum width of one day column.
@@ -92,18 +98,27 @@ class _WeekGridViewState extends State<WeekGridView> {
     final TextTheme text = Theme.of(context).textTheme;
 
     final List<DateTime> days = <DateTime>[
-      for (int i = 0; i < TimetableWeek.lengthInDays; i++)
+      for (int i = 0; i < widget.dayCount; i++)
         TimetableWeek.shift(widget.weekStart, i),
     ];
-    final GridRange range = WeekLayout.rangeFor(widget.entries);
+    // Entries outside the drawn days are dropped here rather than in the
+    // caller: the hour range has to come from what is actually on screen, or a
+    // hidden Sunday evening would stretch every weekday column.
+    final List<CalendarEntry> visible = widget.entries
+        .where(
+          (CalendarEntry e) =>
+              days.any((DateTime day) => _sameDay(e.start, day)),
+        )
+        .toList(growable: false);
+    final GridRange range = WeekLayout.rangeFor(visible);
     final double hourHeight = WeekGridView.hourHeightOf(context);
     final double headerHeight = WeekGridView.headerHeightOf(context);
 
-    List<CalendarEntry> entriesOn(DateTime day) => widget.entries
+    List<CalendarEntry> entriesOn(DateTime day) => visible
         .where((CalendarEntry e) => _sameDay(e.start, day))
         .toList(growable: false);
 
-    final List<CalendarEntry> allDay = widget.entries
+    final List<CalendarEntry> allDay = visible
         .where((CalendarEntry e) => e.allDay)
         .toList(growable: false);
 
@@ -353,10 +368,12 @@ class _DayColumn extends StatelessWidget {
         ),
         child: Stack(
           children: <Widget>[
-            // Hour lines.
+            // Hour lines. Positioned against the SAME height the entries use:
+            // drawing them at the unscaled constant put a 10:00 lecture next to
+            // the 08:00 mark as soon as the reader scaled the text up.
             for (int h = 0; h <= range.hourCount; h++)
               Positioned(
-                top: h * WeekGridView.hourHeight,
+                top: h * hourHeight,
                 left: 0,
                 right: 0,
                 child: Divider(

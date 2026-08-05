@@ -113,4 +113,10 @@ abstract final class PreferenceKeys {
   /// source added in a later version is then on by default instead of
   /// invisible until the user finds the filter.
   static const String calendarDisabledSources = 'calendar.sources.off.v1';
+
+  /// `1` while the week view also draws Saturday and Sunday.
+  ///
+  /// Default off: a teaching week is Monday to Friday, and two empty columns
+  /// cost a fifth of the width of a phone.
+  static const String calendarShowWeekend = 'calendar.weekend.v1';
 }

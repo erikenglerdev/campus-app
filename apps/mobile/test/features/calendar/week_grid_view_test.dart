@@ -34,6 +34,7 @@ Future<void> pumpGrid(
   WidgetTester tester,
   List<CalendarEntry> entries, {
   TextScaler textScaler = TextScaler.noScaling,
+  int dayCount = 5,
 }) async {
   tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1;
@@ -50,6 +51,7 @@ Future<void> pumpGrid(
         entries: entries,
         today: _monday,
         selected: _monday,
+        dayCount: dayCount,
         onSelectDay: (DateTime _) {},
       ),
     ),
@@ -57,6 +59,13 @@ Future<void> pumpGrid(
   );
   await tester.pumpAndSettle();
 }
+
+/// The day headers the grid currently draws, in order.
+List<String> _headers(WidgetTester tester) => tester
+    .widgetList<Text>(find.byType(Text))
+    .map((Text t) => t.data ?? '')
+    .where((String s) => RegExp(r'^\w+\.? \d+$').hasMatch(s))
+    .toList(growable: false);
 
 /// The height one line of this text needs at the width it was actually given.
 double _neededHeight(WidgetTester tester, String title) {
@@ -67,6 +76,76 @@ double _neededHeight(WidgetTester tester, String title) {
 }
 
 void main() {
+  group('the week the grid draws', () {
+    testWidgets('is Monday to Friday by default', (WidgetTester tester) async {
+      // Two empty weekend columns cost a fifth of the width of a phone.
+      await pumpGrid(tester, <CalendarEntry>[]);
+
+      expect(_headers(tester), hasLength(5));
+      expect(_headers(tester).first, contains('11'));
+      expect(_headers(tester).last, contains('15'));
+    });
+
+    testWidgets('runs to Sunday when the weekend is switched on', (
+      WidgetTester tester,
+    ) async {
+      await pumpGrid(tester, <CalendarEntry>[], dayCount: 7);
+
+      expect(_headers(tester), hasLength(7));
+      expect(_headers(tester).last, contains('17'));
+    });
+
+    testWidgets('a Saturday entry is not drawn in the work week', (
+      WidgetTester tester,
+    ) async {
+      // Not just hidden columns: an entry outside the drawn days must not land
+      // in a neighbouring one.
+      await pumpGrid(tester, <CalendarEntry>[
+        _entry(title: 'Samstagstermin', dayOffset: 5, fromH: 10, toH: 11),
+        _entry(title: 'Freitagstermin', dayOffset: 4, fromH: 10, toH: 11),
+      ]);
+
+      expect(find.text('Samstagstermin'), findsNothing);
+      expect(find.text('Freitagstermin'), findsOneWidget);
+    });
+
+    testWidgets('and is drawn once the weekend is on', (
+      WidgetTester tester,
+    ) async {
+      await pumpGrid(tester, <CalendarEntry>[
+        _entry(title: 'Samstagstermin', dayOffset: 5, fromH: 10, toH: 11),
+      ], dayCount: 7);
+
+      expect(find.text('Samstagstermin'), findsOneWidget);
+    });
+  });
+
+  testWidgets('the hour lines follow the reader text size', (
+    WidgetTester tester,
+  ) async {
+    // The lines and the entries have to agree. Entries are positioned against
+    // the scaled hour height; lines drawn at the unscaled constant would sit at
+    // half the spacing and a 10:00 lecture would straddle the 12:00 mark.
+    await pumpGrid(tester, <CalendarEntry>[
+      _entry(title: 'Vorlesung', dayOffset: 0, fromH: 10, toH: 11),
+    ], textScaler: const TextScaler.linear(2));
+
+    final List<double> lines =
+        tester
+            .renderObjectList<RenderBox>(find.byType(Divider))
+            .map((RenderBox box) => box.localToGlobal(Offset.zero).dy)
+            .toSet()
+            .toList(growable: false)
+          ..sort();
+
+    expect(lines.length, greaterThan(1));
+    expect(
+      lines[1] - lines[0],
+      closeTo(const TextScaler.linear(2).scale(WeekGridView.hourHeight), 1),
+      reason: 'an hour on the grid is as tall as an hour of entries',
+    );
+  });
+
   testWidgets('a short entry still shows its title in full', (
     WidgetTester tester,
   ) async {

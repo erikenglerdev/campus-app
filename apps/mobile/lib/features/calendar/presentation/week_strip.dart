@@ -14,6 +14,14 @@ import '../../timetable/application/timetable_week.dart';
 /// month grid costs most of the screen and answers a question ("which day?")
 /// that a week strip answers in a fifth of the space.
 ///
+/// The strip is swiped sideways to change week — one week per swipe, keeping
+/// the selected weekday, arbitrarily far in either direction. The day content
+/// below keeps its own day-at-a-time swipe; the two never meet, because a
+/// gesture belongs to whichever of the two the finger started on.
+///
+/// It shows all seven days even when the week **view** is set to Monday to
+/// Friday: this is the day picker, and a Saturday has to stay reachable.
+///
 /// A day that has entries is marked by a **dot as well as** its weight, and
 /// today additionally by an outline — never by colour alone.
 class WeekStrip extends StatelessWidget {
@@ -22,6 +30,8 @@ class WeekStrip extends StatelessWidget {
     required this.today,
     required this.entryCounts,
     required this.onSelect,
+    required this.onShiftWeeks,
+    required this.onToday,
     super.key,
   });
 
@@ -34,6 +44,14 @@ class WeekStrip extends StatelessWidget {
 
   final ValueChanged<DateTime> onSelect;
 
+  /// Called with `+1`/`-1` when the strip is swiped.
+  final ValueChanged<int> onShiftWeeks;
+
+  final VoidCallback onToday;
+
+  bool get _isCurrentWeek =>
+      TimetableWeek.startOf(selected) == TimetableWeek.startOf(today);
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
@@ -45,24 +63,60 @@ class WeekStrip extends StatelessWidget {
       label: l10n.calendarWeekStripSemantic(
         AppDateFormats.weekdayDate(selected, locale),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xs,
-        ),
-        child: Row(
-          children: <Widget>[
-            for (int i = 0; i < TimetableWeek.lengthInDays; i++)
-              Expanded(
-                child: _DayCell(
-                  day: TimetableWeek.shift(start, i),
-                  selected: selected,
-                  today: today,
-                  entryCount: entryCounts[TimetableWeek.shift(start, i)] ?? 0,
-                  onSelect: onSelect,
-                ),
+      child: GestureDetector(
+        // One week per swipe regardless of how far or how fast the finger
+        // travelled: a calendar that jumped three weeks on a quick flick would
+        // be impossible to aim.
+        onHorizontalDragEnd: (DragEndDetails details) {
+          final double velocity = details.primaryVelocity ?? 0;
+          if (velocity == 0) return;
+          onShiftWeeks(velocity < 0 ? 1 : -1);
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  // Day numbers alone do not say which month you swiped into.
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: AppSpacing.xs),
+                      child: Text(
+                        AppDateFormats.monthAndYear(selected, locale),
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ),
+                  ),
+                  // Offered only when there is something to go back to.
+                  if (!_isCurrentWeek)
+                    TextButton(
+                      onPressed: onToday,
+                      child: Text(l10n.calendarToday),
+                    ),
+                ],
               ),
-          ],
+              Row(
+                children: <Widget>[
+                  for (int i = 0; i < TimetableWeek.lengthInDays; i++)
+                    Expanded(
+                      child: _DayCell(
+                        day: TimetableWeek.shift(start, i),
+                        selected: selected,
+                        today: today,
+                        entryCount:
+                            entryCounts[TimetableWeek.shift(start, i)] ?? 0,
+                        onSelect: onSelect,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

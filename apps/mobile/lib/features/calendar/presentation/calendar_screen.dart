@@ -3,9 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../app/app_routes.dart';
 import '../../../core/locale/formatters.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/status_banner.dart';
@@ -15,10 +13,8 @@ import '../../moodle/application/moodle_controller.dart';
 import '../../timetable/application/timetable_week.dart';
 import '../../timetable/presentation/timetable_group_picker_sheet.dart';
 import '../application/calendar_providers.dart';
-import '../application/public_calendar_providers.dart';
-import '../application/public_calendar_selection.dart';
-import '../domain/public_calendar.dart';
 import '../domain/calendar_entry.dart';
+import 'calendar_source_sheets.dart';
 import 'week_grid_view.dart';
 import 'week_strip.dart';
 
@@ -43,58 +39,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     });
   }
 
-  /// A compact date picker replaces the month grid.
-  ///
-  /// The product rule is that a month view must not be the primary content
-  /// surface on a phone; jumping to a date is the one thing it was actually
-  /// used for, and the platform picker does that in a sheet.
-  Future<void> _pickDate(BuildContext context, WidgetRef ref) async {
-    final DateTime current = ref.read(calendarFocusedDayProvider);
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: current,
-      firstDate: DateTime(current.year - 1),
-      lastDate: DateTime(current.year + 2),
-    );
-    if (picked != null) {
-      ref.read(calendarFocusedDayProvider.notifier).select(picked);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final AppLocalizations l10n = context.l10n;
     final CalendarViewMode mode = ref.watch(calendarViewModeProvider);
     final CalendarData data = ref.watch(focusedCalendarDataProvider);
 
+    // No app bar: the screen starts with what it is for. A title saying
+    // "Kalender" above a calendar, next to a row of icons whose meaning had to
+    // be guessed, was a row of a phone's height spent on nothing.
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.calendarTitle),
-        actions: <Widget>[
-          IconButton(
-            tooltip: l10n.calendarManageTooltip,
-            onPressed: () => context.push(AppRoutes.calendarManage),
-            icon: const Icon(Icons.tune_outlined),
-          ),
-          IconButton(
-            tooltip: l10n.calendarPickDate,
-            onPressed: () => _pickDate(context, ref),
-            icon: const Icon(Icons.calendar_month_outlined),
-          ),
-          IconButton(
-            tooltip: l10n.calendarToday,
-            onPressed: () =>
-                ref.read(calendarFocusedDayProvider.notifier).today(),
-            icon: const Icon(Icons.today_outlined),
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Column(
           children: <Widget>[
-            // Only the toggle is fixed; everything else scrolls with the view,
-            // so nothing can overflow a short viewport.
+            // View selection and source controls stay put; everything else
+            // scrolls with the view, so nothing can overflow a short viewport.
             _ViewToggle(mode: mode),
+            _SourceControls(data: data),
             Expanded(
               child: switch (mode) {
                 CalendarViewMode.day => _DayAgendaView(data: data),
@@ -109,8 +69,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 }
 
-/// The scrollable header shared by both views: source filters, per-source error
-/// banners and (when needed) the "pick a group" hint.
+/// The scrollable header shared by all views: per-source error banners and
+/// (when needed) the "pick a course" hint.
+///
+/// One source failing never removes the others — the banner says which one is
+/// missing and the rest of the calendar keeps its data.
 List<Widget> _calendarHeader(BuildContext context, CalendarData data) {
   final AppLocalizations l10n = context.l10n;
   Widget banner(String message) => Padding(
@@ -128,7 +91,6 @@ List<Widget> _calendarHeader(BuildContext context, CalendarData data) {
     ),
   );
   return <Widget>[
-    _SourceFilters(data: data),
     if (data.hasTimetableError) banner(l10n.calendarTimetableUnavailable),
     if (data.hasMoodleError) banner(l10n.calendarMoodleUnavailable),
     if (data.needsGroup) _GroupHint(),
@@ -187,69 +149,119 @@ class _ViewToggle extends ConsumerWidget {
   }
 }
 
-class _SourceFilters extends ConsumerWidget {
-  const _SourceFilters({required this.data});
+/// The three sources, each a button that opens its own sheet.
+///
+/// Not toggles: what a source needs differs — the timetable needs a course,
+/// Moodle needs an account, the events are a list of calendars — so tapping
+/// opens the place where all of that lives. The state is on the button itself
+/// in words, an icon **and** the accessible state, never in a colour.
+class _SourceControls extends ConsumerWidget {
+  const _SourceControls({required this.data});
 
   final CalendarData data;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AppLocalizations l10n = context.l10n;
-    final List<PublicCalendar> publicCalendars =
-        ref.watch(publicCalendarsCatalogProvider).value?.value ??
-        const <PublicCalendar>[];
-    final PublicCalendarSelectionState selection = ref.watch(
-      publicCalendarSelectionProvider,
-    );
+
+    String stateOf(CalendarSource source) {
+      if (source == CalendarSource.moodle && !data.moodleConnected) {
+        return l10n.calendarSourceNotConnected;
+      }
+      return data.enabledSources.contains(source)
+          ? l10n.calendarSourceVisible
+          : l10n.calendarSourceHidden;
+    }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.xs,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.xs,
       ),
+      // A Wrap, not a Row: three labels plus their state do not share one line
+      // on a narrow phone at a large text size, and a button that has to
+      // truncate its own state is worse than one on the next line.
       child: Wrap(
         spacing: AppSpacing.sm,
         runSpacing: AppSpacing.xs,
         children: <Widget>[
-          FilterChip(
-            avatar: const Icon(
-              Icons.schedule_outlined,
-              size: AppSizes.iconSmall,
+          for (final CalendarSource source in CalendarSource.values)
+            _SourceButton(
+              icon: calendarSourceIcon(source),
+              label: calendarSourceLabel(l10n, source),
+              state: stateOf(source),
+              active:
+                  data.enabledSources.contains(source) &&
+                  (source != CalendarSource.moodle || data.moodleConnected),
+              onPressed: () => showCalendarSourceSheet(context, source),
             ),
-            label: Text(l10n.calendarSourceTimetable),
-            selected: data.enabledSources.contains(CalendarSource.timetable),
-            onSelected: (_) => ref
-                .read(calendarEnabledSourcesProvider.notifier)
-                .toggle(CalendarSource.timetable),
-          ),
-          FilterChip(
-            avatar: const Icon(
-              Icons.cast_for_education_outlined,
-              size: AppSizes.iconSmall,
-            ),
-            label: Text(l10n.calendarSourceMoodle),
-            selected: data.enabledSources.contains(CalendarSource.moodle),
-            onSelected: data.moodleConnected
-                ? (_) => ref
-                      .read(calendarEnabledSourcesProvider.notifier)
-                      .toggle(CalendarSource.moodle)
-                : null,
-          ),
-          // Each public calendar individually, right where the other filters
-          // are. This toggles the SAME selection that "manage calendars"
-          // writes — a second, parallel notion of "visible" would leave the
-          // user with two switches for one thing and no way to tell which won.
-          if (data.enabledSources.contains(CalendarSource.publicCalendar))
-            for (final PublicCalendar calendar in publicCalendars)
-              FilterChip(
-                avatar: const Icon(Icons.public, size: AppSizes.iconSmall),
-                label: Text(calendar.name),
-                selected: selection.isSelected(calendar.slug),
-                onSelected: (bool value) => ref
-                    .read(publicCalendarSelectionProvider.notifier)
-                    .setSelected(calendar.slug, selected: value),
-              ),
         ],
+      ),
+    );
+  }
+}
+
+class _SourceButton extends StatelessWidget {
+  const _SourceButton({
+    required this.icon,
+    required this.label,
+    required this.state,
+    required this.active,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final String state;
+  final bool active;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme text = Theme.of(context).textTheme;
+    return Semantics(
+      button: true,
+      // Announced as "Stundenplan, Sichtbar" — the state is part of the name,
+      // not something a screen reader has to infer from a tint.
+      label: '$label, $state',
+      excludeSemantics: true,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(icon, size: AppSizes.iconSmall),
+            const SizedBox(width: AppSpacing.xs),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(label, style: text.labelLarge),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(
+                        active ? Icons.visibility : Icons.visibility_off,
+                        size: AppSizes.iconSmall,
+                      ),
+                      const SizedBox(width: AppSpacing.xxs),
+                      Flexible(child: Text(state, style: text.labelSmall)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -284,7 +296,9 @@ class _GroupHint extends ConsumerWidget {
                 alignment: AlignmentDirectional.centerEnd,
                 child: TextButton(
                   onPressed: () => showTimetableGroupPickerSheet(context),
-                  child: Text(l10n.calendarSourceTimetable),
+                  // Names the action, not the source: "Stundenplan" is what
+                  // the control above already says.
+                  child: Text(l10n.timetableGroupPickerTitle),
                 ),
               ),
             ],
@@ -326,6 +340,11 @@ class _DayAgendaView extends ConsumerWidget {
           entryCounts: counts,
           onSelect: (DateTime day) =>
               ref.read(calendarFocusedDayProvider.notifier).select(day),
+          // A swipe on the strip is a week; a swipe on the day below is a day.
+          // Two gestures, two areas — neither can swallow the other.
+          onShiftWeeks: (int delta) =>
+              ref.read(calendarFocusedDayProvider.notifier).shiftWeeks(delta),
+          onToday: () => ref.read(calendarFocusedDayProvider.notifier).today(),
         ),
         Expanded(
           child: GestureDetector(
@@ -377,7 +396,7 @@ class _DayAgendaView extends ConsumerWidget {
   }
 }
 
-/// The optional graphical week, with its filters above it.
+/// The optional graphical week.
 class _WeekView extends ConsumerWidget {
   const _WeekView({required this.data});
 
@@ -385,16 +404,56 @@ class _WeekView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final AppLocalizations l10n = context.l10n;
+    final String locale = Localizations.localeOf(context).languageCode;
     final DateTime focused = ref.watch(calendarFocusedDayProvider);
+    final bool showWeekend = ref.watch(calendarShowWeekendProvider);
+
     return Column(
       children: <Widget>[
         ..._calendarHeader(context, data),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.xs,
+            AppSpacing.lg,
+            AppSpacing.xs,
+          ),
+          // A Wrap, not a Row: at a large text size the month and the switch do
+          // not share a line on a narrow phone, and the switch dropping onto
+          // its own line is better than either of them being cut off.
+          child: Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[
+              Text(
+                AppDateFormats.monthAndYear(focused, locale),
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              // A teaching week is Monday to Friday; the weekend is a local
+              // choice. The chip carries a check mark and its label, so the
+              // state is never the fill colour alone.
+              FilterChip(
+                avatar: const Icon(
+                  Icons.weekend_outlined,
+                  size: AppSizes.iconSmall,
+                ),
+                label: Text(l10n.calendarWeekendLabel),
+                selected: showWeekend,
+                onSelected: (_) =>
+                    ref.read(calendarShowWeekendProvider.notifier).toggle(),
+              ),
+            ],
+          ),
+        ),
         Expanded(
           child: WeekGridView(
             weekStart: TimetableWeek.startOf(focused),
             entries: data.entries,
             today: TimetableWeek.dayOf(DateTime.now()),
             selected: focused,
+            dayCount: ref.watch(calendarWeekDayCountProvider),
             onSelectDay: (DateTime day) {
               ref.read(calendarFocusedDayProvider.notifier).select(day);
               // Picking a day in the week grid is how you get to that day.

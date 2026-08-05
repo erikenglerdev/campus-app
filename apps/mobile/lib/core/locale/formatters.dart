@@ -42,6 +42,10 @@ abstract final class AppDateFormats {
   static String dayAndMonth(DateTime value, String locale) =>
       DateFormat.MMMd(locale).format(value.toLocal());
 
+  /// e.g. `Mai 2026` · `May 2026` — which week the strip is showing.
+  static String monthAndYear(DateTime value, String locale) =>
+      DateFormat.yMMMM(locale).format(value.toLocal());
+
   /// e.g. `08:00` — the wall clock time of an appointment in the **device's**
   /// time zone. Uses the same 24 hour pattern as [dateTime] so times read the
   /// same everywhere in the app.

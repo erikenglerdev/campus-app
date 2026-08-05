@@ -49,6 +49,20 @@ Future<ProviderContainer> pumpCalendar(
 }
 
 void main() {
+  testWidgets('starts with the views and the sources, without an app bar', (
+    WidgetTester tester,
+  ) async {
+    // A title saying "Kalender" above a calendar, next to icons whose meaning
+    // had to be guessed, was a row of a phone's height spent on nothing.
+    await pumpCalendar(tester);
+
+    expect(find.byType(AppBar), findsNothing);
+    expect(find.text('Kalender'), findsNothing);
+    expect(find.text('Tag'), findsOneWidget);
+    expect(find.text('Woche'), findsOneWidget);
+    expect(find.text('Liste'), findsOneWidget);
+  });
+
   testWidgets('opens on the day agenda, not on a month grid', (
     WidgetTester tester,
   ) async {
@@ -67,7 +81,8 @@ void main() {
 
     final WeekStrip strip = tester.widget<WeekStrip>(find.byType(WeekStrip));
     expect(strip.entryCounts, isNotNull);
-    // Seven tappable cells, each at least a 48dp target.
+    // Seven tappable cells, each at least a 48dp target — the day picker keeps
+    // the weekend reachable even when the week VIEW is Monday to Friday.
     final Iterable<Semantics> cells = tester
         .widgetList<Semantics>(
           find.descendant(
@@ -98,34 +113,156 @@ void main() {
     expect(after, isNot(before));
   });
 
-  testWidgets('the Today action returns to the current day', (
-    WidgetTester tester,
-  ) async {
-    final ProviderContainer container = await pumpCalendar(tester);
-    container
-        .read(calendarFocusedDayProvider.notifier)
-        .select(DateTime(2026, 1, 5));
-    await tester.pumpAndSettle();
+  group('moving through the weeks', () {
+    testWidgets('swiping the strip moves one week and keeps the weekday', (
+      WidgetTester tester,
+    ) async {
+      final ProviderContainer container = await pumpCalendar(tester);
+      final DateTime before = container.read(calendarFocusedDayProvider);
 
-    await tester.tap(find.byTooltip('Heute'));
-    await tester.pumpAndSettle();
+      await tester.fling(find.byType(WeekStrip), const Offset(-200, 0), 1000);
+      await tester.pumpAndSettle();
 
-    final DateTime now = DateTime.now();
-    final DateTime focused = container.read(calendarFocusedDayProvider);
-    expect(focused.year, now.year);
-    expect(focused.month, now.month);
-    expect(focused.day, now.day);
+      final DateTime after = container.read(calendarFocusedDayProvider);
+      expect(after.difference(before).inDays, 7);
+      expect(after.weekday, before.weekday);
+    });
+
+    testWidgets('and back the other way, arbitrarily far', (
+      WidgetTester tester,
+    ) async {
+      final ProviderContainer container = await pumpCalendar(tester);
+      final DateTime before = container.read(calendarFocusedDayProvider);
+
+      for (int i = 0; i < 6; i++) {
+        await tester.fling(find.byType(WeekStrip), const Offset(200, 0), 1000);
+        await tester.pumpAndSettle();
+      }
+
+      final DateTime after = container.read(calendarFocusedDayProvider);
+      expect(after.difference(before).inDays, -42);
+      expect(after.weekday, before.weekday);
+    });
+
+    testWidgets('the day content still swipes a day at a time', (
+      WidgetTester tester,
+    ) async {
+      // Two gestures, two areas: neither may swallow the other.
+      final ProviderContainer container = await pumpCalendar(tester);
+      final DateTime before = container.read(calendarFocusedDayProvider);
+
+      await tester.fling(
+        find.text('Keine Einträge an diesem Tag.'),
+        const Offset(-200, 0),
+        1000,
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        container.read(calendarFocusedDayProvider).difference(before).inDays,
+        1,
+      );
+    });
+
+    testWidgets('Today comes back from wherever the swiping ended up', (
+      WidgetTester tester,
+    ) async {
+      final ProviderContainer container = await pumpCalendar(tester);
+      container
+          .read(calendarFocusedDayProvider.notifier)
+          .select(DateTime(2026, 1, 5));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Heute'));
+      await tester.pumpAndSettle();
+
+      final DateTime now = DateTime.now();
+      final DateTime focused = container.read(calendarFocusedDayProvider);
+      expect(focused.year, now.year);
+      expect(focused.month, now.month);
+      expect(focused.day, now.day);
+    });
   });
 
-  testWidgets('a date picker replaces the month view', (
-    WidgetTester tester,
-  ) async {
-    await pumpCalendar(tester);
+  group('the source controls', () {
+    testWidgets('name all three sources and their state', (
+      WidgetTester tester,
+    ) async {
+      await pumpCalendar(tester);
 
-    await tester.tap(find.byTooltip('Datum wählen'));
-    await tester.pumpAndSettle();
+      expect(find.text('Stundenplan'), findsOneWidget);
+      expect(find.text('Moodle'), findsOneWidget);
+      expect(find.text('Events'), findsOneWidget);
+      // State in words, never in a colour alone.
+      expect(find.text('Sichtbar'), findsNWidgets(2));
+      expect(find.text('Nicht verbunden'), findsOneWidget);
+    });
 
-    expect(find.byType(DatePickerDialog), findsOneWidget);
+    testWidgets('the timetable control opens its sheet', (
+      WidgetTester tester,
+    ) async {
+      await pumpCalendar(tester);
+
+      await tester.tap(find.text('Stundenplan'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Im Kalender anzeigen'), findsOneWidget);
+      expect(find.text('Noch kein Kurs gewählt'), findsOneWidget);
+      // Twice: the sheet's button, and the hint on the screen behind it.
+      expect(find.text('Kurs wählen'), findsNWidgets(2));
+    });
+
+    testWidgets('hiding a source from its sheet is remembered', (
+      WidgetTester tester,
+    ) async {
+      final InMemoryKeyValueStore store = InMemoryKeyValueStore();
+      final ProviderContainer container = await pumpCalendar(
+        tester,
+        store: store,
+      );
+
+      await tester.tap(find.text('Stundenplan'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Im Kalender anzeigen'));
+      await tester.pumpAndSettle();
+
+      expect(
+        container.read(calendarEnabledSourcesProvider),
+        isNot(contains(CalendarSource.timetable)),
+      );
+      expect(
+        store.getStringList(PreferenceKeys.calendarDisabledSources),
+        <String>[CalendarSource.timetable.storageValue],
+      );
+    });
+
+    testWidgets('the Moodle control explains itself when not connected', (
+      WidgetTester tester,
+    ) async {
+      await pumpCalendar(tester);
+
+      await tester.tap(find.text('Moodle'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Moodle verbinden'), findsOneWidget);
+      // Nothing to switch yet — the sheet offers the way in instead.
+      expect(find.text('Im Kalender anzeigen'), findsNothing);
+    });
+
+    testWidgets('the events control opens the public calendars', (
+      WidgetTester tester,
+    ) async {
+      await pumpCalendar(tester);
+
+      await tester.tap(find.text('Events'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Öffentliche Kalender'), findsOneWidget);
+      expect(
+        find.text('Ausgewählte in Google Kalender öffnen'),
+        findsOneWidget,
+      );
+    });
   });
 
   group('week view', _weekViewTests);
@@ -203,7 +340,10 @@ void main() {
 
   testWidgets('renders in English', (WidgetTester tester) async {
     await pumpCalendar(tester, locale: AppLocales.english);
-    expect(find.byTooltip('Choose date'), findsOneWidget);
+
+    expect(find.text('Day'), findsOneWidget);
+    expect(find.text('Not connected'), findsOneWidget);
+    expect(find.text('Visible'), findsNWidgets(2));
   });
 
   testWidgets('survives a narrow phone with doubled text', (
@@ -245,7 +385,33 @@ void _weekViewTests() {
     expect(find.byType(WeekStrip), findsNothing);
   });
 
-  testWidgets('the grid shows all seven days', (WidgetTester tester) async {
+  testWidgets('starts on the teaching week and can take the weekend', (
+    WidgetTester tester,
+  ) async {
+    final InMemoryKeyValueStore store = InMemoryKeyValueStore();
+    final ProviderContainer container = await pumpCalendar(
+      tester,
+      store: store,
+    );
+    container
+        .read(calendarViewModeProvider.notifier)
+        .set(CalendarViewMode.week);
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<WeekGridView>(find.byType(WeekGridView)).dayCount,
+      5,
+      reason: 'Monday to Friday by default',
+    );
+
+    await tester.tap(find.text('Wochenende'));
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<WeekGridView>(find.byType(WeekGridView)).dayCount, 7);
+    expect(store.getInt(PreferenceKeys.calendarShowWeekend), 1);
+  });
+
+  testWidgets('the grid starts on a Monday', (WidgetTester tester) async {
     final ProviderContainer container = await pumpCalendar(tester);
     container
         .read(calendarViewModeProvider.notifier)
@@ -301,7 +467,7 @@ void _weekViewTests() {
         .set(CalendarViewMode.week);
     await tester.pumpAndSettle();
 
-    // Seven columns do not fit a 320 px phone, so the grid scrolls sideways
+    // Five columns do not fit a 320 px phone, so the grid scrolls sideways
     // rather than overflowing.
     expect(tester.takeException(), isNull);
   });

@@ -53,6 +53,13 @@ class CalendarFocusedDayController extends Notifier<DateTime> {
 
   void select(DateTime day) => state = TimetableWeek.dayOf(day);
   void today() => select(DateTime.now());
+
+  /// Moves [weeks] weeks, keeping the weekday.
+  ///
+  /// Whole weeks rather than 7×24 hours: adding a `Duration` across a daylight
+  /// saving change lands an hour off and can fall on the day before.
+  void shiftWeeks(int weeks) =>
+      state = TimetableWeek.shift(state, weeks * TimetableWeek.lengthInDays);
 }
 
 final NotifierProvider<CalendarFocusedDayController, DateTime>
@@ -60,6 +67,46 @@ calendarFocusedDayProvider =
     NotifierProvider<CalendarFocusedDayController, DateTime>(
       CalendarFocusedDayController.new,
     );
+
+/// Number of columns the week view draws without the weekend.
+const int kWorkWeekDays = 5;
+
+/// Whether the week view also draws Saturday and Sunday.
+///
+/// Off by default: a teaching week is Monday to Friday, and two empty columns
+/// cost a fifth of the width of a phone. Purely local, like every other view
+/// preference — nothing about it reaches a backend.
+class CalendarWeekendController extends Notifier<bool> {
+  @override
+  bool build() =>
+      ref
+          .watch(keyValueStoreProvider)
+          .getInt(PreferenceKeys.calendarShowWeekend) ==
+      1;
+
+  Future<void> set(bool value) async {
+    state = value;
+    // Written in both directions, so "off" is a decision the store remembers
+    // rather than the absence of one.
+    await ref
+        .read(keyValueStoreProvider)
+        .setInt(PreferenceKeys.calendarShowWeekend, value ? 1 : 0);
+  }
+
+  Future<void> toggle() => set(!state);
+}
+
+final NotifierProvider<CalendarWeekendController, bool>
+calendarShowWeekendProvider = NotifierProvider<CalendarWeekendController, bool>(
+  CalendarWeekendController.new,
+);
+
+/// How many day columns the week view draws.
+final Provider<int> calendarWeekDayCountProvider = Provider<int>(
+  (Ref ref) => ref.watch(calendarShowWeekendProvider)
+      ? TimetableWeek.lengthInDays
+      : kWorkWeekDays,
+);
 
 /// Which sources contribute to the calendar.
 ///
