@@ -5,45 +5,23 @@ import 'package:flutter/material.dart';
 
 import 'app_dimensions.dart';
 
-/// How much breathing room the interface gives its content.
+/// Spacing and sizing of the app's layout, as one typed token set.
 ///
-/// Two named steps rather than a slider: every value below was chosen so that
-/// **compact still clears the 48dp touch target**. A continuous control would
-/// let a user shrink the app past that, which the project rules forbid.
-enum DisplayDensity {
-  /// Roomier. The default — easier to hit, easier to scan.
-  comfortable('comfortable'),
-
-  /// Tighter. Fits noticeably more onto a 320 px-wide phone without ever
-  /// going below the minimum touch target.
-  compact('compact');
-
-  const DisplayDensity(this.storageValue);
-
-  /// Stable identifier written to local storage, never the enum index.
-  final String storageValue;
-
-  static const DisplayDensity fallback = DisplayDensity.comfortable;
-
-  static DisplayDensity fromStorage(String? value) {
-    for (final DisplayDensity density in DisplayDensity.values) {
-      if (density.storageValue == value) return density;
-    }
-    return fallback;
-  }
-
-  bool get isCompact => this == DisplayDensity.compact;
-}
-
-/// Spacing and sizing that changes with [DisplayDensity].
+/// There is exactly **one** set of values and no runtime choice. The app used
+/// to offer a "comfortable" and a "compact" density; the compact one won,
+/// because it is what a phone actually needs, and a preference that only makes
+/// the app roomier at the cost of what fits is a question nobody benefits from
+/// having to answer.
 ///
-/// Screens read these through `context.metrics` instead of picking between two
-/// constants themselves, so density stays a single decision rather than a
-/// condition repeated in every widget.
+/// Screens read these through `context.metrics` rather than reaching for raw
+/// constants, so the spacing of the whole app stays one decision instead of a
+/// number repeated in fifty widgets.
+///
+/// [listRowMinHeight] is deliberately pinned to [AppSizes.minTouchTarget]: the
+/// tightest the layout may ever get is still a target a finger can hit.
 @immutable
 class AppMetrics extends ThemeExtension<AppMetrics> {
   const AppMetrics({
-    required this.density,
     required this.screenPadding,
     required this.cardPadding,
     required this.cardGap,
@@ -51,8 +29,6 @@ class AppMetrics extends ThemeExtension<AppMetrics> {
     required this.listRowMinHeight,
     required this.cardRadius,
   });
-
-  final DisplayDensity density;
 
   /// Horizontal padding of a screen's content column.
   final double screenPadding;
@@ -67,23 +43,13 @@ class AppMetrics extends ThemeExtension<AppMetrics> {
   final double sectionGap;
 
   /// Minimum height of a tappable list row. Never below
-  /// [AppSizes.minTouchTarget], in either density.
+  /// [AppSizes.minTouchTarget].
   final double listRowMinHeight;
 
   final double cardRadius;
 
-  static const AppMetrics comfortable = AppMetrics(
-    density: DisplayDensity.comfortable,
-    screenPadding: AppSpacing.lg,
-    cardPadding: AppSpacing.lg,
-    cardGap: AppSpacing.md,
-    sectionGap: AppSpacing.xl,
-    listRowMinHeight: 56,
-    cardRadius: AppRadius.lg,
-  );
-
-  static const AppMetrics compact = AppMetrics(
-    density: DisplayDensity.compact,
+  /// The one set the app uses.
+  static const AppMetrics standard = AppMetrics(
     screenPadding: AppSpacing.md,
     cardPadding: AppSpacing.md,
     cardGap: AppSpacing.sm,
@@ -92,12 +58,8 @@ class AppMetrics extends ThemeExtension<AppMetrics> {
     cardRadius: AppRadius.md,
   );
 
-  static AppMetrics of(DisplayDensity density) =>
-      density.isCompact ? compact : comfortable;
-
   @override
   AppMetrics copyWith({
-    DisplayDensity? density,
     double? screenPadding,
     double? cardPadding,
     double? cardGap,
@@ -106,7 +68,6 @@ class AppMetrics extends ThemeExtension<AppMetrics> {
     double? cardRadius,
   }) {
     return AppMetrics(
-      density: density ?? this.density,
       screenPadding: screenPadding ?? this.screenPadding,
       cardPadding: cardPadding ?? this.cardPadding,
       cardGap: cardGap ?? this.cardGap,
@@ -121,7 +82,6 @@ class AppMetrics extends ThemeExtension<AppMetrics> {
     if (other == null) return this;
     double mix(double a, double b) => a + (b - a) * t;
     return AppMetrics(
-      density: t < 0.5 ? density : other.density,
       screenPadding: mix(screenPadding, other.screenPadding),
       cardPadding: mix(cardPadding, other.cardPadding),
       cardGap: mix(cardGap, other.cardGap),
@@ -135,5 +95,5 @@ class AppMetrics extends ThemeExtension<AppMetrics> {
 /// Reads [AppMetrics] off the theme.
 extension AppMetricsContext on BuildContext {
   AppMetrics get metrics =>
-      Theme.of(this).extension<AppMetrics>() ?? AppMetrics.comfortable;
+      Theme.of(this).extension<AppMetrics>() ?? AppMetrics.standard;
 }

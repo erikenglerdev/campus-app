@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'accent_palette.dart';
 import 'app_colors.dart';
-import 'app_density.dart';
+import 'app_metrics.dart';
 import 'app_dimensions.dart';
 import 'app_motion.dart';
 
@@ -15,31 +15,25 @@ import 'app_motion.dart';
 /// (`assets/fonts/Manrope-Variable.ttf`, SIL OFL 1.1). No font is ever fetched
 /// at runtime, therefore the `google_fonts` package is deliberately not used.
 ///
-/// Personalisation — accent palette, display density and reduced motion — is
-/// applied **here**, so a screen never has to know which one is active. It
-/// reads `context.colors`, `context.metrics` and `context.motion` and gets the
+/// Personalisation — accent palette and reduced motion — is applied **here**,
+/// so a screen never has to know which one is active. It reads
+/// `context.colors`, `context.metrics` and `context.motion` and gets the
 /// resolved answer.
 abstract final class AppTheme {
   static const String fontFamily = 'Manrope';
 
   static ThemeData light({
     AccentPalette accent = AccentPalette.fallback,
-    DisplayDensity density = DisplayDensity.fallback,
     AppMotion motion = AppMotion.enabled,
-  }) => _build(accent.applyTo(AppColors.light), density, motion);
+  }) => _build(accent.applyTo(AppColors.light), motion);
 
   static ThemeData dark({
     AccentPalette accent = AccentPalette.fallback,
-    DisplayDensity density = DisplayDensity.fallback,
     AppMotion motion = AppMotion.enabled,
-  }) => _build(accent.applyTo(AppColors.dark), density, motion);
+  }) => _build(accent.applyTo(AppColors.dark), motion);
 
-  static ThemeData _build(
-    AppColors colors,
-    DisplayDensity density,
-    AppMotion motion,
-  ) {
-    final AppMetrics metrics = AppMetrics.of(density);
+  static ThemeData _build(AppColors colors, AppMotion motion) {
+    const AppMetrics metrics = AppMetrics.standard;
     final ColorScheme scheme = ColorScheme(
       brightness: colors.brightness,
       primary: colors.primary,
@@ -121,8 +115,8 @@ abstract final class AppTheme {
       listTileTheme: ListTileThemeData(
         iconColor: colors.textSecondary,
         textColor: colors.textPrimary,
-        minVerticalPadding: density.isCompact ? AppSpacing.sm : AppSpacing.md,
-        // Never below the minimum touch target, in either density.
+        minVerticalPadding: AppSpacing.sm,
+        // Never below the minimum touch target.
         minTileHeight: metrics.listRowMinHeight,
       ),
       navigationBarTheme: NavigationBarThemeData(
@@ -130,7 +124,7 @@ abstract final class AppTheme {
         surfaceTintColor: Colors.transparent,
         indicatorColor: colors.primaryContainer,
         elevation: 0,
-        height: density.isCompact ? 64 : 72,
+        height: 64,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         labelTextStyle: WidgetStateProperty.resolveWith(
           (Set<WidgetState> states) => states.contains(WidgetState.selected)

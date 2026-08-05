@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/prefs/settings_controller.dart';
 import '../../../core/theme/accent_palette.dart';
-import '../../../core/theme/app_density.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../l10n/l10n.dart';
 
@@ -135,63 +134,6 @@ class _Swatch extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Comfortable or compact. Two named steps, never a slider — see
-/// [DisplayDensity].
-class DensityTile extends ConsumerWidget {
-  const DensityTile({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final AppLocalizations l10n = context.l10n;
-    final DisplayDensity current = ref.watch(
-      settingsProvider.select((AppSettings s) => s.displayDensity),
-    );
-
-    String label(DisplayDensity density) => switch (density) {
-      DisplayDensity.comfortable => l10n.settingsDensityComfortable,
-      DisplayDensity.compact => l10n.settingsDensityCompact,
-    };
-
-    // Radio rows rather than a trailing dropdown: a dropdown's label sits in
-    // the row's trailing slot, and at large text scales it pushes the row past
-    // the edge of a 320 px phone. This also matches how language and theme are
-    // presented two rows above.
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.sm,
-            AppSpacing.lg,
-            0,
-          ),
-          child: Text(
-            l10n.settingsDensity,
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-        ),
-        RadioGroup<DisplayDensity>(
-          groupValue: current,
-          onChanged: (DisplayDensity? density) {
-            if (density == null) return;
-            ref.read(settingsProvider.notifier).setDisplayDensity(density);
-          },
-          child: Column(
-            children: <Widget>[
-              for (final DisplayDensity density in DisplayDensity.values)
-                RadioListTile<DisplayDensity>.adaptive(
-                  value: density,
-                  title: Text(label(density)),
-                ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

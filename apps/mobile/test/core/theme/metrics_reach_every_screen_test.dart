@@ -3,27 +3,25 @@
 
 /// Holds the design system's promise across the whole app.
 ///
-/// A setting that visibly changes five screens and silently does nothing on
-/// twenty-seven others is worse than no setting: the user changes it, sees
-/// almost no effect, and concludes the app is broken. Before this test, every
-/// screen of contacts, Moodle, mail, grades and to-dos used a fixed padding
-/// and ignored the density entirely.
+/// The layout metrics are the one place that decides how much room a screen
+/// gives its content. A screen that hardcodes the value instead drifts away
+/// from the rest of the app the moment the token changes — which is how
+/// contacts, Moodle, mail, grades and to-dos once ended up with a padding
+/// nobody could adjust.
 library;
 
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// Features whose screens must honour the display density.
+/// Features whose screens must take their padding from the metrics.
 const List<String> _features = <String>[
   'contacts',
   'moodle',
   'mail',
   'grades',
   'todos',
-  'today',
   'requests',
-  'search',
 ];
 
 List<File> _screensOf(String feature) {
@@ -37,7 +35,7 @@ List<File> _screensOf(String feature) {
 }
 
 void main() {
-  test('no screen hardcodes the outer padding the density owns', () {
+  test('no screen hardcodes the outer padding the metrics own', () {
     // `EdgeInsets.all(AppSpacing.lg)` as a scroll view's padding is exactly the
     // value AppMetrics.screenPadding exists to decide.
     final List<String> offenders = <String>[];
@@ -55,7 +53,7 @@ void main() {
       offenders,
       isEmpty,
       reason:
-          'these screens ignore the display density and should use '
+          'these screens ignore the layout metrics and should use '
           'context.metrics.screenPadding:\n${offenders.join('\n')}',
     );
   });

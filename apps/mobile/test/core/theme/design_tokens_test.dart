@@ -3,7 +3,7 @@
 
 import 'package:campus_koethen/core/theme/accent_palette.dart';
 import 'package:campus_koethen/core/theme/app_colors.dart';
-import 'package:campus_koethen/core/theme/app_density.dart';
+import 'package:campus_koethen/core/theme/app_metrics.dart';
 import 'package:campus_koethen/core/theme/app_dimensions.dart';
 import 'package:campus_koethen/core/theme/app_motion.dart';
 import 'package:campus_koethen/core/theme/app_theme.dart';
@@ -11,40 +11,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('display density', () {
-    test('an unknown stored value falls back to comfortable', () {
-      expect(DisplayDensity.fromStorage(null), DisplayDensity.comfortable);
-      expect(DisplayDensity.fromStorage('cosy'), DisplayDensity.comfortable);
-      expect(DisplayDensity.fromStorage('compact'), DisplayDensity.compact);
-    });
-
-    test('compact is genuinely tighter than comfortable', () {
+  group('layout metrics', () {
+    test('the one metric set never goes below the minimum touch target', () {
+      // The app no longer offers a density choice; the single set it does use
+      // still has to keep every row tappable.
       expect(
-        AppMetrics.compact.screenPadding,
-        lessThan(AppMetrics.comfortable.screenPadding),
-      );
-      expect(
-        AppMetrics.compact.cardGap,
-        lessThan(AppMetrics.comfortable.cardGap),
-      );
-      expect(
-        AppMetrics.compact.sectionGap,
-        lessThan(AppMetrics.comfortable.sectionGap),
+        AppMetrics.standard.listRowMinHeight,
+        greaterThanOrEqualTo(AppSizes.minTouchTarget),
       );
     });
 
-    test('compact never goes below the minimum touch target', () {
-      // This is the whole reason density is two named steps and not a slider.
-      for (final AppMetrics metrics in <AppMetrics>[
-        AppMetrics.comfortable,
-        AppMetrics.compact,
-      ]) {
-        expect(
-          metrics.listRowMinHeight,
-          greaterThanOrEqualTo(AppSizes.minTouchTarget),
-          reason: '${metrics.density.storageValue} rows must stay tappable',
-        );
-      }
+    test('spacing is positive and ordered', () {
+      const AppMetrics m = AppMetrics.standard;
+      expect(m.screenPadding, greaterThan(0));
+      expect(m.cardGap, greaterThan(0));
+      expect(m.sectionGap, greaterThan(m.cardGap));
     });
   });
 
@@ -92,9 +73,8 @@ void main() {
   group('theme assembly', () {
     ThemeData themed({
       AccentPalette accent = AccentPalette.fallback,
-      DisplayDensity density = DisplayDensity.fallback,
       AppMotion motion = AppMotion.enabled,
-    }) => AppTheme.light(accent: accent, density: density, motion: motion);
+    }) => AppTheme.light(accent: accent, motion: motion);
 
     test('carries colours, metrics and motion as typed extensions', () {
       final ThemeData theme = themed();
@@ -116,20 +96,15 @@ void main() {
       );
     });
 
-    test('density reaches the list and navigation themes', () {
-      final ThemeData compact = themed(density: DisplayDensity.compact);
-      final ThemeData comfortable = themed();
+    test('the metrics reach the list theme', () {
+      final ThemeData theme = themed();
       expect(
-        compact.listTileTheme.minTileHeight,
-        lessThan(comfortable.listTileTheme.minTileHeight!),
+        theme.listTileTheme.minTileHeight,
+        AppMetrics.standard.listRowMinHeight,
       );
       expect(
-        compact.listTileTheme.minTileHeight,
+        theme.listTileTheme.minTileHeight,
         greaterThanOrEqualTo(AppSizes.minTouchTarget),
-      );
-      expect(
-        compact.navigationBarTheme.height,
-        lessThan(comfortable.navigationBarTheme.height!),
       );
     });
 
