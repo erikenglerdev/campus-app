@@ -936,7 +936,7 @@
   "canteenAllergenMolluscs": "Contains molluscs",
   "canteenAllergenFish": "Contains fish",
   "canteenFilterTooltip": "Filters and favourites",
-  "canteenFilterMarkersHint": "Only markings the source publishes for this day.",
+  "canteenNoMealsAfterFilterMessage": "Loosen the filter or try another day.",
   "canteenFilterClear": "Clear filters",
   "canteenFilterActive": "Filters active",
   "canteenNoMealsAfterFilter": "No dish matches your filters.",

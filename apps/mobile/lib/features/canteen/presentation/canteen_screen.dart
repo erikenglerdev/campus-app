@@ -220,7 +220,7 @@ class _MenuContent extends ConsumerWidget {
             child: EmptyView(
               icon: Icons.filter_alt_off_outlined,
               title: l10n.canteenNoMealsAfterFilter,
-              message: l10n.canteenFilterMarkersHint,
+              message: l10n.canteenNoMealsAfterFilterMessage,
               action: FilledButton.icon(
                 onPressed: () =>
                     ref.read(canteenFilterProvider.notifier).clear(),
