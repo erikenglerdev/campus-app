@@ -13,7 +13,7 @@
 # ---------------------------------------------------------------------------
 # Stage 1 — install workspace dependencies
 # ---------------------------------------------------------------------------
-FROM node:22.23.1-slim AS deps
+FROM node:22.23.2-slim AS deps
 
 RUN corepack enable
 WORKDIR /repo
@@ -63,7 +63,7 @@ RUN pnpm --filter @campus/cms deploy --prod --legacy /opt/deploy
 # ---------------------------------------------------------------------------
 # Stage 3 — runtime
 # ---------------------------------------------------------------------------
-FROM node:22.23.1-slim AS runtime
+FROM node:22.23.2-slim AS runtime
 
 # tini gives correct signal handling so Strapi shuts down cleanly.
 RUN apt-get update \
