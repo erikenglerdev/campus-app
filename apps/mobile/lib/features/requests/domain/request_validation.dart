@@ -2,7 +2,7 @@
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
 import 'application_files.dart';
-import 'request_models.dart';
+import 'request_drafts.dart';
 
 /// Which field failed, and why.
 ///
@@ -10,32 +10,59 @@ import 'request_models.dart';
 /// wording belongs to `gen_l10n`. That also keeps validation testable without
 /// pulling a BuildContext into it.
 enum RequestFieldError {
+  locationMissing,
   titleMissing,
   titleTooLong,
-  categoryMissing,
-  amountMissing,
-  amountInvalid,
-  amountZero,
-  purposeMissing,
-  descriptionMissing,
-  descriptionTooLong,
-  contactEmailInvalid,
-  locationMissing,
   applicantMissing,
+  applicantTooLong,
   requiredFileMissing,
+  fileWrongType,
+  fileTooLarge,
+  areaMissing,
+  submitterNameTooLong,
+  feedbackMissing,
+  feedbackTooLong,
 }
 
 /// Which field an error belongs to.
+///
+/// Exactly the fields the two forms actually have. The wire names are kept
+/// next to them so a server-side `issues[].field` can be mapped onto the form
+/// without a second table that could drift apart from this one.
 enum RequestField {
-  title,
-  category,
-  amount,
-  purpose,
-  description,
-  contactEmail,
-  location,
-  applicant,
-  files,
+  location(wire: 'locationId'),
+  title(wire: 'title'),
+  applicant(wire: 'applicant'),
+  financeRequestFile(wire: 'finance_request'),
+  studentCardFile(wire: 'student_card'),
+  annexAFile(wire: 'annex_a'),
+  annexBFile(wire: 'annex_b'),
+  area(wire: 'areaId'),
+  submitterName(wire: 'submitterName'),
+  feedback(wire: 'feedback');
+
+  const RequestField({required this.wire});
+
+  /// The name the endpoint uses for this field.
+  final String wire;
+
+  /// The form field a server-side issue refers to, or `null` when the endpoint
+  /// named something this build does not know — that one is shown as a general
+  /// message rather than silently dropped.
+  static RequestField? fromWire(String? field) {
+    for (final RequestField value in RequestField.values) {
+      if (value.wire == field) return value;
+    }
+    return null;
+  }
+
+  /// The form field belonging to a file slot.
+  static RequestField forSlot(ApplicationFileSlot slot) => switch (slot) {
+    ApplicationFileSlot.financeRequest => RequestField.financeRequestFile,
+    ApplicationFileSlot.studentCard => RequestField.studentCardFile,
+    ApplicationFileSlot.annexA => RequestField.annexAFile,
+    ApplicationFileSlot.annexB => RequestField.annexBFile,
+  };
 }
 
 /// The result of validating a draft.
@@ -48,78 +75,82 @@ class RequestValidation {
 
   RequestFieldError? errorFor(RequestField field) => errors[field];
 
-  static const int titleMaxLength = 120;
-  static const int descriptionMaxLength = 4000;
-
   /// Validates a draft for **submission**.
   ///
-  /// Saving a draft deliberately does not go through this: a half-written
-  /// application is exactly what a draft is for. Only the attempt to submit
-  /// has to be complete.
-  static RequestValidation validate(RequestDraft draft) {
+  /// Saving deliberately does not go through this: a half-written application
+  /// is exactly what a draft is for. Only the attempt to send has to be
+  /// complete. The server remains the authority — this exists so the form can
+  /// point at a field instead of relaying a message with no anchor.
+  static RequestValidation validate(RequestDraft draft) => switch (draft) {
+    FinanceApplicationDraft() => _application(draft),
+    FeedbackDraft() => _feedback(draft),
+  };
+
+  static RequestValidation _application(FinanceApplicationDraft draft) {
     final Map<RequestField, RequestFieldError> errors =
         <RequestField, RequestFieldError>{};
+
+    if (draft.locationId == null) {
+      errors[RequestField.location] = RequestFieldError.locationMissing;
+    }
 
     final String title = draft.title.trim();
     if (title.isEmpty) {
       errors[RequestField.title] = RequestFieldError.titleMissing;
-    } else if (title.length > titleMaxLength) {
+    } else if (title.length > FinanceApplicationDraft.textMaxLength) {
       errors[RequestField.title] = RequestFieldError.titleTooLong;
     }
 
-    if ((draft.category ?? '').trim().isEmpty) {
-      errors[RequestField.category] = RequestFieldError.categoryMissing;
+    final String applicant = draft.applicant.trim();
+    if (applicant.isEmpty) {
+      errors[RequestField.applicant] = RequestFieldError.applicantMissing;
+    } else if (applicant.length > FinanceApplicationDraft.textMaxLength) {
+      errors[RequestField.applicant] = RequestFieldError.applicantTooLong;
     }
 
-    final String description = draft.description.trim();
-    if (description.isEmpty) {
-      errors[RequestField.description] = RequestFieldError.descriptionMissing;
-    } else if (description.length > descriptionMaxLength) {
-      errors[RequestField.description] = RequestFieldError.descriptionTooLong;
-    }
-
-    if (draft.kind.hasAmount) {
-      final Money? amount = draft.amount;
-      if (amount == null) {
-        errors[RequestField.amount] = RequestFieldError.amountMissing;
-      } else if (Money.tryParse(amount.amount) == null) {
-        errors[RequestField.amount] = RequestFieldError.amountInvalid;
-      } else if (amount.isZero) {
-        // A €0 application is not a rounding problem, it is a mistake.
-        errors[RequestField.amount] = RequestFieldError.amountZero;
+    for (final ApplicationFileSlot slot in ApplicationFileSlot.values) {
+      final RequestField field = RequestField.forSlot(slot);
+      final RequestAttachment? file = draft.fileFor(slot);
+      if (file == null) {
+        if (slot.isRequired) {
+          errors[field] = RequestFieldError.requiredFileMissing;
+        }
+        continue;
       }
-
-      if (draft.purpose.trim().isEmpty) {
-        errors[RequestField.purpose] = RequestFieldError.purposeMissing;
+      if (!slot.accepts(file.fileName)) {
+        errors[field] = RequestFieldError.fileWrongType;
+        continue;
       }
-
-      // What the endpoint itself requires. Checked here so the form can point
-      // at the field, rather than surfacing a server message with no anchor.
-      if (draft.locationId == null) {
-        errors[RequestField.location] = RequestFieldError.locationMissing;
+      final int? size = file.sizeBytes;
+      if (size != null && !slot.acceptsSize(size)) {
+        errors[field] = RequestFieldError.fileTooLarge;
       }
-      if (draft.applicant.trim().isEmpty) {
-        errors[RequestField.applicant] = RequestFieldError.applicantMissing;
-      }
-      final bool missingFile = ApplicationFileSlot.required.any(
-        (ApplicationFileSlot slot) => draft.fileFor(slot) == null,
-      );
-      if (missingFile) {
-        errors[RequestField.files] = RequestFieldError.requiredFileMissing;
-      }
-    }
-
-    final String? email = draft.contactEmail?.trim();
-    // Contact details are optional; only a *given* address has to look like one.
-    if (email != null && email.isNotEmpty && !_looksLikeEmail(email)) {
-      errors[RequestField.contactEmail] = RequestFieldError.contactEmailInvalid;
     }
 
     return RequestValidation(errors);
   }
 
-  /// Deliberately permissive: the goal is to catch a typo, not to re-implement
-  /// RFC 5322 and reject an address that is in fact valid.
-  static bool _looksLikeEmail(String value) =>
-      RegExp(r'^[^@\s]+@[^@\s.]+\.[^@\s]+$').hasMatch(value);
+  static RequestValidation _feedback(FeedbackDraft draft) {
+    final Map<RequestField, RequestFieldError> errors =
+        <RequestField, RequestFieldError>{};
+
+    if (draft.areaId == null) {
+      errors[RequestField.area] = RequestFieldError.areaMissing;
+    }
+
+    // Optional by design — only a *given* name has to fit.
+    if (draft.submitterName.trim().length > FeedbackDraft.nameMaxLength) {
+      errors[RequestField.submitterName] =
+          RequestFieldError.submitterNameTooLong;
+    }
+
+    final String text = draft.feedback.trim();
+    if (text.isEmpty) {
+      errors[RequestField.feedback] = RequestFieldError.feedbackMissing;
+    } else if (text.length > FeedbackDraft.textMaxLength) {
+      errors[RequestField.feedback] = RequestFieldError.feedbackTooLong;
+    }
+
+    return RequestValidation(errors);
+  }
 }

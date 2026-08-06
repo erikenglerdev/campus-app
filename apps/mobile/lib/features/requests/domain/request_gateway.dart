@@ -1,52 +1,79 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
-import 'request_models.dart';
+import 'request_drafts.dart';
+import 'request_validation.dart';
 
 /// What came back from an attempt to submit.
 ///
 /// One case per outcome the endpoint documents, because they call for different
 /// things from the user: a rejected field can be corrected, a conflict cannot,
-/// a rate limit only needs patience, and a network failure should be retried
-/// with the *same* key.
+/// a rate limit only needs patience, and an unreachable endpoint should be
+/// retried with the *same* key.
 sealed class SubmissionResult {
   const SubmissionResult();
 }
 
-/// The submission was accepted and became a case.
+/// The submission became a case.
 class SubmissionAccepted extends SubmissionResult {
-  const SubmissionAccepted(this.request);
+  const SubmissionAccepted({
+    required this.statusUrl,
+    required this.receiptPdfUrl,
+    required this.number,
+    required this.wasReplay,
+  });
 
-  final SubmittedRequest request;
+  /// Secret status link — never logged, never put in a route.
+  final String statusUrl;
+
+  /// Receipt PDF, same token.
+  final String receiptPdfUrl;
+
+  final String? number;
+
+  /// True for HTTP 200 / `Idempotency-Replayed: true`. A replay is a success:
+  /// the case exists and nothing was filed twice.
+  final bool wasReplay;
 }
 
 /// No endpoint is configured in this build.
 ///
-/// The honest answer when `REQUESTS_BASE_URL` is empty — **not** an error, and
-/// emphatically not a fake success.
+/// The honest answer when `REQUESTS_BASE_URL` is empty or not HTTPS — **not**
+/// an error, and emphatically not a fake success.
 class SubmissionNotConnected extends SubmissionResult {
   const SubmissionNotConnected();
 }
 
-/// The draft is incomplete or the endpoint refused a field (400 / 422).
+/// The endpoint refused the input (400), or a required field is missing.
 class SubmissionRejected extends SubmissionResult {
   const SubmissionRejected({
-    required this.message,
-    this.issues = const <String>[],
+    this.message = '',
+    this.fieldErrors = const <RequestField, String>{},
+    this.generalIssues = const <String>[],
   });
 
-  /// The endpoint's own wording. It is written for the applicant and is more
-  /// specific than anything the app could say from the status code alone.
+  /// The endpoint's own wording, written for the applicant.
   final String message;
 
-  /// Field-level hints, already flattened to text.
-  final List<String> issues;
+  /// Issues mapped onto real form fields, so the form can point at them.
+  final Map<RequestField, String> fieldErrors;
+
+  /// Issues naming a field this build does not know. Shown as general text
+  /// rather than dropped — an unmapped message is still information.
+  final List<String> generalIssues;
 }
 
-/// The same key was used for a different application (409).
+/// The chosen location or area no longer exists (404).
+class SubmissionTargetGone extends SubmissionResult {
+  const SubmissionTargetGone({this.message = ''});
+
+  final String message;
+}
+
+/// The same key was used for a different submission (409).
 ///
 /// Not retryable: sending again cannot help, and sending with a fresh key
-/// would file a second application. Needs a decision from the user.
+/// would file a second case. Needs a decision from the user.
 class SubmissionConflict extends SubmissionResult {
   const SubmissionConflict();
 }
@@ -56,6 +83,12 @@ class SubmissionTooLarge extends SubmissionResult {
   const SubmissionTooLarge();
 }
 
+/// The endpoint rejected the content type (415). A client defect, not the
+/// user's — surfaced separately so it cannot hide as a validation error.
+class SubmissionUnsupportedMedia extends SubmissionResult {
+  const SubmissionUnsupportedMedia();
+}
+
 /// Rate limited (429).
 class SubmissionRateLimited extends SubmissionResult {
   const SubmissionRateLimited({this.retryAfter});
@@ -63,27 +96,36 @@ class SubmissionRateLimited extends SubmissionResult {
   final Duration? retryAfter;
 }
 
-/// Reached nobody: no network, DNS failure, timeout.
+/// Reached nobody, or the answer was ambiguous: no network, timeout, 5xx.
 ///
-/// Distinct from [SubmissionFailed] because it is the case the idempotency key
-/// exists for — the application may or may not have been filed, and retrying
-/// with the same key is exactly the right move.
-class SubmissionUnreachable extends SubmissionResult {
-  const SubmissionUnreachable();
-}
+/// **The outcome is unknown.** The case may or may not have been filed, which
+/// is exactly what the idempotency key exists for — the draft is frozen with a
+/// [PendingSubmission] and a retry sends the identical payload under the same
+/// key.
+class SubmissionOutcomeUnknown extends SubmissionResult {
+  const SubmissionOutcomeUnknown(this.reason);
 
-/// The endpoint answered, but with something unusable.
-class SubmissionFailed extends SubmissionResult {
-  const SubmissionFailed(this.reason);
-
-  /// A short technical reason for logging. Never rendered raw to the user and
-  /// never carrying the submission's contents or the status link.
+  /// A short technical reason. Never carries the payload, a link or a name.
   final String reason;
 }
 
-/// Port: whatever accepts an application.
+/// The endpoint answered, but with something unusable — a success without a
+/// status link, or a body that is not what the contract describes.
+class SubmissionFailed extends SubmissionResult {
+  const SubmissionFailed(this.reason);
+
+  final String reason;
+}
+
+/// Port: whatever accepts submissions.
+///
+/// Two methods rather than one over a sealed draft: the endpoints differ in
+/// path, content type and body shape, and a single method would only push that
+/// switch one layer down while making both signatures vaguer.
 abstract interface class RequestGateway {
-  Future<SubmissionResult> submit(RequestDraft draft);
+  Future<SubmissionResult> submitApplication(FinanceApplicationDraft draft);
+
+  Future<SubmissionResult> submitFeedback(FeedbackDraft draft);
 }
 
 /// Used when no endpoint is configured for this build.
@@ -94,6 +136,10 @@ class NotConnectedRequestGateway implements RequestGateway {
   const NotConnectedRequestGateway();
 
   @override
-  Future<SubmissionResult> submit(RequestDraft draft) async =>
-      const SubmissionNotConnected();
+  Future<SubmissionResult> submitApplication(FinanceApplicationDraft draft) =>
+      Future<SubmissionResult>.value(const SubmissionNotConnected());
+
+  @override
+  Future<SubmissionResult> submitFeedback(FeedbackDraft draft) =>
+      Future<SubmissionResult>.value(const SubmissionNotConnected());
 }

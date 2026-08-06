@@ -1,84 +1,97 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
 
-import '../domain/request_models.dart';
+import '../domain/application_files.dart';
+import '../domain/attachment_store.dart';
+import '../domain/request_drafts.dart';
+import 'encrypted_attachment_store.dart';
 
-/// Port: lets the user pick files to send along with a request.
-abstract interface class AttachmentPicker {
-  /// Returns the files the user chose, already secured for later use.
-  /// An empty list means the picker was cancelled.
-  Future<List<RequestAttachment>> pick();
-
-  /// Removes a file this app copied. Never touches the user's original.
-  Future<void> discard(RequestAttachment attachment);
+/// What picking a file ended in.
+sealed class PickResult {
+  const PickResult();
 }
 
-/// Picks files and **copies them into the app's own directory**.
-///
-/// Keeping only the path the picker returned would look simpler and break
-/// quietly: on both platforms that path can be a temporary cache entry or a
-/// content URI that stops resolving once the picker's session ends. A draft is
-/// meant to be reopened days later, so an attachment that silently vanishes
-/// between sessions would be worse than not offering attachments at all.
-///
-/// The copy lives in the app's documents directory — not encrypted, because
-/// the user chose to attach it to something they intend to send, which is the
-/// same category of data as the draft text beside it.
-class LocalCopyAttachmentPicker implements AttachmentPicker {
-  const LocalCopyAttachmentPicker();
+class PickedFile extends PickResult {
+  const PickedFile(this.attachment);
 
-  static const String _folder = 'request_attachments';
+  final RequestAttachment attachment;
+}
+
+/// The user closed the dialog without choosing.
+class PickCancelled extends PickResult {
+  const PickCancelled();
+}
+
+/// The file does not belong in this slot.
+class PickWrongType extends PickResult {
+  const PickWrongType();
+}
+
+/// Over the endpoint's 25 MB per file.
+class PickTooLarge extends PickResult {
+  const PickTooLarge();
+}
+
+/// The file could not be read, or could not be stored.
+class PickFailed extends PickResult {
+  const PickFailed();
+}
+
+/// Port: lets the user pick one file for one slot.
+///
+/// Per slot rather than a free multi-select: the endpoint expects exactly four
+/// named fields with different accepted types, and a generic "add files" button
+/// would let a student attach something that is then silently not sent.
+abstract interface class AttachmentPicker {
+  Future<PickResult> pickFor(ApplicationFileSlot slot);
+}
+
+/// Picks a file and hands its bytes to the encrypted store.
+///
+/// Type and size are checked **before** anything is stored, so a file that
+/// cannot be sent never reaches the device's storage in the first place.
+class SecureAttachmentPicker implements AttachmentPicker {
+  const SecureAttachmentPicker(this._store);
+
+  final AttachmentStore _store;
 
   @override
-  Future<List<RequestAttachment>> pick() async {
-    final List<XFile> chosen = await openFiles();
-    if (chosen.isEmpty) return const <RequestAttachment>[];
-
-    final Directory target = Directory(
-      '${(await getApplicationDocumentsDirectory()).path}/$_folder',
+  Future<PickResult> pickFor(ApplicationFileSlot slot) async {
+    final XFile? chosen = await openFile(
+      acceptedTypeGroups: <XTypeGroup>[
+        XTypeGroup(
+          label: slot.field,
+          extensions: slot.extensions.toList(growable: false),
+        ),
+      ],
     );
-    await target.create(recursive: true);
+    if (chosen == null) return const PickCancelled();
 
-    final List<RequestAttachment> kept = <RequestAttachment>[];
-    for (final XFile file in chosen) {
-      try {
-        // Prefixed with a timestamp so two files of the same name can coexist.
-        final String stamp = DateTime.now().microsecondsSinceEpoch.toString();
-        final String copy = '${target.path}/$stamp-${file.name}';
-        await File(file.path).copy(copy);
-        kept.add(
-          RequestAttachment(
-            fileName: file.name,
-            path: copy,
-            sizeBytes: await File(copy).length(),
-          ),
-        );
-      } catch (_) {
-        // One unreadable file must not lose the others.
-        continue;
-      }
-    }
-    return kept;
-  }
+    // The dialog's own filter is a convenience, not a guarantee — on both
+    // platforms the user can still end up with something else.
+    if (!slot.accepts(chosen.name)) return const PickWrongType();
 
-  @override
-  Future<void> discard(RequestAttachment attachment) async {
     try {
-      final File file = File(attachment.path);
-      // Only ever inside our own folder — never a file the user still owns.
-      if (file.path.contains('/$_folder/') && file.existsSync()) {
-        await file.delete();
-      }
-    } catch (_) {}
+      final Uint8List bytes = await chosen.readAsBytes();
+      if (!slot.acceptsSize(bytes.length)) return const PickTooLarge();
+      final RequestAttachment? stored = await _store.put(chosen.name, bytes);
+      return stored == null ? const PickFailed() : PickedFile(stored);
+    } catch (_) {
+      return const PickFailed();
+    }
   }
 }
 
 /// Overridable so tests never open a platform dialog.
+final Provider<AttachmentStore> attachmentStoreProvider =
+    Provider<AttachmentStore>((Ref ref) => EncryptedAttachmentStore());
+
 final Provider<AttachmentPicker> attachmentPickerProvider =
-    Provider<AttachmentPicker>((Ref ref) => const LocalCopyAttachmentPicker());
+    Provider<AttachmentPicker>(
+      (Ref ref) => SecureAttachmentPicker(ref.watch(attachmentStoreProvider)),
+    );

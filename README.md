@@ -124,6 +124,7 @@ docs/                          Produkt-, Architektur- und Betriebsdokumentation
 | [student-mail.md](docs/student-mail.md)                           | Studenten-E-Mail-Client (IMAP/SMTP, direkt vom Gerät)      |
 | [grades.md](docs/grades.md)                                       | HIS-QIS-Notenspiegel (direkt vom Gerät)                    |
 | [moodle.md](docs/moodle.md)                                       | Moodle-Integration und quellenübergreifender Kalender      |
+| [requests.md](docs/requests.md)                                   | Anträge und Feedback ans Gremiensystem (direkt vom Gerät)  |
 | [local-development.md](docs/local-development.md)                 | Lokaler Stack, Schritt für Schritt                         |
 | [content-editor-guide.md](docs/content-editor-guide.md)           | Handbuch für die Redaktion in Strapi                       |
 | [legal/dependency-licenses.md](docs/legal/dependency-licenses.md) | Lizenzbewertung der Abhängigkeiten                         |

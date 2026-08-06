@@ -1,283 +1,500 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
-import 'package:campus_koethen/features/requests/domain/request_gateway.dart';
+/// The two submission types, their limits, and what survives a version change.
+library;
+
 import 'package:campus_koethen/features/requests/domain/application_files.dart';
-import 'package:campus_koethen/features/requests/domain/request_models.dart';
+import 'package:campus_koethen/features/requests/domain/case_status.dart';
+import 'package:campus_koethen/features/requests/domain/gremio_origin.dart';
+import 'package:campus_koethen/features/requests/domain/request_drafts.dart';
 import 'package:campus_koethen/features/requests/domain/request_validation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-RequestDraft _draft({
-  RequestKind kind = RequestKind.feedback,
-  String title = 'Ein Titel',
-  String? category = 'general',
-  Money? amount,
-  String purpose = '',
-  String description = 'Eine Beschreibung.',
-  String? contactEmail,
-  String applicant = 'A. Person',
+import '../../support/fake_gremio.dart';
+
+final DateTime _now = DateTime(2026, 8, 6, 12);
+
+FinanceApplicationDraft _application({
   int? locationId = 1,
-  Map<ApplicationFileSlot, RequestAttachment> files =
-      const <ApplicationFileSlot, RequestAttachment>{
-        ApplicationFileSlot.financeRequest: RequestAttachment(
+  String title = 'Grillabend am FB5',
+  String applicant = 'Testperson',
+  Map<ApplicationFileSlot, RequestAttachment>? files,
+}) => FinanceApplicationDraft(
+  id: 'draft-1',
+  createdAt: _now,
+  updatedAt: _now,
+  idempotencyKey: '550e8400-e29b-41d4-a716-446655440000',
+  locationId: locationId,
+  title: title,
+  applicant: applicant,
+  files:
+      files ??
+      <ApplicationFileSlot, RequestAttachment>{
+        ApplicationFileSlot.financeRequest: const RequestAttachment(
           fileName: 'antrag.pdf',
-          path: '/tmp/antrag.pdf',
+          path: 'a',
+          sizeBytes: 100,
         ),
-        ApplicationFileSlot.studentCard: RequestAttachment(
-          fileName: 'ausweis.pdf',
-          path: '/tmp/ausweis.pdf',
+        ApplicationFileSlot.studentCard: const RequestAttachment(
+          fileName: 'ausweis.png',
+          path: 'b',
+          sizeBytes: 100,
         ),
       },
-}) => RequestDraft(
-  id: 'draft-1',
-  kind: kind,
-  createdAt: DateTime(2026, 5, 12),
-  updatedAt: DateTime(2026, 5, 12),
-  idempotencyKey: 'test-key-0000000000',
-  applicant: applicant,
-  locationId: locationId,
-  files: files,
-  title: title,
-  category: category,
-  amount: amount,
-  purpose: purpose,
-  description: description,
-  contactEmail: contactEmail,
+);
+
+FeedbackDraft _feedback({
+  int? areaId = 1,
+  String submitterName = '',
+  String feedback = 'Die Öffnungszeiten sollten verlängert werden.',
+}) => FeedbackDraft(
+  id: 'draft-2',
+  createdAt: _now,
+  updatedAt: _now,
+  idempotencyKey: '550e8400-e29b-41d4-a716-446655440001',
+  areaId: areaId,
+  submitterName: submitterName,
+  feedback: feedback,
 );
 
 void main() {
-  group('money', () {
-    test('accepts both notations and normalises to a full stop', () {
-      expect(Money.tryParse('12,50')?.amount, '12.50');
-      expect(Money.tryParse('12.50')?.amount, '12.50');
-      expect(Money.tryParse(' 8 ')?.amount, '8');
-    });
+  group('the application draft', () {
+    test('holds exactly the fields the endpoint takes', () {
+      final Map<String, dynamic> json = _application().toJson();
 
-    test('rejects anything that is not a plain non-negative amount', () {
-      // A rejected value is never silently rounded into something else.
-      for (final String input in <String>[
-        '',
-        'abc',
-        '-5',
-        '1.234',
-        '1..2',
-        '1,2,3',
-        '1e3',
+      expect(
+        json.keys,
+        containsAll(<String>['locationId', 'title', 'applicant']),
+      );
+      // Everything the placeholder version invented is gone. Keeping any of it
+      // would preserve the illusion that it is going to be sent.
+      for (final String obsolete in <String>[
+        'category',
+        'amount',
+        'currency',
+        'purpose',
+        'description',
+        'contactName',
+        'contactEmail',
       ]) {
-        expect(Money.tryParse(input), isNull, reason: 'accepted "$input"');
+        expect(json.containsKey(obsolete), isFalse, reason: obsolete);
       }
     });
 
-    test('never becomes a binary float', () {
-      // 0.1 + 0.2 != 0.3 in floating point; an application for €4.30 must not
-      // become €4.2999999 anywhere on the way.
-      const Money money = Money(amount: '4.30');
-      expect(money.amount, '4.30');
-      expect(money.minorUnits, 430);
-      expect(Money.tryParse('0.1')!.minorUnits, 10);
-      expect(Money.tryParse('0.3')!.minorUnits, 30);
+    test('accepts a complete application', () {
+      expect(RequestValidation.validate(_application()).isValid, isTrue);
     });
 
-    test('knows zero', () {
-      expect(Money.tryParse('0')!.isZero, isTrue);
-      expect(Money.tryParse('0.00')!.isZero, isTrue);
-      expect(Money.tryParse('0.01')!.isZero, isFalse);
-    });
-  });
-
-  group('validation', () {
-    test('a complete piece of feedback passes', () {
-      expect(RequestValidation.validate(_draft()).isValid, isTrue);
-    });
-
-    test('title, category and description are required', () {
+    test('requires location, subject, applicant and both files', () {
       final RequestValidation result = RequestValidation.validate(
-        _draft(title: '   ', category: null, description: ''),
+        _application(
+          locationId: null,
+          title: '  ',
+          applicant: '',
+          files: const <ApplicationFileSlot, RequestAttachment>{},
+        ),
+      );
+
+      expect(
+        result.errorFor(RequestField.location),
+        RequestFieldError.locationMissing,
       );
       expect(
         result.errorFor(RequestField.title),
         RequestFieldError.titleMissing,
       );
       expect(
-        result.errorFor(RequestField.category),
-        RequestFieldError.categoryMissing,
+        result.errorFor(RequestField.applicant),
+        RequestFieldError.applicantMissing,
       );
       expect(
-        result.errorFor(RequestField.description),
-        RequestFieldError.descriptionMissing,
+        result.errorFor(RequestField.financeRequestFile),
+        RequestFieldError.requiredFileMissing,
       );
+      expect(
+        result.errorFor(RequestField.studentCardFile),
+        RequestFieldError.requiredFileMissing,
+      );
+      // The annexes are optional and must not be demanded.
+      expect(result.errorFor(RequestField.annexAFile), isNull);
+      expect(result.errorFor(RequestField.annexBFile), isNull);
     });
 
-    test('an over-long title or description is rejected', () {
+    test('caps subject and applicant at 200 characters', () {
+      final String long = 'x' * 201;
       final RequestValidation result = RequestValidation.validate(
-        _draft(
-          title: 'x' * (RequestValidation.titleMaxLength + 1),
-          description: 'y' * (RequestValidation.descriptionMaxLength + 1),
-        ),
+        _application(title: long, applicant: long),
       );
+
       expect(
         result.errorFor(RequestField.title),
         RequestFieldError.titleTooLong,
       );
       expect(
-        result.errorFor(RequestField.description),
-        RequestFieldError.descriptionTooLong,
-      );
-    });
-
-    test('feedback needs neither an amount nor a purpose', () {
-      final RequestValidation result = RequestValidation.validate(_draft());
-      expect(result.errorFor(RequestField.amount), isNull);
-      expect(result.errorFor(RequestField.purpose), isNull);
-    });
-
-    test('a finance application needs both', () {
-      final RequestValidation result = RequestValidation.validate(
-        _draft(kind: RequestKind.financeApplication),
-      );
-      expect(
-        result.errorFor(RequestField.amount),
-        RequestFieldError.amountMissing,
-      );
-      expect(
-        result.errorFor(RequestField.purpose),
-        RequestFieldError.purposeMissing,
-      );
-    });
-
-    test('an amount of zero is a mistake, not a rounding problem', () {
-      final RequestValidation result = RequestValidation.validate(
-        _draft(
-          kind: RequestKind.financeApplication,
-          amount: Money.tryParse('0'),
-          purpose: 'Material',
-        ),
-      );
-      expect(
-        result.errorFor(RequestField.amount),
-        RequestFieldError.amountZero,
-      );
-    });
-
-    test('a complete finance application passes', () {
-      final RequestValidation result = RequestValidation.validate(
-        _draft(
-          kind: RequestKind.financeApplication,
-          amount: Money.tryParse('120,50'),
-          purpose: 'Material für die Erstsemesterwoche',
-        ),
-      );
-      expect(result.isValid, isTrue);
-    });
-
-    test('contact details stay optional', () {
-      expect(
-        RequestValidation.validate(_draft(contactEmail: null)).isValid,
-        isTrue,
-      );
-      expect(
-        RequestValidation.validate(_draft(contactEmail: '  ')).isValid,
-        isTrue,
-      );
-    });
-
-    test('but a given address has to look like one', () {
-      expect(
-        RequestValidation.validate(
-          _draft(contactEmail: 'not-an-address'),
-        ).errorFor(RequestField.contactEmail),
-        RequestFieldError.contactEmailInvalid,
+        result.errorFor(RequestField.applicant),
+        RequestFieldError.applicantTooLong,
       );
       expect(
         RequestValidation.validate(
-          _draft(contactEmail: 'jemand@example.org'),
+          _application(title: 'x' * 200, applicant: 'y' * 200),
         ).isValid,
         isTrue,
+        reason: 'exactly 200 is still allowed',
+      );
+    });
+
+    test('refuses a file of the wrong type in a slot', () {
+      final RequestValidation result = RequestValidation.validate(
+        _application(
+          files: <ApplicationFileSlot, RequestAttachment>{
+            // The finance request is PDF only — a photo does not belong here.
+            ApplicationFileSlot.financeRequest: const RequestAttachment(
+              fileName: 'antrag.png',
+              path: 'a',
+              sizeBytes: 10,
+            ),
+            ApplicationFileSlot.studentCard: const RequestAttachment(
+              fileName: 'ausweis.pdf',
+              path: 'b',
+              sizeBytes: 10,
+            ),
+          },
+        ),
+      );
+
+      expect(
+        result.errorFor(RequestField.financeRequestFile),
+        RequestFieldError.fileWrongType,
+      );
+      expect(result.errorFor(RequestField.studentCardFile), isNull);
+    });
+
+    test('refuses a file over 25 MB', () {
+      const int overLimit = 25 * 1024 * 1024 + 1;
+      final RequestValidation result = RequestValidation.validate(
+        _application(
+          files: <ApplicationFileSlot, RequestAttachment>{
+            ApplicationFileSlot.financeRequest: const RequestAttachment(
+              fileName: 'antrag.pdf',
+              path: 'a',
+              sizeBytes: overLimit,
+            ),
+            ApplicationFileSlot.studentCard: const RequestAttachment(
+              fileName: 'ausweis.pdf',
+              path: 'b',
+              sizeBytes: 10,
+            ),
+          },
+        ),
+      );
+
+      expect(
+        result.errorFor(RequestField.financeRequestFile),
+        RequestFieldError.fileTooLarge,
+      );
+    });
+
+    test('the student card takes PDF, PNG and JPEG', () {
+      const ApplicationFileSlot card = ApplicationFileSlot.studentCard;
+      expect(card.accepts('a.pdf'), isTrue);
+      expect(card.accepts('a.png'), isTrue);
+      expect(card.accepts('a.jpg'), isTrue);
+      expect(card.accepts('a.jpeg'), isTrue);
+      expect(card.accepts('a.docx'), isFalse);
+      expect(card.contentTypeFor('a.jpeg'), 'image/jpeg');
+    });
+  });
+
+  group('the feedback draft', () {
+    test('holds exactly the fields the endpoint takes', () {
+      final Map<String, dynamic> json = _feedback().toJson();
+
+      expect(json.keys, containsAll(<String>['areaId', 'feedback']));
+      for (final String obsolete in <String>['title', 'category', 'files']) {
+        expect(json.containsKey(obsolete), isFalse, reason: obsolete);
+      }
+    });
+
+    test('leaves a blank name out of the wire payload entirely', () {
+      // Not "Anonym": the committee records that itself, and putting the word
+      // in the user's mouth would claim they typed it.
+      expect(_feedback(submitterName: '').wireSubmitterName, isNull);
+      expect(_feedback(submitterName: '   ').wireSubmitterName, isNull);
+      expect(_feedback(submitterName: ' Max ').wireSubmitterName, 'Max');
+    });
+
+    test('requires an area and a text', () {
+      final RequestValidation result = RequestValidation.validate(
+        _feedback(areaId: null, feedback: '   '),
+      );
+
+      expect(result.errorFor(RequestField.area), RequestFieldError.areaMissing);
+      expect(
+        result.errorFor(RequestField.feedback),
+        RequestFieldError.feedbackMissing,
+      );
+    });
+
+    test('caps the name at 200 and the text at 10000 characters', () {
+      final RequestValidation result = RequestValidation.validate(
+        _feedback(submitterName: 'x' * 201, feedback: 'y' * 10001),
+      );
+
+      expect(
+        result.errorFor(RequestField.submitterName),
+        RequestFieldError.submitterNameTooLong,
+      );
+      expect(
+        result.errorFor(RequestField.feedback),
+        RequestFieldError.feedbackTooLong,
+      );
+      expect(
+        RequestValidation.validate(_feedback(feedback: 'y' * 10000)).isValid,
+        isTrue,
       );
     });
   });
 
-  group('drafts', () {
-    test('a blank draft knows it is blank', () {
-      final RequestDraft blank = RequestDraft(
-        id: 'x',
-        kind: RequestKind.feedback,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
-        idempotencyKey: 'test-key-0000000000',
+  group('server-side issues', () {
+    test('map onto the real form fields by their wire names', () {
+      expect(RequestField.fromWire('title'), RequestField.title);
+      expect(RequestField.fromWire('applicant'), RequestField.applicant);
+      expect(RequestField.fromWire('locationId'), RequestField.location);
+      expect(RequestField.fromWire('areaId'), RequestField.area);
+      expect(RequestField.fromWire('feedback'), RequestField.feedback);
+      expect(
+        RequestField.fromWire('finance_request'),
+        RequestField.financeRequestFile,
       );
-      expect(blank.isEmpty, isTrue);
-      expect(_draft().isEmpty, isFalse);
-    });
-
-    test('round-trips through JSON, amount included', () {
-      final RequestDraft draft = _draft(
-        kind: RequestKind.financeApplication,
-        amount: Money.tryParse('99.99'),
-        purpose: 'Druckkosten',
-        contactEmail: 'a@b.de',
-      );
-      final RequestDraft? back = RequestDraft.fromJson(draft.toJson());
-
-      expect(back, isNotNull);
-      expect(back!.kind, RequestKind.financeApplication);
-      expect(back.amount?.amount, '99.99');
-      expect(back.amount?.currency, 'EUR');
-      expect(back.purpose, 'Druckkosten');
-      expect(back.contactEmail, 'a@b.de');
-    });
-
-    test('a malformed stored draft is skipped, not fatal', () {
-      expect(RequestDraft.fromJson(<String, dynamic>{}), isNull);
-      expect(RequestDraft.fromJson(<String, dynamic>{'id': 'x'}), isNull);
-      expect(RequestDraft.fromJson('nonsense'), isNull);
+      // A field this build does not know is reported as unmapped rather than
+      // silently swallowed.
+      expect(RequestField.fromWire('somethingNew'), isNull);
     });
   });
 
-  group('submission gateway', () {
+  group('reading an older stored draft', () {
+    test('keeps subject, applicant, location and files', () {
+      final RequestDraft? restored = RequestDraft.fromJson(<String, dynamic>{
+        'id': 'old-1',
+        'kind': 'finance-application',
+        'createdAt': '2026-07-01T10:00:00.000Z',
+        'updatedAt': '2026-07-01T10:00:00.000Z',
+        'idempotencyKey': '550e8400-e29b-41d4-a716-446655440000',
+        'title': 'Alter Antrag',
+        'applicant': 'Testperson',
+        'locationId': 3,
+        // Fields the placeholder version wrote and the endpoint never had.
+        'category': 'event',
+        'amount': '120.50',
+        'purpose': 'Grillkohle',
+        'description': 'Lange Beschreibung',
+        'contactEmail': 'jemand@example.invalid',
+        'files': <String, dynamic>{
+          'finance_request': <String, dynamic>{
+            'fileName': 'antrag.pdf',
+            'path': 'x',
+          },
+        },
+      });
+
+      expect(restored, isA<FinanceApplicationDraft>());
+      final FinanceApplicationDraft draft =
+          restored! as FinanceApplicationDraft;
+      expect(draft.title, 'Alter Antrag');
+      expect(draft.applicant, 'Testperson');
+      expect(draft.locationId, 3);
+      expect(draft.fileFor(ApplicationFileSlot.financeRequest), isNotNull);
+      // And nothing obsolete comes back out.
+      expect(draft.toJson().containsKey('amount'), isFalse);
+    });
+
+    test('carries an old feedback description over as the feedback text', () {
+      final RequestDraft? restored = RequestDraft.fromJson(<String, dynamic>{
+        'id': 'old-2',
+        'kind': 'feedback',
+        'idempotencyKey': '550e8400-e29b-41d4-a716-446655440001',
+        'description': 'Der alte Text',
+        'category': '7',
+      });
+
+      expect(restored, isA<FeedbackDraft>());
+      final FeedbackDraft draft = restored! as FeedbackDraft;
+      expect(draft.feedback, 'Der alte Text');
+      // The old category was an app-side label. Reading it as an areaId would
+      // file the feedback with whichever board happens to hold that number.
+      expect(draft.areaId, isNull);
+    });
+
     test(
-      'reports that nothing is connected instead of faking success',
-      () async {
-        // The whole point: no invented endpoint, no simulated confirmation.
-        final SubmissionResult result = await const NotConnectedRequestGateway()
-            .submit(_draft());
-        expect(result, isA<SubmissionNotConnected>());
-        expect(result, isNot(isA<SubmissionAccepted>()));
+      'replaces an unusable idempotency key rather than failing to load',
+      () {
+        final RequestDraft? restored = RequestDraft.fromJson(<String, dynamic>{
+          'id': 'old-3',
+          'kind': 'feedback',
+          'idempotencyKey': 'zu-kurz',
+          'feedback': 'Text',
+        });
+
+        expect(restored, isNotNull);
+        expect(restored!.idempotencyKey.length, greaterThanOrEqualTo(16));
       },
     );
   });
 
-  group('submitted cases', () {
-    SubmittedRequest submitted(String? url) => SubmittedRequest(
-      id: 'case-1',
-      kind: RequestKind.feedback,
-      title: 'Titel',
-      submittedAt: DateTime(2026, 5, 12),
-      status: RequestStatus.submitted,
-      trackingUrl: url,
-    );
-
-    test('only an https link counts as safe to open', () {
-      // A link that arrives from a server is untrusted input; handing an
-      // arbitrary scheme to the operating system is how that becomes a bug.
-      expect(
-        submitted('https://example.org/case/1').hasSafeTrackingUrl,
-        isTrue,
+  group('the pending-submission guard', () {
+    test('expires exactly 30 days after the FIRST attempt', () {
+      final PendingSubmission pending = PendingSubmission(
+        firstAttemptAt: DateTime(2026, 7, 1),
+        fingerprint: 'x',
       );
-      expect(submitted('http://example.org').hasSafeTrackingUrl, isFalse);
-      expect(submitted('javascript:alert(1)').hasSafeTrackingUrl, isFalse);
-      expect(submitted('file:///etc/passwd').hasSafeTrackingUrl, isFalse);
-      expect(submitted('https://').hasSafeTrackingUrl, isFalse);
-      expect(submitted(null).hasSafeTrackingUrl, isFalse);
+
+      expect(pending.isExpiredAt(DateTime(2026, 7, 30)), isFalse);
+      expect(pending.isExpiredAt(DateTime(2026, 7, 31)), isTrue);
     });
 
-    test('status identifiers are stable and unique', () {
-      final Set<String> seen = <String>{};
-      for (final RequestStatus status in RequestStatus.values) {
-        expect(seen.add(status.storageValue), isTrue);
-        expect(RequestStatus.fromStorage(status.storageValue), status);
-      }
-      expect(RequestStatus.fromStorage('made-up'), isNull);
+    test('the fingerprint changes when any sent value changes', () {
+      final String base = _application().payloadFingerprint;
+
+      expect(_application(title: 'Anderes').payloadFingerprint, isNot(base));
+      expect(_application(locationId: 2).payloadFingerprint, isNot(base));
+      expect(
+        _application(applicant: 'Andere Person').payloadFingerprint,
+        isNot(base),
+      );
+      // And not when something that is never sent changes.
+      expect(
+        _application().copyWith(updatedAt: DateTime(2027)).payloadFingerprint,
+        base,
+      );
+    });
+
+    test(
+      'a blank and an "Anonym-by-omission" feedback differ by text only',
+      () {
+        expect(
+          _feedback(submitterName: '').payloadFingerprint,
+          _feedback(submitterName: '   ').payloadFingerprint,
+        );
+      },
+    );
+  });
+
+  group('the origin allowlist', () {
+    test('accepts only the configured HTTPS origin', () {
+      final GremioOrigin origin = GremioOrigin.parse(kFakeBaseUrl)!;
+
+      expect(origin.allows('$kFakeBaseUrl/status/abc'), isTrue);
+      expect(origin.allows('http://gremio.example/status/abc'), isFalse);
+      // A suffix match would let this through — it must not.
+      expect(
+        origin.allows('https://gremio.example.attacker.invalid/status/abc'),
+        isFalse,
+      );
+      expect(origin.allows('https://other.invalid/status/abc'), isFalse);
+      expect(origin.allows('https://user:pw@gremio.example/status'), isFalse);
+      expect(origin.allows('https://gremio.example:8443/status'), isFalse);
+      expect(origin.allows(''), isFalse);
+      expect(origin.allows(null), isFalse);
+    });
+
+    test('refuses to be built from anything but HTTPS', () {
+      expect(GremioOrigin.parse('http://gremio.example'), isNull);
+      expect(GremioOrigin.parse(''), isNull);
+      expect(GremioOrigin.parse('  '), isNull);
+      expect(GremioOrigin.parse('gremio.example'), isNull);
+      expect(GremioOrigin.parse('https://user:pw@gremio.example'), isNull);
+    });
+
+    test('never puts a token-bearing path in its own description', () {
+      final GremioOrigin origin = GremioOrigin.parse(kFakeBaseUrl)!;
+      expect(origin.toString(), isNot(contains('testtoken')));
+    });
+  });
+
+  group('parsing a status response', () {
+    test('reads every field of an application', () {
+      final CaseStatus? status = CaseStatus.fromJson(
+        applicationStatusBody(
+          publicNote: 'Bitte reiche noch eine Quittung nach.',
+          resubmittedAt: '2026-08-06T09:00:00.000Z',
+          archived: true,
+          canUpload: true,
+          submitMode: 'receipt',
+          documents: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'kind': 'finance_request',
+              'label': 'Finanzantrag',
+              'filename': 'Finanzantrag.pdf',
+              'mimeType': 'application/pdf',
+              'downloadUrl': '$kFakeBaseUrl/api/status/testtoken/attachment/12',
+            },
+          ],
+        ),
+      );
+
+      expect(status, isA<ApplicationCaseStatus>());
+      final ApplicationCaseStatus app = status! as ApplicationCaseStatus;
+      expect(app.title, 'Grillabend am FB5');
+      expect(app.applicant, 'Testperson');
+      expect(app.statusName, 'In Bearbeitung');
+      expect(app.number, 'A_0042_2026');
+      expect(app.archived, isTrue);
+      expect(app.resubmittedAt, isNotNull);
+      expect(app.publicNote, 'Bitte reiche noch eine Quittung nach.');
+      expect(app.documents, hasLength(1));
+      expect(app.documents.single.kind, 'finance_request');
+      expect(app.actions.canUploadDocuments, isTrue);
+      expect(app.actions.submitMode, 'receipt');
+    });
+
+    test('reads every field of a feedback', () {
+      final CaseStatus? status = CaseStatus.fromJson(
+        feedbackStatusBody(submitterName: 'Max Mustermann'),
+      );
+
+      expect(status, isA<FeedbackCaseStatus>());
+      final FeedbackCaseStatus fb = status! as FeedbackCaseStatus;
+      expect(fb.area, 'Bibliothek');
+      expect(fb.submitterName, 'Max Mustermann');
+      expect(fb.text, 'Die Öffnungszeiten sollten verlängert werden.');
+      expect(fb.documents, isEmpty);
+      expect(fb.actions.canUploadDocuments, isFalse);
+      expect(fb.actions.submitMode, isNull);
+    });
+
+    test('keeps a null status name as null instead of inventing one', () {
+      final CaseStatus? status = CaseStatus.fromJson(
+        applicationStatusBody(name: null, number: null),
+      );
+
+      expect(status!.statusName, isNull);
+      expect(status.number, isNull);
+    });
+
+    test('ignores unknown extra fields', () {
+      final Map<String, dynamic> body = applicationStatusBody()
+        ..['somethingNewTheServerAdded'] = <String, dynamic>{'a': 1};
+
+      expect(CaseStatus.fromJson(body), isA<ApplicationCaseStatus>());
+    });
+
+    test('refuses a body that is not one of the two documented types', () {
+      expect(
+        CaseStatus.fromJson(<String, dynamic>{'type': 'inventory'}),
+        isNull,
+      );
+      expect(CaseStatus.fromJson(<String, dynamic>{}), isNull);
+      expect(CaseStatus.fromJson('nope'), isNull);
+      // Missing required links: unusable, so not a status at all.
+      final Map<String, dynamic> broken = applicationStatusBody()
+        ..remove('statusUrl');
+      expect(CaseStatus.fromJson(broken), isNull);
+    });
+
+    test('never names a link in its own description', () {
+      final CaseStatus status = CaseStatus.fromJson(applicationStatusBody())!;
+      expect(status.toString(), isNot(contains('testtoken')));
     });
   });
 }

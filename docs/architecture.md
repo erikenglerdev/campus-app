@@ -160,6 +160,8 @@ lib/
     mail/  grades/  moodle/                                  Pfad 2, direkt vom Gerät
     todos/                                                   rein lokal, ohne Netz
     requests/                                                Pfad 2, direkt an das Gremiensystem
+                                                             (Anträge, Feedback, Statusabruf —
+                                                             [requests.md](requests.md))
     more/                                                    Hub für alles, was nicht angeheftet ist
 ```
 

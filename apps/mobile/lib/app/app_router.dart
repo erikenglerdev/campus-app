@@ -24,9 +24,10 @@ import '../features/moodle/presentation/moodle_screen.dart';
 import '../features/more/presentation/more_screen.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/news/presentation/news_list_screen.dart';
-import '../features/requests/domain/request_models.dart';
-import '../features/requests/presentation/request_draft_screen.dart';
+import '../features/requests/presentation/application_form_screen.dart';
+import '../features/requests/presentation/feedback_form_screen.dart';
 import '../features/requests/presentation/requests_screen.dart';
+import '../features/requests/presentation/submission_detail_screen.dart';
 import '../features/settings/presentation/channel_settings_screen.dart';
 import '../features/settings/presentation/navigation_settings_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
@@ -237,16 +238,27 @@ GoRouter createAppRouter({
                     const RequestsScreen(),
                 routes: <RouteBase>[
                   GoRoute(
-                    path: AppRoutes.requestDraftPath,
-                    name: AppRoutes.requestDraftName,
+                    path: AppRoutes.requestApplicationPath,
+                    name: AppRoutes.requestApplicationName,
                     builder: (BuildContext _, GoRouterState state) =>
-                        RequestDraftScreen(
-                          draftId: state.pathParameters['id'] ?? 'new',
-                          kind:
-                              RequestKind.fromStorage(
-                                state.uri.queryParameters['kind'],
-                              ) ??
-                              RequestKind.feedback,
+                        ApplicationFormScreen(
+                          draftId: state.uri.queryParameters['draft'],
+                        ),
+                  ),
+                  GoRoute(
+                    path: AppRoutes.requestFeedbackPath,
+                    name: AppRoutes.requestFeedbackName,
+                    builder: (BuildContext _, GoRouterState state) =>
+                        FeedbackFormScreen(
+                          draftId: state.uri.queryParameters['draft'],
+                        ),
+                  ),
+                  GoRoute(
+                    path: AppRoutes.requestSubmissionPath,
+                    name: AppRoutes.requestSubmissionName,
+                    builder: (BuildContext _, GoRouterState state) =>
+                        SubmissionDetailScreen(
+                          submissionId: state.pathParameters['id'] ?? '',
                         ),
                   ),
                 ],

@@ -63,10 +63,22 @@ abstract final class AppRoutes {
   // Applications and feedback, nested under More.
   static const String requestsPath = 'requests';
   static const String requests = '/more/requests';
-  static const String requestDraftName = 'request-draft';
 
-  /// Draft editor. The id is the local draft's identifier; `new` starts one.
-  static const String requestDraftPath = 'draft/:id';
+  /// The two forms. An existing draft is continued through a `draft` query
+  /// parameter; without one the screen starts a new draft.
+  static const String requestApplicationName = 'request-application';
+  static const String requestApplicationPath = 'application';
+  static const String requestFeedbackName = 'request-feedback';
+  static const String requestFeedbackPath = 'feedback';
+
+  /// One submitted case.
+  ///
+  /// The path carries the **local** id and nothing else. The status link, the
+  /// receipt link and every document link are bearer credentials: putting one
+  /// in a route would leak it into navigation history, deep links and any
+  /// analytics that ever watches routes.
+  static const String requestSubmissionName = 'request-submission';
+  static const String requestSubmissionPath = 'submission/:id';
 
   /// First-run onboarding. A top-level route, outside the navigation shell.
   static const String onboarding = '/onboarding';

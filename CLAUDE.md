@@ -37,16 +37,20 @@ Diese Datei ist für automatisierte und menschliche Beiträge gleichermaßen ver
      Aufgaben-, Abgabe-, Ankündigungs- oder Deadline-Daten dürfen ein Campus-Köthen-Backend
      erreichen. Der quellenübergreifende Kalender führt Stundenplan (Campus API) und
      Moodle-Deadlines **ausschließlich lokal auf dem Gerät** zusammen.
-   - die **Antragstellung** (Finanzanträge an das Gremiensystem des Studierendenrats) → direkt
-     an dessen öffentliche API. Anders als die drei anderen ist dieser Dienst **nicht**
-     nutzerauthentifiziert; ausschlaggebend ist der Inhalt: Eine Einreichung trägt den Namen
-     der antragstellenden Person und eine **Kopie des Studierendenausweises**. Genau solche
-     Daten sollen kein Campus-Köthen-Backend erreichen, weshalb hier dieselbe Begründung greift
-     wie bei den übrigen drei. Die Adresse ist **nie** eine Quellcode-Konstante, sondern kommt
-     als `REQUESTS_BASE_URL` aus dem Build-Environment. Der zurückgegebene **Statuslink ist ein
-     Geheimnis** — er ist der einzige Zugang zum Vorgang, wird nur lokal gespeichert und
-     **niemals** geloggt, gemeldet oder an Dritte weitergegeben. Entwürfe, Anhänge und Ergebnis
-     bleiben auf dem Gerät.
+   - die **Antragstellung und das Feedback** (Finanzanträge und Rückmeldungen an das Gremiensystem
+     des Studierendenrats) → direkt an dessen öffentliche API. Anders als die drei anderen ist
+     dieser Dienst **nicht** nutzerauthentifiziert; ausschlaggebend ist der Inhalt: Eine
+     Einreichung trägt den Namen der antragstellenden Person und eine **Kopie des
+     Studierendenausweises**. Genau solche Daten sollen kein Campus-Köthen-Backend erreichen,
+     weshalb hier dieselbe Begründung greift wie bei den übrigen drei. Die Adresse ist **nie**
+     eine Quellcode-Konstante, sondern kommt als `REQUESTS_BASE_URL` aus dem Build-Environment
+     und muss **HTTPS** sein; daraus entsteht eine exakte Origin-Allowlist. Der zurückgegebene
+     **Statuslink ist ein Geheimnis** — er ist der einzige Zugang zum Vorgang, wird verschlüsselt
+     lokal gespeichert und **niemals** geloggt, gemeldet, geteilt oder in eine Route
+     aufgenommen; dasselbe gilt für die Quittungs- und Dokument-Links, die denselben Token
+     tragen. Der Status wird **ausschließlich** per `POST` mit dem Link im JSON-Body abgefragt,
+     nie über einen Query-Parameter. Entwürfe, Anhänge und Ergebnis bleiben auf dem Gerät.
+     Details: [`docs/requests.md`](docs/requests.md).
 
    Für diese Ausnahmen gilt: **kein** Backend-Proxy, **keine** serverseitige Speicherung, **kein**
    Analytics-/Logging-Umweg. Zugangsdaten nur im Keychain/Keystore, sensible Inhalte nur

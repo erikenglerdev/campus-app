@@ -1,20 +1,31 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
-import 'request_models.dart';
+import 'request_drafts.dart';
+import 'submitted_case.dart';
 
 /// Port: local, on-device persistence for drafts and submitted cases.
 ///
-/// Drafts are user-authored data, not a cache — nothing here is ever evicted
-/// to make room.
+/// Everything behind this port is **encrypted at rest**. A draft can hold a
+/// student card, and a submitted case holds a link that is equivalent to a
+/// bearer token — neither belongs in SharedPreferences or a plaintext box.
+///
+/// Drafts and cases are user data, not a cache: nothing here is ever evicted
+/// to make room, and a failed write is reported rather than swallowed, because
+/// the caller has to know whether a case was safely recorded before it removes
+/// the draft that produced it.
 abstract interface class RequestStore {
   Future<List<RequestDraft>> readDrafts();
   Future<void> writeDrafts(List<RequestDraft> drafts);
+
+  Future<List<SubmittedCase>> readCases();
+  Future<void> writeCases(List<SubmittedCase> cases);
 }
 
 /// A volatile store, used as a safe fallback and in tests.
 class InMemoryRequestStore implements RequestStore {
   List<RequestDraft> _drafts = const <RequestDraft>[];
+  List<SubmittedCase> _cases = const <SubmittedCase>[];
 
   @override
   Future<List<RequestDraft>> readDrafts() async =>
@@ -23,4 +34,12 @@ class InMemoryRequestStore implements RequestStore {
   @override
   Future<void> writeDrafts(List<RequestDraft> drafts) async =>
       _drafts = List<RequestDraft>.of(drafts);
+
+  @override
+  Future<List<SubmittedCase>> readCases() async =>
+      List<SubmittedCase>.of(_cases);
+
+  @override
+  Future<void> writeCases(List<SubmittedCase> cases) async =>
+      _cases = List<SubmittedCase>.of(cases);
 }

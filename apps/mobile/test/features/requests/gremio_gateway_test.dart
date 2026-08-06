@@ -1,382 +1,466 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
-import 'dart:async';
+/// What actually goes on the wire, and what every documented answer means.
+library;
+
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:campus_koethen/features/requests/data/gremio_request_gateway.dart';
 import 'package:campus_koethen/features/requests/domain/application_files.dart';
-import 'package:campus_koethen/features/requests/domain/idempotency_key.dart';
+import 'package:campus_koethen/features/requests/domain/request_drafts.dart';
 import 'package:campus_koethen/features/requests/domain/request_gateway.dart';
-import 'package:campus_koethen/features/requests/domain/request_models.dart';
+import 'package:campus_koethen/features/requests/domain/request_validation.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Records what was sent and answers with a script.
-class _Adapter implements HttpClientAdapter {
-  _Adapter(this.respond);
+import '../../support/fake_gremio.dart';
 
-  final FutureOr<ResponseBody> Function(RequestOptions options) respond;
-  final List<RequestOptions> requests = <RequestOptions>[];
+const String _key = '550e8400-e29b-41d4-a716-446655440000';
+final DateTime _now = DateTime(2026, 8, 6, 12);
 
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) async {
-    requests.add(options);
-    return respond(options);
-  }
-
-  @override
-  void close({bool force = false}) {}
+Future<(GremioRequestGateway, FakeGremioAdapter, FakeAttachmentStore)> _build(
+  FakeGremioResponse Function(RequestOptions) handler,
+) async {
+  final FakeGremioAdapter adapter = FakeGremioAdapter(handler);
+  final FakeAttachmentStore store = FakeAttachmentStore();
+  return (
+    GremioRequestGateway(
+      dio: fakeGremioDio(adapter),
+      baseUrl: kFakeBaseUrl,
+      attachments: store,
+    ),
+    adapter,
+    store,
+  );
 }
 
-ResponseBody _json(Object? body, int status, {Map<String, String>? headers}) =>
-    ResponseBody.fromString(
-      jsonEncode(body),
-      status,
-      headers: <String, List<String>>{
-        Headers.contentTypeHeader: <String>['application/json'],
-        for (final MapEntry<String, String> e
-            in (headers ?? const <String, String>{}).entries)
-          e.key: <String>[e.value],
-      },
-    );
-
-late Directory _tempDir;
-
-RequestAttachment _file(String name, {int bytes = 32}) {
-  final File file = File('${_tempDir.path}/$name')
-    ..writeAsBytesSync(List<int>.filled(bytes, 65));
-  return RequestAttachment(fileName: name, path: file.path, sizeBytes: bytes);
+Future<FinanceApplicationDraft> _application(FakeAttachmentStore store) async {
+  final RequestAttachment antrag = (await store.put(
+    'antrag.pdf',
+    Uint8List.fromList(<int>[1, 2, 3]),
+  ))!;
+  final RequestAttachment ausweis = (await store.put(
+    'ausweis.png',
+    Uint8List.fromList(<int>[4, 5, 6]),
+  ))!;
+  return FinanceApplicationDraft(
+    id: 'draft-1',
+    createdAt: _now,
+    updatedAt: _now,
+    idempotencyKey: _key,
+    locationId: 7,
+    title: 'Grillabend am FB5',
+    applicant: 'Testperson',
+    files: <ApplicationFileSlot, RequestAttachment>{
+      ApplicationFileSlot.financeRequest: antrag,
+      ApplicationFileSlot.studentCard: ausweis,
+    },
+  );
 }
 
-RequestDraft _draft({
-  int? locationId = 1,
-  String applicant = 'A. Person',
-  String title = 'Grillabend',
-  Map<ApplicationFileSlot, RequestAttachment>? files,
-  String? key,
-}) => RequestDraft(
-  id: 'draft-1',
-  kind: RequestKind.financeApplication,
-  createdAt: DateTime(2026, 8, 4),
-  updatedAt: DateTime(2026, 8, 4),
-  idempotencyKey: key ?? IdempotencyKey.generate(),
-  title: title,
-  applicant: applicant,
-  locationId: locationId,
-  files:
-      files ??
-      <ApplicationFileSlot, RequestAttachment>{
-        ApplicationFileSlot.financeRequest: _file('antrag.pdf'),
-        ApplicationFileSlot.studentCard: _file('ausweis.png'),
-      },
+FeedbackDraft _feedback({String submitterName = ''}) => FeedbackDraft(
+  id: 'draft-2',
+  createdAt: _now,
+  updatedAt: _now,
+  idempotencyKey: _key,
+  areaId: 3,
+  submitterName: submitterName,
+  feedback: '  Die Öffnungszeiten sollten verlängert werden.  ',
 );
 
-GremioRequestGateway _gateway(
-  _Adapter adapter, {
-  String base = 'https://gremio.test',
-}) {
-  final Dio dio = Dio(
-    BaseOptions(validateStatus: (int? s) => s != null && s < 500),
-  );
-  dio.httpClientAdapter = adapter;
-  return GremioRequestGateway(dio: dio, baseUrl: base);
-}
+const FakeGremioResponse _created = FakeGremioResponse(<String, dynamic>{
+  'statusUrl': kFakeStatusUrl,
+  'receiptPdfUrl': kFakeReceiptUrl,
+  'number': 'A_0042_2026',
+}, statusCode: 201);
 
 void main() {
-  setUp(() {
-    _tempDir = Directory.systemTemp.createTempSync('gremio-test');
-  });
-  tearDown(() {
-    if (_tempDir.existsSync()) _tempDir.deleteSync(recursive: true);
-  });
+  group('submitting an application', () {
+    test('posts multipart to the documented path with the key', () async {
+      final (gateway, adapter, store) = await _build((_) => _created);
 
-  group('the request that goes out', () {
-    test('hits the documented path', () async {
-      final _Adapter adapter = _Adapter(
-        (_) => _json(<String, dynamic>{
-          'statusUrl': 'https://gremio.test/status/abc',
-          'receiptPdfUrl': 'https://gremio.test/status/abc/pdf',
-          'number': 'A_0042_2026',
-        }, 201),
+      final SubmissionResult result = await gateway.submitApplication(
+        await _application(store),
       );
-      await _gateway(adapter).submit(_draft());
-
-      expect(adapter.requests.single.method, 'POST');
-      expect(adapter.requests.single.uri.path, '/api/public/v1/applications');
-    });
-
-    test('carries the draft its own idempotency key', () async {
-      // Not a fresh one per attempt — that is the whole mechanism.
-      final _Adapter adapter = _Adapter(
-        (_) => _json(<String, dynamic>{
-          'statusUrl': 'https://g.test/s/a',
-          'receiptPdfUrl': 'https://g.test/s/a/pdf',
-          'number': null,
-        }, 201),
-      );
-      final RequestDraft draft = _draft(
-        key: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
-      );
-
-      await _gateway(adapter).submit(draft);
-      await _gateway(adapter).submit(draft);
-
-      expect(
-        adapter.requests
-            .map((RequestOptions o) => o.headers['Idempotency-Key'])
-            .toSet(),
-        <String>{'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'},
-      );
-    });
-
-    test('is multipart and names the fields as the API expects', () async {
-      final _Adapter adapter = _Adapter(
-        (_) => _json(<String, dynamic>{
-          'statusUrl': 'https://g.test/s/a',
-          'receiptPdfUrl': 'https://g.test/s/a/pdf',
-          'number': null,
-        }, 201),
-      );
-      await _gateway(adapter).submit(_draft());
-
-      final RequestOptions sent = adapter.requests.single;
-      expect(sent.contentType, startsWith('multipart/form-data'));
-      final FormData form = sent.data as FormData;
-      expect(
-        form.fields.map((MapEntry<String, String> f) => f.key).toSet(),
-        <String>{'locationId', 'title', 'applicant'},
-      );
-      expect(
-        form.files.map((MapEntry<String, MultipartFile> f) => f.key).toSet(),
-        <String>{'finance_request', 'student_card'},
-      );
-    });
-
-    test('sends optional annexes only when present', () async {
-      final _Adapter adapter = _Adapter(
-        (_) => _json(<String, dynamic>{
-          'statusUrl': 'https://g.test/s/a',
-          'receiptPdfUrl': 'https://g.test/s/a/pdf',
-          'number': null,
-        }, 201),
-      );
-      await _gateway(adapter).submit(
-        _draft(
-          files: <ApplicationFileSlot, RequestAttachment>{
-            ApplicationFileSlot.financeRequest: _file('antrag.pdf'),
-            ApplicationFileSlot.studentCard: _file('ausweis.pdf'),
-            ApplicationFileSlot.annexA: _file('anlage.pdf'),
-          },
-        ),
-      );
-
-      final FormData form = adapter.requests.single.data as FormData;
-      expect(
-        form.files.map((MapEntry<String, MultipartFile> f) => f.key).toSet(),
-        <String>{'finance_request', 'student_card', 'annex_a'},
-      );
-    });
-  });
-
-  group('what comes back', () {
-    Future<SubmissionResult> answer(
-      Object? body,
-      int status, {
-      Map<String, String>? headers,
-    }) => _gateway(
-      _Adapter((_) => _json(body, status, headers: headers)),
-    ).submit(_draft());
-
-    test('201 becomes an accepted case', () async {
-      final SubmissionResult result = await answer(<String, dynamic>{
-        'statusUrl': 'https://gremio.test/status/abc',
-        'receiptPdfUrl': 'https://gremio.test/status/abc/pdf',
-        'number': 'A_0042_2026',
-      }, 201);
 
       expect(result, isA<SubmissionAccepted>());
-      final SubmittedRequest request = (result as SubmissionAccepted).request;
-      expect(request.number, 'A_0042_2026');
-      expect(request.trackingUrl, 'https://gremio.test/status/abc');
-      expect(request.hasSafeTrackingUrl, isTrue);
-      expect(request.hasSafeReceiptUrl, isTrue);
-      expect(request.wasReplay, isFalse);
-    });
-
-    test('a numberless board is fine', () async {
-      final SubmissionResult result = await answer(<String, dynamic>{
-        'statusUrl': 'https://gremio.test/status/abc',
-        'receiptPdfUrl': 'https://gremio.test/status/abc/pdf',
-        'number': null,
-      }, 201);
-      expect((result as SubmissionAccepted).request.number, isNull);
-    });
-
-    test('200 is a replay and says so', () async {
-      final SubmissionResult result = await answer(
-        <String, dynamic>{
-          'statusUrl': 'https://gremio.test/status/abc',
-          'receiptPdfUrl': 'https://gremio.test/status/abc/pdf',
-          'number': 'A_1_2026',
-        },
-        200,
-        headers: <String, String>{'Idempotency-Replayed': 'true'},
-      );
-      expect((result as SubmissionAccepted).request.wasReplay, isTrue);
-    });
-
-    test('an http status link is refused, not opened', () async {
-      // A link from a server is untrusted input.
-      final SubmissionResult result = await answer(<String, dynamic>{
-        'statusUrl': 'http://gremio.test/status/abc',
-        'receiptPdfUrl': 'http://gremio.test/status/abc/pdf',
-        'number': null,
-      }, 201);
+      expect(adapter.lastRequest.path, contains('/api/public/v1/applications'));
+      expect(adapter.lastRequest.method, 'POST');
       expect(
-        (result as SubmissionAccepted).request.hasSafeTrackingUrl,
-        isFalse,
+        adapter.lastRequest.headers['Idempotency-Key'],
+        _key,
+        reason: 'the key is mandatory and belongs to the draft',
       );
+      expect(adapter.lastRequest.contentType, contains('multipart/form-data'));
     });
 
-    test('a 201 without a status link is a failure, not a success', () async {
-      // Reporting success without the only means of tracking would strand the
-      // application.
-      final SubmissionResult result = await answer(<String, dynamic>{
-        'number': 'A_1',
-      }, 201);
-      expect(result, isA<SubmissionFailed>());
+    test('sends exactly the documented fields, and nothing else', () async {
+      final (gateway, adapter, store) = await _build((_) => _created);
+
+      await gateway.submitApplication(await _application(store));
+      final String body = adapter.bodies.last;
+
+      for (final String field in <String>[
+        'locationId',
+        'title',
+        'applicant',
+        'finance_request',
+        'student_card',
+      ]) {
+        expect(body, contains('name="$field"'), reason: field);
+      }
+      for (final String never in <String>[
+        'category',
+        'amount',
+        'purpose',
+        'description',
+        'contactName',
+        'contactEmail',
+        'ts',
+        'sig',
+        'website',
+      ]) {
+        expect(body, isNot(contains('name="$never"')), reason: never);
+      }
+      // Optional annexes are absent when nothing was picked.
+      expect(body, isNot(contains('name="annex_a"')));
+      expect(body, isNot(contains('name="annex_b"')));
     });
 
-    test('400 carries the endpoint’s own wording and field hints', () async {
-      final SubmissionResult result = await answer(<String, dynamic>{
-        'error': 'Bitte einen Antragsgegenstand angeben.',
-        'issues': <Object?>[
-          <String, dynamic>{
-            'field': 'title',
-            'message': 'Bitte einen Antragsgegenstand angeben.',
-          },
-        ],
-      }, 400);
+    test('sends the annexes when they are there', () async {
+      final (gateway, adapter, store) = await _build((_) => _created);
+      final FinanceApplicationDraft base = await _application(store);
+      final RequestAttachment annex = (await store.put(
+        'anlage.pdf',
+        Uint8List.fromList(<int>[7]),
+      ))!;
+
+      await gateway.submitApplication(
+        base.withFile(ApplicationFileSlot.annexA, annex),
+      );
+
+      expect(adapter.bodies.last, contains('name="annex_a"'));
+    });
+
+    test('refuses to send an incomplete draft at all', () async {
+      final (gateway, adapter, store) = await _build((_) => _created);
+      final FinanceApplicationDraft draft = (await _application(
+        store,
+      )).copyWith(title: '');
+
+      final SubmissionResult result = await gateway.submitApplication(draft);
 
       expect(result, isA<SubmissionRejected>());
       expect(
-        (result as SubmissionRejected).message,
-        'Bitte einen Antragsgegenstand angeben.',
-      );
-      expect(result.issues, hasLength(1));
-    });
-
-    test('404, 409, 413, 429 each get their own answer', () async {
-      expect(
-        await answer(<String, dynamic>{'error': 'x'}, 404),
-        isA<SubmissionRejected>(),
-      );
-      expect(
-        await answer(<String, dynamic>{'error': 'x'}, 409),
-        isA<SubmissionConflict>(),
-      );
-      expect(
-        await answer(<String, dynamic>{'error': 'x'}, 413),
-        isA<SubmissionTooLarge>(),
-      );
-
-      final SubmissionResult limited = await answer(
-        <String, dynamic>{'error': 'x'},
-        429,
-        headers: <String, String>{'Retry-After': '30'},
-      );
-      expect(limited, isA<SubmissionRateLimited>());
-      expect(
-        (limited as SubmissionRateLimited).retryAfter,
-        const Duration(seconds: 30),
+        adapter.requests,
+        isEmpty,
+        reason: 'no rate-limit slot is burned for an answer we already know',
       );
     });
 
-    test(
-      'a network error is unreachable, so the same key can be retried',
-      () async {
-        final SubmissionResult result = await _gateway(
-          _Adapter((_) => throw const SocketException('no route')),
-        ).submit(_draft());
-        expect(result, isA<SubmissionUnreachable>());
-      },
-    );
+    test('reports a missing attachment at its own field', () async {
+      final (gateway, _, store) = await _build((_) => _created);
+      final FinanceApplicationDraft draft = await _application(store);
+      // The draft outlived its bytes — cleared storage, a restored backup.
+      store.entries.clear();
 
-    test('an unconfigured build never pretends', () async {
-      final SubmissionResult result = await _gateway(
-        _Adapter((_) => _json(<String, dynamic>{}, 201)),
-        base: '',
-      ).submit(_draft());
-      expect(result, isA<SubmissionNotConnected>());
+      final SubmissionResult result = await gateway.submitApplication(draft);
+
+      expect(result, isA<SubmissionRejected>());
+      expect(
+        (result as SubmissionRejected).fieldErrors.keys,
+        contains(RequestField.financeRequestFile),
+      );
     });
   });
 
-  group('refusing to send an incomplete draft', () {
-    Future<SubmissionResult> attempt(RequestDraft draft) async {
-      final _Adapter adapter = _Adapter((_) => _json(<String, dynamic>{}, 201));
-      final SubmissionResult result = await _gateway(adapter).submit(draft);
-      expect(
-        adapter.requests,
-        isEmpty,
-        reason: 'nothing should have been sent',
+  group('submitting feedback', () {
+    test('posts JSON to the documented path with the key', () async {
+      final (gateway, adapter, _) = await _build(
+        (_) => const FakeGremioResponse(<String, dynamic>{
+          'statusUrl': kFakeFeedbackStatusUrl,
+          'receiptPdfUrl': kFakeFeedbackReceiptUrl,
+          'number': 'F_0042_2026',
+        }, statusCode: 201),
       );
-      return result;
+
+      final SubmissionResult result = await gateway.submitFeedback(_feedback());
+
+      expect(result, isA<SubmissionAccepted>());
+      expect(adapter.lastRequest.path, contains('/api/public/v1/feedback'));
+      expect(adapter.lastRequest.headers['Idempotency-Key'], _key);
+      expect(adapter.lastRequest.contentType, contains('application/json'));
+    });
+
+    test('omits submitterName entirely when the user gave none', () async {
+      final (gateway, adapter, _) = await _build(
+        (_) => const FakeGremioResponse(<String, dynamic>{
+          'statusUrl': kFakeFeedbackStatusUrl,
+          'receiptPdfUrl': kFakeFeedbackReceiptUrl,
+          'number': null,
+        }, statusCode: 201),
+      );
+
+      await gateway.submitFeedback(_feedback());
+      final Map<String, dynamic> sent =
+          jsonDecode(adapter.bodies.last) as Map<String, dynamic>;
+
+      expect(sent.containsKey('submitterName'), isFalse);
+      expect(sent['areaId'], 3);
+      // Trimmed, as the contract says.
+      expect(sent['feedback'], 'Die Öffnungszeiten sollten verlängert werden.');
+      expect(sent.keys.length, 2, reason: 'no invented fields');
+    });
+
+    test('sends a given name, trimmed', () async {
+      final (gateway, adapter, _) = await _build(
+        (_) => const FakeGremioResponse(<String, dynamic>{
+          'statusUrl': kFakeFeedbackStatusUrl,
+          'receiptPdfUrl': kFakeFeedbackReceiptUrl,
+          'number': null,
+        }, statusCode: 201),
+      );
+
+      await gateway.submitFeedback(_feedback(submitterName: '  Max  '));
+
+      expect(
+        (jsonDecode(adapter.bodies.last)
+            as Map<String, dynamic>)['submitterName'],
+        'Max',
+      );
+    });
+  });
+
+  group('the documented answers', () {
+    Future<SubmissionResult> answer(FakeGremioResponse response) async {
+      final (gateway, _, _) = await _build((_) => response);
+      return gateway.submitFeedback(_feedback());
     }
 
-    test('without a location', () async {
-      expect(
-        await attempt(_draft(locationId: null)),
-        isA<SubmissionRejected>(),
+    test('201 is a new case', () async {
+      final SubmissionResult result = await answer(
+        const FakeGremioResponse(<String, dynamic>{
+          'statusUrl': kFakeFeedbackStatusUrl,
+          'receiptPdfUrl': kFakeFeedbackReceiptUrl,
+          'number': 'F_1',
+        }, statusCode: 201),
       );
+
+      expect(result, isA<SubmissionAccepted>());
+      final SubmissionAccepted accepted = result as SubmissionAccepted;
+      expect(accepted.wasReplay, isFalse);
+      expect(accepted.number, 'F_1');
+      expect(accepted.statusUrl, kFakeFeedbackStatusUrl);
     });
 
-    test('without an applicant', () async {
-      expect(await attempt(_draft(applicant: '  ')), isA<SubmissionRejected>());
-    });
-
-    test('without a title', () async {
-      expect(await attempt(_draft(title: '')), isA<SubmissionRejected>());
-    });
-
-    test('without the mandatory files', () async {
-      expect(
-        await attempt(
-          _draft(files: const <ApplicationFileSlot, RequestAttachment>{}),
+    test('200 with the replay header is a success, not a duplicate', () async {
+      final SubmissionResult result = await answer(
+        const FakeGremioResponse(
+          <String, dynamic>{
+            'statusUrl': kFakeFeedbackStatusUrl,
+            'receiptPdfUrl': kFakeFeedbackReceiptUrl,
+            'number': 'F_1',
+          },
+          headers: <String, String>{'Idempotency-Replayed': 'true'},
         ),
-        isA<SubmissionRejected>(),
+      );
+
+      expect(result, isA<SubmissionAccepted>());
+      expect((result as SubmissionAccepted).wasReplay, isTrue);
+    });
+
+    test('400 issues land on the fields they name', () async {
+      final SubmissionResult result = await answer(
+        const FakeGremioResponse(<String, dynamic>{
+          'error': 'Bitte Feedback eingeben.',
+          'issues': <Map<String, String>>[
+            <String, String>{
+              'field': 'feedback',
+              'message': 'Bitte Feedback eingeben.',
+            },
+            <String, String>{
+              'field': 'somethingNew',
+              'message': 'Unbekanntes Feld.',
+            },
+          ],
+        }, statusCode: 400),
+      );
+
+      expect(result, isA<SubmissionRejected>());
+      final SubmissionRejected rejected = result as SubmissionRejected;
+      expect(
+        rejected.fieldErrors[RequestField.feedback],
+        'Bitte Feedback eingeben.',
+      );
+      // An issue this build cannot place is kept, not swallowed.
+      expect(rejected.generalIssues, contains('Unbekanntes Feld.'));
+      expect(rejected.message, 'Bitte Feedback eingeben.');
+    });
+
+    test('404 means the target is gone', () async {
+      expect(
+        await answer(
+          const FakeGremioResponse(<String, dynamic>{
+            'error': 'Bereich nicht gefunden.',
+          }, statusCode: 404),
+        ),
+        isA<SubmissionTargetGone>(),
       );
     });
 
-    test('with a file that has gone missing from disk', () async {
-      // A draft can outlive its files: the user cleared storage, or restored a
-      // backup. Better a clear refusal than a half-empty multipart body.
-      final RequestDraft draft = _draft(
-        files: <ApplicationFileSlot, RequestAttachment>{
-          ApplicationFileSlot.financeRequest: const RequestAttachment(
-            fileName: 'weg.pdf',
-            path: '/nirgendwo/weg.pdf',
-          ),
-          ApplicationFileSlot.studentCard: _file('ausweis.pdf'),
-        },
+    test('409 is a conflict that a retry cannot fix', () async {
+      expect(
+        await answer(const FakeGremioResponse(null, statusCode: 409)),
+        isA<SubmissionConflict>(),
       );
-      expect(await attempt(draft), isA<SubmissionRejected>());
     });
 
-    test('with a file the slot does not accept', () async {
-      final RequestDraft draft = _draft(
-        files: <ApplicationFileSlot, RequestAttachment>{
-          ApplicationFileSlot.financeRequest: _file('antrag.png'),
-          ApplicationFileSlot.studentCard: _file('ausweis.pdf'),
-        },
+    test('413 is too large', () async {
+      expect(
+        await answer(const FakeGremioResponse(null, statusCode: 413)),
+        isA<SubmissionTooLarge>(),
       );
-      expect(await attempt(draft), isA<SubmissionRejected>());
+    });
+
+    test('415 is a client-side protocol fault of its own', () async {
+      expect(
+        await answer(const FakeGremioResponse(null, statusCode: 415)),
+        isA<SubmissionUnsupportedMedia>(),
+      );
+    });
+
+    test('429 carries Retry-After', () async {
+      final SubmissionResult result = await answer(
+        const FakeGremioResponse(
+          <String, dynamic>{'error': 'zu viele'},
+          statusCode: 429,
+          headers: <String, String>{'Retry-After': '42'},
+        ),
+      );
+
+      expect(result, isA<SubmissionRateLimited>());
+      expect(
+        (result as SubmissionRateLimited).retryAfter,
+        const Duration(seconds: 42),
+      );
+    });
+
+    test('a transport failure is an UNKNOWN outcome, not a failure', () async {
+      // The distinction the idempotency key exists for: the case may have been
+      // filed and only the answer lost.
+      expect(
+        await answer(const FakeGremioResponse.transportError()),
+        isA<SubmissionOutcomeUnknown>(),
+      );
+    });
+
+    test('a 500 is an unknown outcome too', () async {
+      expect(
+        await answer(const FakeGremioResponse(null, statusCode: 500)),
+        isA<SubmissionOutcomeUnknown>(),
+      );
+    });
+
+    test('a success without a usable status link is not a success', () async {
+      expect(
+        await answer(
+          const FakeGremioResponse(<String, dynamic>{
+            'receiptPdfUrl': kFakeReceiptUrl,
+            'number': 'F_1',
+          }, statusCode: 201),
+        ),
+        isA<SubmissionFailed>(),
+      );
+    });
+
+    test('a link pointing at another origin is refused', () async {
+      // The attack this closes: the endpoint answers with somebody else's host
+      // and the app then sends the token there.
+      expect(
+        await answer(
+          const FakeGremioResponse(<String, dynamic>{
+            'statusUrl': 'https://attacker.invalid/status/abc',
+            'receiptPdfUrl': kFakeReceiptUrl,
+            'number': null,
+          }, statusCode: 201),
+        ),
+        isA<SubmissionFailed>(),
+      );
+    });
+
+    test('an http link is refused as well', () async {
+      expect(
+        await answer(
+          const FakeGremioResponse(<String, dynamic>{
+            'statusUrl': 'http://gremio.example/status/abc',
+            'receiptPdfUrl': kFakeReceiptUrl,
+            'number': null,
+          }, statusCode: 201),
+        ),
+        isA<SubmissionFailed>(),
+      );
+    });
+  });
+
+  group('a build without an endpoint', () {
+    test('reports "not connected" instead of pretending', () async {
+      final FakeAttachmentStore store = FakeAttachmentStore();
+      final GremioRequestGateway gateway = GremioRequestGateway(
+        dio: fakeGremioDio(FakeGremioAdapter((_) => _created)),
+        baseUrl: '',
+        attachments: store,
+      );
+
+      expect(
+        await gateway.submitFeedback(_feedback()),
+        isA<SubmissionNotConnected>(),
+      );
+      expect(
+        await gateway.submitApplication(await _application(store)),
+        isA<SubmissionNotConnected>(),
+      );
+    });
+
+    test('a plain-http base address counts as unconfigured', () async {
+      final GremioRequestGateway gateway = GremioRequestGateway(
+        dio: fakeGremioDio(FakeGremioAdapter((_) => _created)),
+        baseUrl: 'http://gremio.example',
+        attachments: FakeAttachmentStore(),
+      );
+
+      expect(
+        await gateway.submitFeedback(_feedback()),
+        isA<SubmissionNotConnected>(),
+      );
+    });
+  });
+
+  group('secrets', () {
+    test('no failure reason ever carries a link or personal data', () async {
+      for (final FakeGremioResponse response in <FakeGremioResponse>[
+        const FakeGremioResponse.transportError(),
+        const FakeGremioResponse(null, statusCode: 500),
+        const FakeGremioResponse(<String, dynamic>{
+          'statusUrl': 'https://attacker.invalid/status/abc',
+          'receiptPdfUrl': kFakeReceiptUrl,
+          'number': null,
+        }, statusCode: 201),
+      ]) {
+        final (gateway, _, _) = await _build((_) => response);
+        final SubmissionResult result = await gateway.submitFeedback(
+          _feedback(submitterName: 'Max Mustermann'),
+        );
+        final String reason = switch (result) {
+          SubmissionOutcomeUnknown(:final String reason) => reason,
+          SubmissionFailed(:final String reason) => reason,
+          _ => '',
+        };
+        expect(reason, isNot(contains('testtoken')));
+        expect(reason, isNot(contains('attacker')));
+        expect(reason, isNot(contains('Max')));
+      }
     });
   });
 }

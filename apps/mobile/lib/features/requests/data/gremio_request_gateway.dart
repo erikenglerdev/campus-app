@@ -2,59 +2,95 @@
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 
 import '../domain/application_files.dart';
+import '../domain/attachment_store.dart';
+import '../domain/gremio_origin.dart';
+import '../domain/request_drafts.dart';
 import '../domain/request_gateway.dart';
-import '../domain/request_models.dart';
+import '../domain/request_validation.dart';
 import 'requests_api_config.dart';
 
-/// Submits a finance application straight from the device.
+/// Submits applications and feedback straight from the device.
 ///
-/// Direct on purpose: a submission carries the applicant's name and a copy of
+/// Direct on purpose: an application carries the applicant's name and a copy of
 /// their student card, and CLAUDE.md §2 lists this among the integrations that
 /// must not pass through a Campus Köthen backend. Nothing about the request or
 /// its answer is proxied, cached server-side or logged.
 ///
 /// **The status link in the answer is a secret.** It is put into the returned
-/// [SubmittedRequest] and nowhere else — never into a log line, never into a
-/// failure reason.
+/// [SubmissionAccepted] and nowhere else — never into a log line, never into a
+/// failure reason, and only after it has been checked against the configured
+/// origin: a link pointing somewhere else is not a case this app can track, it
+/// is somebody else's host being handed a token.
 class GremioRequestGateway implements RequestGateway {
-  GremioRequestGateway({required Dio dio, required String baseUrl})
-    : this._(dio, RequestsApiConfig.stripTrailingSlash(baseUrl.trim()));
+  GremioRequestGateway({
+    required Dio dio,
+    required String baseUrl,
+    required AttachmentStore attachments,
+  }) : this._(
+         dio,
+         attachments,
+         RequestsApiConfig.stripTrailingSlash(baseUrl.trim()),
+         GremioOrigin.parse(baseUrl),
+       );
 
-  GremioRequestGateway._(this._dio, this._baseUrl);
+  GremioRequestGateway._(
+    this._dio,
+    this._attachments,
+    this._base,
+    this._origin,
+  );
 
   final Dio _dio;
-  final String _baseUrl;
+  final AttachmentStore _attachments;
+  final String _base;
+  final GremioOrigin? _origin;
 
   @override
-  Future<SubmissionResult> submit(RequestDraft draft) async {
-    if (_baseUrl.isEmpty) return const SubmissionNotConnected();
+  Future<SubmissionResult> submitApplication(
+    FinanceApplicationDraft draft,
+  ) async {
+    if (_origin == null) return const SubmissionNotConnected();
 
-    final SubmissionRejected? incomplete = await _checkLocally(draft);
-    if (incomplete != null) return incomplete;
+    final RequestValidation validation = RequestValidation.validate(draft);
+    if (!validation.isValid) {
+      // Sending a body that cannot succeed wastes the user's data allowance
+      // and burns a rate-limit slot for an answer we already know.
+      return SubmissionRejected(
+        fieldErrors: <RequestField, String>{
+          for (final RequestField field in validation.errors.keys) field: '',
+        },
+      );
+    }
 
     final FormData form = FormData();
-    form.fields.add(
-      MapEntry<String, String>('locationId', '${draft.locationId}'),
-    );
-    form.fields.add(MapEntry<String, String>('title', draft.title.trim()));
-    form.fields.add(
-      MapEntry<String, String>('applicant', draft.applicant.trim()),
-    );
+    form.fields
+      ..add(MapEntry<String, String>('locationId', '${draft.locationId}'))
+      ..add(MapEntry<String, String>('title', draft.title.trim()))
+      ..add(MapEntry<String, String>('applicant', draft.applicant.trim()));
 
     for (final ApplicationFileSlot slot in ApplicationFileSlot.values) {
       final RequestAttachment? file = draft.fileFor(slot);
       if (file == null) continue;
+      // Read straight into memory: no decrypted copy is ever written to disk,
+      // so there is no temporary file for a crash to leave behind.
+      final Uint8List? bytes = await _attachments.read(file);
+      if (bytes == null) {
+        return SubmissionRejected(
+          fieldErrors: <RequestField, String>{RequestField.forSlot(slot): ''},
+        );
+      }
       final String? contentType = slot.contentTypeFor(file.fileName);
       form.files.add(
         MapEntry<String, MultipartFile>(
           slot.field,
-          await MultipartFile.fromFile(
-            file.path,
+          MultipartFile.fromBytes(
+            bytes,
             filename: file.fileName,
             contentType: contentType == null
                 ? null
@@ -64,117 +100,159 @@ class GremioRequestGateway implements RequestGateway {
       );
     }
 
+    return _send(
+      path: RequestsApiConfig.applicationsPath,
+      body: form,
+      idempotencyKey: draft.idempotencyKey,
+    );
+  }
+
+  @override
+  Future<SubmissionResult> submitFeedback(FeedbackDraft draft) async {
+    if (_origin == null) return const SubmissionNotConnected();
+
+    final RequestValidation validation = RequestValidation.validate(draft);
+    if (!validation.isValid) {
+      return SubmissionRejected(
+        fieldErrors: <RequestField, String>{
+          for (final RequestField field in validation.errors.keys) field: '',
+        },
+      );
+    }
+
+    final String? name = draft.wireSubmitterName;
+    return _send(
+      path: RequestsApiConfig.feedbackPath,
+      body: <String, dynamic>{
+        'areaId': draft.areaId,
+        // Left out entirely when blank. The committee records such feedback as
+        // anonymous itself; sending that word would put it in the user's mouth
+        // and, per the contract, is the same request for idempotency anyway.
+        'submitterName': ?name,
+        'feedback': draft.feedback.trim(),
+      },
+      idempotencyKey: draft.idempotencyKey,
+      contentType: Headers.jsonContentType,
+    );
+  }
+
+  Future<SubmissionResult> _send({
+    required String path,
+    required Object body,
+    required String idempotencyKey,
+    String? contentType,
+  }) async {
     try {
       final Response<dynamic> response = await _dio.post<dynamic>(
-        '$_baseUrl${RequestsApiConfig.applicationsPath}',
-        data: form,
+        '$_base$path',
+        data: body,
         options: Options(
           headers: <String, String>{
-            'Idempotency-Key': draft.idempotencyKey,
+            'Idempotency-Key': idempotencyKey,
             'Accept': 'application/json',
           },
+          contentType: contentType,
           sendTimeout: RequestsApiConfig.sendTimeout,
           receiveTimeout: RequestsApiConfig.receiveTimeout,
-          // Every documented status is a result, not an exception.
+          // Every documented status below 500 is a result, not an exception.
+          // A 5xx is left to throw: its outcome is genuinely unknown.
           validateStatus: (int? status) => status != null && status < 500,
         ),
       );
-      return _readResponse(draft, response);
+      return _readResponse(response);
     } on DioException catch (error) {
       return _readTransportError(error);
     }
   }
 
-  /// Refuses obviously incomplete drafts before opening a connection.
-  ///
-  /// Not a substitute for the server's validation — it is the authority — but
-  /// sending a body that cannot succeed wastes the user's data allowance and
-  /// burns a rate-limit slot for an answer we already know.
-  Future<SubmissionRejected?> _checkLocally(RequestDraft draft) async {
-    final List<String> issues = <String>[];
-    if (draft.locationId == null) issues.add('locationId');
-    if (draft.title.trim().isEmpty) issues.add('title');
-    if (draft.applicant.trim().isEmpty) issues.add('applicant');
-
-    for (final ApplicationFileSlot slot in ApplicationFileSlot.values) {
-      final RequestAttachment? file = draft.fileFor(slot);
-      if (file == null) {
-        if (slot.isRequired) issues.add(slot.field);
-        continue;
-      }
-      if (!slot.accepts(file.fileName)) {
-        issues.add(slot.field);
-        continue;
-      }
-      // A draft can outlive its files — cleared storage, a restored backup.
-      if (!await File(file.path).exists()) issues.add(slot.field);
-    }
-
-    if (issues.isEmpty) return null;
-    return SubmissionRejected(message: '', issues: issues);
-  }
-
-  SubmissionResult _readResponse(
-    RequestDraft draft,
-    Response<dynamic> response,
-  ) {
+  SubmissionResult _readResponse(Response<dynamic> response) {
     final int status = response.statusCode ?? 0;
-    final dynamic body = response.data;
-    final Map<String, dynamic> json = body is Map<String, dynamic>
-        ? body
+    final dynamic data = response.data;
+    final Map<String, dynamic> json = data is Map<String, dynamic>
+        ? data
         : const <String, dynamic>{};
 
-    if (status == 200 || status == 201) {
-      final Object? statusUrl = json['statusUrl'];
-      if (statusUrl is! String || statusUrl.trim().isEmpty) {
-        // Without the link there is no way back to this application. Calling
-        // that a success would strand it.
-        return const SubmissionFailed('accepted-without-status-url');
-      }
-      final Object? number = json['number'];
-      final Object? receipt = json['receiptPdfUrl'];
-      return SubmissionAccepted(
-        SubmittedRequest(
-          id: draft.id,
-          kind: draft.kind,
-          title: draft.title.trim(),
-          submittedAt: DateTime.now(),
-          status: RequestStatus.submitted,
-          number: number is String && number.trim().isNotEmpty ? number : null,
-          trackingUrl: statusUrl,
-          receiptPdfUrl: receipt is String && receipt.trim().isNotEmpty
-              ? receipt
-              : null,
-          wasReplay:
-              status == 200 ||
-              response.headers.value('Idempotency-Replayed') == 'true',
-        ),
-      );
-    }
+    if (status == 200 || status == 201) return _readAccepted(response, json);
 
     final Object? error = json['error'];
     final String message = error is String ? error : '';
-    final List<String> issues = <String>[
-      for (final Object? issue
-          in json['issues'] is List
-              ? json['issues'] as List<Object?>
-              : const <Object?>[])
-        if (issue is Map<String, dynamic> && issue['message'] is String)
-          issue['message'] as String,
-    ];
 
     return switch (status) {
-      400 ||
-      404 ||
-      415 ||
-      422 => SubmissionRejected(message: message, issues: issues),
+      400 => _readRejected(message, json),
+      404 => SubmissionTargetGone(message: message),
       409 => const SubmissionConflict(),
       413 => const SubmissionTooLarge(),
+      415 => const SubmissionUnsupportedMedia(),
       429 => SubmissionRateLimited(
         retryAfter: _retryAfter(response.headers.value('Retry-After')),
       ),
-      _ => SubmissionFailed('http-$status'),
+      // Anything else below 500 the contract does not describe. Unknown, not
+      // failed: we cannot tell whether the case was filed.
+      _ => SubmissionOutcomeUnknown('http-$status'),
     };
+  }
+
+  SubmissionResult _readAccepted(
+    Response<dynamic> response,
+    Map<String, dynamic> json,
+  ) {
+    final Object? statusUrl = json['statusUrl'];
+    final Object? receipt = json['receiptPdfUrl'];
+    // Without the link there is no way back to this case. Calling that a
+    // success would strand it.
+    if (statusUrl is! String || !_origin!.allows(statusUrl)) {
+      return const SubmissionFailed('accepted-without-usable-status-url');
+    }
+    if (receipt is! String || !_origin.allows(receipt)) {
+      return const SubmissionFailed('accepted-without-usable-receipt-url');
+    }
+    final Object? number = json['number'];
+    return SubmissionAccepted(
+      statusUrl: statusUrl,
+      receiptPdfUrl: receipt,
+      number: number is String && number.trim().isNotEmpty ? number : null,
+      wasReplay:
+          response.statusCode == 200 ||
+          response.headers.value('Idempotency-Replayed') == 'true',
+    );
+  }
+
+  /// Maps the endpoint's field-level issues onto the real form fields.
+  ///
+  /// An issue naming something this build does not know is kept as general
+  /// text rather than dropped: an unmapped message is still information, and
+  /// silently losing it would leave the user with a form that looks fine and
+  /// a submission that keeps failing.
+  static SubmissionRejected _readRejected(
+    String message,
+    Map<String, dynamic> json,
+  ) {
+    final Map<RequestField, String> fields = <RequestField, String>{};
+    final List<String> general = <String>[];
+
+    final Object? issues = json['issues'];
+    if (issues is List) {
+      for (final Object? issue in issues) {
+        if (issue is! Map<String, dynamic>) continue;
+        final Object? field = issue['field'];
+        final Object? text = issue['message'];
+        if (text is! String || text.trim().isEmpty) continue;
+        final RequestField? mapped = RequestField.fromWire(
+          field is String ? field : null,
+        );
+        if (mapped == null) {
+          general.add(text);
+        } else {
+          fields[mapped] = text;
+        }
+      }
+    }
+
+    return SubmissionRejected(
+      message: message,
+      fieldErrors: fields,
+      generalIssues: general,
+    );
   }
 
   static Duration? _retryAfter(String? header) {
@@ -182,15 +260,28 @@ class GremioRequestGateway implements RequestGateway {
     return seconds == null || seconds < 0 ? null : Duration(seconds: seconds);
   }
 
-  static SubmissionResult _readTransportError(DioException error) =>
-      switch (error.type) {
-        DioExceptionType.connectionTimeout ||
-        DioExceptionType.sendTimeout ||
-        DioExceptionType.receiveTimeout ||
-        DioExceptionType.connectionError => const SubmissionUnreachable(),
-        DioExceptionType.unknown when error.error is SocketException =>
-          const SubmissionUnreachable(),
-        // The reason is a type name, never the body and never a URL.
-        _ => SubmissionFailed('dio-${error.type.name}'),
-      };
+  /// Every transport failure and every 5xx is an **unknown** outcome.
+  ///
+  /// The request may have been processed and only the answer lost. Reporting
+  /// it as a plain failure would invite a fresh submission and a duplicate
+  /// case; reporting it as unknown is what freezes the draft and keeps the
+  /// key for an identical retry.
+  static SubmissionResult _readTransportError(DioException error) {
+    final int? status = error.response?.statusCode;
+    if (status != null && status >= 500) {
+      return SubmissionOutcomeUnknown('http-$status');
+    }
+    return switch (error.type) {
+      DioExceptionType.connectionTimeout ||
+      DioExceptionType.sendTimeout ||
+      DioExceptionType.receiveTimeout ||
+      DioExceptionType.connectionError => const SubmissionOutcomeUnknown(
+        'transport',
+      ),
+      DioExceptionType.unknown when error.error is SocketException =>
+        const SubmissionOutcomeUnknown('transport'),
+      // The reason is a type name, never the body, a name or a URL.
+      _ => SubmissionOutcomeUnknown('dio-${error.type.name}'),
+    };
+  }
 }

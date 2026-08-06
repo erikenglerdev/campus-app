@@ -19,11 +19,20 @@ class DocumentViewerScreen extends StatefulWidget {
   const DocumentViewerScreen({
     required this.document,
     this.shareService = const DocumentShareService(),
+    this.allowSharing = true,
     super.key,
   });
 
   final AppDocument document;
   final DocumentShareService shareService;
+
+  /// Whether the document may leave the app.
+  ///
+  /// Off for anything reachable only through a secret token — a committee
+  /// receipt embeds the same token as the status link, so sharing the PDF
+  /// would hand over access to the whole case. The viewer then shows the
+  /// document and offers no way out of it.
+  final bool allowSharing;
 
   @override
   State<DocumentViewerScreen> createState() => _DocumentViewerScreenState();
@@ -56,11 +65,12 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
       appBar: AppBar(
         title: Text(doc.filename, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: <Widget>[
-          IconButton(
-            onPressed: () => widget.shareService.share(doc),
-            tooltip: l10n.documentShare,
-            icon: const Icon(Icons.ios_share),
-          ),
+          if (widget.allowSharing)
+            IconButton(
+              onPressed: () => widget.shareService.share(doc),
+              tooltip: l10n.documentShare,
+              icon: const Icon(Icons.ios_share),
+            ),
         ],
       ),
       body: _body(context, l10n, doc),
@@ -105,12 +115,14 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
             Text(l10n.documentPreviewUnavailable, textAlign: TextAlign.center),
-            const SizedBox(height: AppSpacing.lg),
-            FilledButton.icon(
-              onPressed: () => widget.shareService.share(doc),
-              icon: const Icon(Icons.ios_share),
-              label: Text(l10n.documentShare),
-            ),
+            if (widget.allowSharing) ...<Widget>[
+              const SizedBox(height: AppSpacing.lg),
+              FilledButton.icon(
+                onPressed: () => widget.shareService.share(doc),
+                icon: const Icon(Icons.ios_share),
+                label: Text(l10n.documentShare),
+              ),
+            ],
           ],
         ),
       ),

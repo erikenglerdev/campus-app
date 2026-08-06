@@ -370,20 +370,26 @@ Vollständige Beschreibung inklusive Redaktionshandbuch: [public-calendars.md](p
 Diese Quellen erreicht **ausschließlich die App**. Ein Backend darf sie nie abrufen; es gibt für
 sie keine API-Route, keine Strapi-Collection, keinen Worker-Job und keine Datenbanktabelle.
 
-| Quelle                     | Zweck                                                   | Besonderheit                                                                           | Doku                               |
-| -------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------- |
-| `mail.hs-anhalt.de`        | Studentisches Postfach                                  | IMAPS 993, SMTP 587 mit **Pflicht**-STARTTLS, kein Klartext                            | [student-mail.md](student-mail.md) |
-| `service.ssc.hs-anhalt.de` | HIS-QIS-Notenspiegel                                    | **keine** offizielle API — HTML-Parsing über Spaltenüberschriften                      | [grades.md](grades.md)             |
-| `moodle.hs-anhalt.de`      | Kurse, Materialien, Aufgaben, Ankündigungen, Deadlines  | feste, rein **lesende** Whitelist von `wsfunction`s                                    | [moodle.md](moodle.md)             |
-| `REQUESTS_BASE_URL`        | Finanzanträge an das Gremiensystem des Studierendenrats | Adresse **nie** als Quellcode-Konstante; `multipart/form-data` mit Idempotenzschlüssel | —                                  |
+| Quelle                     | Zweck                                                                | Besonderheit                                                                                                                                                                                           | Doku                               |
+| -------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
+| `mail.hs-anhalt.de`        | Studentisches Postfach                                               | IMAPS 993, SMTP 587 mit **Pflicht**-STARTTLS, kein Klartext                                                                                                                                            | [student-mail.md](student-mail.md) |
+| `service.ssc.hs-anhalt.de` | HIS-QIS-Notenspiegel                                                 | **keine** offizielle API — HTML-Parsing über Spaltenüberschriften                                                                                                                                      | [grades.md](grades.md)             |
+| `moodle.hs-anhalt.de`      | Kurse, Materialien, Aufgaben, Ankündigungen, Deadlines               | feste, rein **lesende** Whitelist von `wsfunction`s                                                                                                                                                    | [moodle.md](moodle.md)             |
+| `REQUESTS_BASE_URL`        | Finanzanträge und Feedback an das Gremiensystem des Studierendenrats | Adresse **nie** als Quellcode-Konstante, **HTTPS** erzwungen; Antrag als `multipart/form-data`, Feedback als `application/json`, beide mit Idempotenzschlüssel; Status per `POST` mit dem Link im Body | —                                  |
 
 Gemeinsame Regeln: feste Host-Allowlist vor jedem Request · Redirects auf fremde Hosts oder auf
 Klartext werden abgebrochen · Zertifikatsprüfung nie deaktiviert · Zugangsdaten und Token nur im
 Keychain/Keystore · Inhalte nur verschlüsselt lokal · nichts davon in Logs oder Fehlermeldungen.
 
-Für die **Antragstellung** gilt zusätzlich: Der zurückgegebene **Statuslink ist ein Geheimnis** —
-er ist der einzige Zugang zum Vorgang, wird nur lokal gespeichert und **niemals** geloggt, gemeldet
-oder an Dritte weitergegeben. Entwürfe, Anhänge und Ergebnis bleiben auf dem Gerät.
+Für **Anträge und Feedback** gilt zusätzlich: Der zurückgegebene **Statuslink ist ein
+Bearer-Credential** — er ist der einzige Zugang zum Vorgang, wird verschlüsselt lokal gespeichert und
+**niemals** geloggt, gemeldet, geteilt oder als Route beziehungsweise Query-Parameter verwendet.
+Quittungs- und Dokument-Links tragen denselben Token und werden genauso behandelt. Der Statusabruf
+ist deshalb ein `POST` mit dem Link im JSON-Body und ohne Idempotenzschlüssel; er antwortet
+`Cache-Control: no-store`, weshalb Statusantworten nur im Arbeitsspeicher gehalten werden. Entwürfe,
+Anhänge — einschließlich des Studierendenausweises — und Ergebnis bleiben verschlüsselt auf dem
+Gerät. Ein `400` oder `404` löscht **nie** einen lokal gespeicherten Vorgang.
+Details: [requests.md](requests.md).
 
 **Bekannte Fragilität:** HIS-QIS bietet keine JSON-API. Ändert die Hochschule das Portal, greift
 `portalStructureChanged` — mit lokalisierter Meldung, **ohne** den Cache zu überschreiben und
