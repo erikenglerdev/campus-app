@@ -13,8 +13,9 @@ void main() {
       final MapCatalog catalog = await const MapAssetLoader().load();
 
       expect(catalog.mapVersion, isNotEmpty);
-      expect(catalog.rooms, hasLength(30));
-      expect(catalog.floors, hasLength(2));
+      // Two demo storeys plus the campus overview.
+      expect(catalog.rooms, hasLength(60));
+      expect(catalog.floors, hasLength(3));
       expect(catalog.buildings, hasLength(2));
       expect(catalog.buildings.map((MapBuilding b) => b.buildingKey), <String>[
         'demo-north',
@@ -37,6 +38,10 @@ void main() {
       final MapBuilding demo = catalog.building('demo-north')!;
       expect(demo.name.resolve('de'), 'Demogebäude Nord (fiktiv)');
       expect(demo.name.resolve('en'), 'Demo building north (fictional)');
+      expect(
+        catalog.floor('demo-north-level1')!.name.resolve('en'),
+        'First floor',
+      );
       expect(
         catalog.floor('demo-north-level2')!.name.resolve('en'),
         'Second floor',
@@ -77,9 +82,10 @@ void main() {
     test('floors are scoped to their building', () async {
       final MapCatalog catalog = await const MapAssetLoader().load();
 
+      // Lowest storey first — the order the picker offers them in.
       expect(
         catalog.floorsOf('demo-north').map((MapFloor f) => f.floorKey),
-        <String>['demo-north-level2'],
+        <String>['demo-north-level1', 'demo-north-level2'],
       );
       expect(catalog.floorsOf('does-not-exist'), isEmpty);
       expect(catalog.buildingOfFloor('demo-north-level2'), 'demo-north');

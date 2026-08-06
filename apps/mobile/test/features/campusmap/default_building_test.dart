@@ -73,7 +73,8 @@ void main() {
     WidgetTester tester,
   ) async {
     await pumpMap(tester);
-    expect(_shownFloorKey(tester), 'demo-north-level2');
+    // Its lowest storey, not whichever floor happens to come first in the file.
+    expect(_shownFloorKey(tester), 'demo-north-level1');
   });
 
   testWidgets('the chosen default building is the one that opens', (
@@ -89,7 +90,7 @@ void main() {
     // A building removed from the catalogue in a later version must not leave
     // the map blank.
     await pumpMap(tester, defaultBuilding: 'a-building-that-was-removed');
-    expect(_shownFloorKey(tester), 'demo-north-level2');
+    expect(_shownFloorKey(tester), 'demo-north-level1');
     expect(tester.takeException(), isNull);
   });
 }

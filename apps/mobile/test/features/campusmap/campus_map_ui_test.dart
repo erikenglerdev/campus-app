@@ -36,14 +36,15 @@ Map<String, dynamic> roomJson(
   String? mapVersion,
   String roomType = 'office',
   int sortOrder = 0,
+  int level = 2,
 }) => <String, dynamic>{
-  'roomKey': 'demo-north-level2-$suffix',
+  'roomKey': 'demo-north-level$level-$suffix',
   'roomNumber': 'B.${suffix.substring(1)}',
   'buildingKey': 'demo-north',
   'buildingName': 'Demogebäude Nord (fiktiv)',
-  'floorKey': 'demo-north-level2',
-  'floorLevel': 2,
-  'floorName': '2. Obergeschoss',
+  'floorKey': 'demo-north-level$level',
+  'floorLevel': level,
+  'floorName': '$level. Obergeschoss',
   'roomType': roomType,
   'displayName': displayName,
   'description': null,
@@ -54,14 +55,24 @@ Map<String, dynamic> roomJson(
 };
 
 List<Map<String, dynamic>> get roomsFixture => <Map<String, dynamic>>[
+  // The lower storey, which the map opens on…
+  roomJson(
+    'b101',
+    displayName: 'Kleiner Hörsaal',
+    roomType: 'lecture',
+    sortOrder: 10,
+    level: 1,
+  ),
+  roomJson('b102', sortOrder: 20, level: 1),
+  // …and the upper one, reachable through the floor picker or a deep link.
   roomJson(
     'b201',
     displayName: 'Großer Hörsaal',
     roomType: 'lecture',
-    sortOrder: 10,
+    sortOrder: 110,
   ),
-  roomJson('b202', sortOrder: 20),
-  roomJson('b210', sortOrder: 100),
+  roomJson('b202', sortOrder: 120),
+  roomJson('b210', sortOrder: 200),
 ];
 
 /// The real generated catalogue, loaded once.
@@ -493,11 +504,18 @@ void main() {
     ) async {
       await pumpMap(tester);
 
-      // The centre of B.201 in plan coordinates, from the bundled catalogue.
+      // The centre of the first room in plan coordinates, from the bundled
+      // catalogue. Both storeys share this drawing, so the tap must resolve to
+      // the room of the floor on screen — the lower one — and not to the
+      // identically shaped room above it.
       await tester.tapAt(planPointOnScreen(tester, const Offset(195, 310)));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Ausgewählt: Großer Hörsaal'), findsOneWidget);
+      expect(
+        find.textContaining('Ausgewählt: Kleiner Hörsaal'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Großer Hörsaal'), findsNothing);
       expect(find.byIcon(Icons.place), findsWidgets);
     });
 
@@ -534,15 +552,18 @@ void main() {
       await pumpMap(tester);
       await tester.tapAt(planPointOnScreen(tester, const Offset(195, 310)));
       await tester.pumpAndSettle();
-      expect(find.textContaining('Ausgewählt: Großer Hörsaal'), findsOneWidget);
+      expect(
+        find.textContaining('Ausgewählt: Kleiner Hörsaal'),
+        findsOneWidget,
+      );
 
-      // B.202 sits next door. Zoomed in, its centre is off screen, so the
+      // B.102 sits next door. Zoomed in, its centre is off screen, so the
       // target is the part of it that is actually visible — which is exactly
       // the situation this has to survive.
       await tester.tapAt(planPointOnScreen(tester, const Offset(310, 310)));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Ausgewählt: B.202'), findsOneWidget);
+      expect(find.textContaining('Ausgewählt: B.102'), findsOneWidget);
     });
   });
 
@@ -687,7 +708,10 @@ void _selectionTests() {
 
   const String demo = 'demo-north';
   const String overview = 'koethen-campus-overview';
-  const String demoFloor = 'demo-north-level2';
+  // The demo building has two storeys drawn from one another. The map opens on
+  // the lower one, the way a house is read from the ground up.
+  const String demoFloor = 'demo-north-level1';
+  const String demoUpperFloor = 'demo-north-level2';
   const String overviewFloor = 'koethen-campus-overview-level';
 
   Future<void> switchTo(WidgetTester tester, String label) async {
@@ -714,7 +738,7 @@ void _selectionTests() {
     await pumpMap(tester);
     expect(
       tester.widget<FloorMapView>(find.byType(FloorMapView)).floor.svgAsset,
-      'assets/maps/demo-north/level2.svg',
+      'assets/maps/demo-north/level1.svg',
     );
 
     await tester.tap(find.text(buildingName(demo)));
@@ -747,7 +771,7 @@ void _selectionTests() {
     expect(find.text(floorName(demoFloor)), findsNothing);
   });
 
-  testWidgets('switching back shows the 30-room plan again', (
+  testWidgets('switching back shows the demo plan again', (
     WidgetTester tester,
   ) async {
     await pumpMap(tester);
@@ -787,7 +811,7 @@ void _selectionTests() {
     final FloorMapView view = tester.widget<FloorMapView>(
       find.byType(FloorMapView),
     );
-    expect(view.floor.floorKey, demoFloor);
+    expect(view.floor.floorKey, demoUpperFloor);
     expect(view.selected?.roomKey, 'demo-north-level2-b201');
     expect(find.text(buildingName(demo)), findsOneWidget);
   });
@@ -800,7 +824,7 @@ void _selectionTests() {
     final FloorMapView view = tester.widget<FloorMapView>(
       find.byType(FloorMapView),
     );
-    expect(view.floor.floorKey, demoFloor);
+    expect(view.floor.floorKey, demoUpperFloor);
     expect(view.selected?.roomKey, 'demo-north-level2-b210');
     expect(find.text(buildingName(demo)), findsOneWidget);
   });
@@ -831,11 +855,47 @@ void _selectionTests() {
       find.bySemanticsLabel('Gebäude auswählen, aktuell ${buildingName(demo)}'),
       findsOneWidget,
     );
-    // One level: stated, not offered as a choice.
+    // Two storeys: a real choice, announced as one.
     expect(
-      find.bySemanticsLabel('Einzige Ebene: ${floorName(demoFloor)}'),
+      find.bySemanticsLabel('Etage auswählen, aktuell ${floorName(demoFloor)}'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('the floor picker switches storeys inside the building', (
+    WidgetTester tester,
+  ) async {
+    await pumpMap(tester);
+    expect(
+      tester.widget<FloorMapView>(find.byType(FloorMapView)).floor.floorKey,
+      demoFloor,
+    );
+
+    await tester.tap(find.text(floorName(demoFloor)));
+    await tester.pumpAndSettle();
+    await switchTo(tester, floorName(demoUpperFloor));
+
+    final FloorMapView view = tester.widget<FloorMapView>(
+      find.byType(FloorMapView),
+    );
+    expect(view.floor.floorKey, demoUpperFloor);
+    expect(view.floor.svgAsset, 'assets/maps/demo-north/level2.svg');
+    // The building did not change with it.
+    expect(find.text(buildingName(demo)), findsOneWidget);
+  });
+
+  testWidgets('a room selection carries the map to its own storey', (
+    WidgetTester tester,
+  ) async {
+    // The two plans are the same drawing, so landing on the right SHAPE proves
+    // nothing — only the floor key does.
+    await pumpMap(tester, initialRoomKey: 'demo-north-level2-b210');
+
+    expect(
+      tester.widget<FloorMapView>(find.byType(FloorMapView)).floor.floorKey,
+      demoUpperFloor,
+    );
+    expect(find.text(floorName(demoUpperFloor)), findsOneWidget);
   });
 
   testWidgets('the selectors render in English', (WidgetTester tester) async {

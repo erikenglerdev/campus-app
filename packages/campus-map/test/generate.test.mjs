@@ -16,13 +16,14 @@ function outputs() {
 
 const MOBILE_CATALOG = 'apps/mobile/assets/maps/map_catalog.json';
 const MOBILE_SVG = 'apps/mobile/assets/maps/demo-north/level2.svg';
+const MOBILE_SVG_LEVEL1 = 'apps/mobile/assets/maps/demo-north/level1.svg';
 const MOBILE_CAMPUS_SVG = 'apps/mobile/assets/maps/campus/koethen-overview.svg';
 
 test('emits exactly the expected generated files', () => {
   const { files } = outputs();
   assert.deepEqual(
     [...files.keys()].sort(),
-    [MOBILE_CATALOG, MOBILE_SVG, MOBILE_CAMPUS_SVG].sort(),
+    [MOBILE_CATALOG, MOBILE_SVG, MOBILE_SVG_LEVEL1, MOBILE_CAMPUS_SVG].sort(),
   );
 });
 
@@ -40,8 +41,8 @@ test('the mobile catalogue carries the mapping Flutter needs', () => {
 
   assert.equal(mobile.mapVersion, catalog.mapVersion);
   assert.equal(mobile.schemaVersion, catalog.schemaVersion);
-  assert.equal(mobile.rooms.length, 30);
-  assert.equal(mobile.floors.length, 2);
+  assert.equal(mobile.rooms.length, 60);
+  assert.equal(mobile.floors.length, 3);
   assert.equal(mobile.buildings.length, 2);
 
   const room = mobile.rooms.find((r) => r.roomNumber === 'B.201');
@@ -55,6 +56,32 @@ test('the mobile catalogue carries the mapping Flutter needs', () => {
   const demoFloor = mobile.floors.find((f) => f.floorKey === 'demo-north-level2');
   assert.equal(demoFloor.svgAsset, 'assets/maps/demo-north/level2.svg');
   assert.ok(demoFloor.viewBox.width > 0);
+
+  // The two storeys of the demo building share a drawing but never a key: the
+  // same shape under two floor keys is exactly how a tap could otherwise land
+  // on the room one floor up.
+  const first = mobile.rooms.find((r) => r.roomNumber === 'B.101');
+  assert.ok(first, 'B.101 must be present');
+  assert.equal(first.roomKey, 'demo-north-level1-b101');
+  assert.equal(first.floorKey, 'demo-north-level1');
+  assert.equal(
+    mobile.floors.find((f) => f.floorKey === 'demo-north-level1').svgAsset,
+    'assets/maps/demo-north/level1.svg',
+  );
+});
+
+test('the demo building lists its lower storey first', () => {
+  const { files } = outputs();
+  const mobile = JSON.parse(files.get(MOBILE_CATALOG));
+
+  // A picker that offers the second floor above the first reads backwards.
+  const demo = mobile.floors
+    .filter((f) => f.buildingKey === 'demo-north')
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  assert.deepEqual(
+    demo.map((f) => f.floorKey),
+    ['demo-north-level1', 'demo-north-level2'],
+  );
 });
 
 test('the mobile catalogue carries building and floor names, but no room prose', () => {

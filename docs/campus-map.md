@@ -10,12 +10,21 @@ Zwei Kartengebäude, bewusst unterschiedlicher Natur:
 
 | Gebäude                   | `buildingKey`             | Ebene                           | Räume |
 | ------------------------- | ------------------------- | ------------------------------- | ----- |
+| Demogebäude Nord (fiktiv) | `demo-north`              | `demo-north-level1`             | 30    |
 | Demogebäude Nord (fiktiv) | `demo-north`              | `demo-north-level2`             | 30    |
 | Campus Köthen – Übersicht | `koethen-campus-overview` | `koethen-campus-overview-level` | 0     |
 
-> ⚠️ **Das Demogebäude ist vollständig erfunden.** Etage und alle 30 Räume (B.201–B.230) sind
-> Demonstrationsdaten; es wird kein realer Grundriss und kein realer Raum dargestellt.
->
+> ⚠️ **Das Demogebäude ist vollständig erfunden.** Beide Etagen und alle 60 Räume
+> (B.101–B.130, B.201–B.230) sind Demonstrationsdaten; es wird kein realer Grundriss und kein
+> realer Raum dargestellt.
+
+Die beiden Etagen tragen bewusst **dieselbe Geometrie**: Das ist ein Demo-Asset, und zwei
+Stockwerke sind da, um die Etagenauswahl, den Etagenwechsel und die Raumauflösung über mehrere
+Ebenen real durchzuspielen — nicht, um zwei unterschiedliche Grundrisse zu zeigen. Schlüssel und
+Raumnummern sind dagegen **strikt getrennt** (`demo-north-level1-b101` gegen
+`demo-north-level2-b201`); genau daran hängt, dass ein Tap nicht im Raum eine Etage höher landet.
+Die Karte öffnet die **unterste** Etage, so wie ein Haus von unten gelesen wird.
+
 > ⚠️ **Die Campusübersicht ist schematisch.** Sie ist vereinfacht, nicht maßstabsgetreu und
 > **kein** Flucht-, Rettungs- oder amtlicher Lageplan. Sie enthält **keine** Räume und **keine**
 > Innengeometrie. Vor einer Veröffentlichung sind Herkunft und Rechte an der zugrunde liegenden

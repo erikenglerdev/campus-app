@@ -4,13 +4,14 @@
 
 Kanonischer Kartenkatalog, SVG-Validator und Generator der gebündelten Flutter-Kartenassets.
 
-> ⚠️ **Der enthaltene Plan ist vollständig fiktiv.** Gebäude, Etage und alle 30 Räume sind
+> ⚠️ **Der enthaltene Plan ist vollständig fiktiv.** Gebäude, beide Etagen und alle 60 Räume sind
 > Demonstrationsdaten. Es wird kein realer Grundriss abgebildet.
 
 ## Inhalt
 
 ```text
-buildings/demo-north/level2.svg   kanonische Geometriequelle
+buildings/demo-north/level1.svg   kanonische Geometriequelle, 1. Obergeschoss
+buildings/demo-north/level2.svg   kanonische Geometriequelle, 2. Obergeschoss
 catalog/campus-map.catalog.json   kanonische strukturierte Quelle
 src/
   svg-reader.mjs                  strikter Allowlist-Parser für den genutzten XML-Ausschnitt

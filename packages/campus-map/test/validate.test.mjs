@@ -157,12 +157,28 @@ test('rejects a viewBox that disagrees with the SVG', () => {
 
 // --- the real, committed asset ----------------------------------------------
 
-test('the committed demo catalogue and SVG are consistent, with exactly 30 rooms', () => {
+test('the committed catalogue and its SVGs are consistent', () => {
   const { catalog, problems } = loadCanonical();
   assert.deepEqual(problems, [], problems.join('\n'));
-  assert.equal(catalog.rooms.length, 30);
-  assert.equal(new Set(catalog.rooms.map((r) => r.roomKey)).size, 30);
-  assert.equal(catalog.floors[0].expectedRoomCount, 30);
+
+  // Two demo storeys of 30 rooms each. Counting the keys as well is the point:
+  // the two floors were drawn from one another, so a missed rename would show
+  // up here as a duplicate rather than in the app as a room in two places.
+  assert.equal(catalog.rooms.length, 60);
+  assert.equal(new Set(catalog.rooms.map((r) => r.roomKey)).size, 60);
+
+  for (const floorKey of ['demo-north-level1', 'demo-north-level2']) {
+    const floor = catalog.floors.find((f) => f.floorKey === floorKey);
+    assert.ok(floor, `${floorKey} is missing`);
+    assert.equal(floor.expectedRoomCount, 30);
+    assert.equal(catalog.rooms.filter((r) => r.floorKey === floorKey).length, 30);
+  }
+
+  // Neither storey may claim the other's numbers.
+  const numbersOf = (floorKey) =>
+    catalog.rooms.filter((r) => r.floorKey === floorKey).map((r) => r.roomNumber);
+  assert.ok(numbersOf('demo-north-level1').every((n) => n.startsWith('B.1')));
+  assert.ok(numbersOf('demo-north-level2').every((n) => n.startsWith('B.2')));
 });
 
 test('a building needs a supported planKind', () => {

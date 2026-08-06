@@ -20,12 +20,17 @@ async function catalogRooms() {
   return map.toFlatRooms(catalog);
 }
 
-test('the committed catalogue yields exactly 30 syncable demo rooms', async () => {
+test('the committed catalogue yields exactly 60 syncable demo rooms', async () => {
   const rooms = await catalogRooms();
-  assert.equal(rooms.length, 30);
-  assert.equal(new Set(rooms.map((r) => r.roomKey)).size, 30);
+  // Two storeys of 30. Counting the distinct keys as well is the point: both
+  // floors were drawn from the same file, so a missed rename would surface
+  // here as a collision rather than as a room that exists twice in the CMS.
+  assert.equal(rooms.length, 60);
+  assert.equal(new Set(rooms.map((r) => r.roomKey)).size, 60);
   assert.ok(rooms.every((r) => r.buildingKey === 'demo-north'));
-  assert.ok(rooms.every((r) => r.floorKey === 'demo-north-level2'));
+  for (const floorKey of ['demo-north-level1', 'demo-north-level2']) {
+    assert.equal(rooms.filter((r) => r.floorKey === floorKey).length, 30);
+  }
 });
 
 test('every catalogue-managed CMS field is supplied by the catalogue', async () => {
@@ -36,9 +41,9 @@ test('every catalogue-managed CMS field is supplied by the catalogue', async () 
   }
 });
 
-test('a first sync would create exactly 30 rooms', async () => {
+test('a first sync would create exactly 60 rooms', async () => {
   const plan = planRoomSync(await catalogRooms(), []);
-  assert.equal(plan.summary.create, 30);
+  assert.equal(plan.summary.create, 60);
   assert.equal(plan.summary.update, 0);
   assert.equal(plan.summary.deactivate, 0);
 });
@@ -52,7 +57,7 @@ test('a second sync against the persisted result is a no-op', async () => {
   }));
 
   const plan = planRoomSync(rooms, persisted);
-  assert.equal(plan.summary.unchanged, 30);
+  assert.equal(plan.summary.unchanged, 60);
   assert.equal(plan.summary.create + plan.summary.update + plan.summary.deactivate, 0);
 
   const calls: string[] = [];
@@ -82,7 +87,7 @@ test('editorial work on a persisted room survives a resync', async () => {
   }));
 
   const plan = planRoomSync(rooms, persisted);
-  assert.equal(plan.summary.unchanged, 30);
+  assert.equal(plan.summary.unchanged, 60);
   const serialised = JSON.stringify(plan);
   assert.ok(!serialised.includes('Redaktioneller Name'));
   assert.ok(!serialised.includes('contactPersons'));
