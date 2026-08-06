@@ -10,7 +10,6 @@ import 'package:campus_koethen/core/network/network_providers.dart';
 import 'package:campus_koethen/core/prefs/key_value_store.dart';
 import 'package:campus_koethen/core/prefs/preference_keys.dart';
 import 'package:campus_koethen/core/prefs/settings_controller.dart';
-import 'package:campus_koethen/core/theme/accent_palette.dart';
 import 'package:campus_koethen/core/theme/app_theme.dart';
 import 'package:campus_koethen/features/onboarding/presentation/onboarding_screen.dart';
 import 'package:campus_koethen/features/news/presentation/news_list_screen.dart';
@@ -117,16 +116,32 @@ void main() {
     WidgetTester tester,
   ) async {
     await pumpApp(tester);
-    expect(find.text('Schritt 1 von 5'), findsOneWidget);
+    expect(find.text('Schritt 1 von 3'), findsOneWidget);
 
     await tester.tap(find.text('Überspringen'));
     await tester.pumpAndSettle();
-    expect(find.text('Schritt 2 von 5'), findsOneWidget);
-    expect(find.text('Aussehen'), findsOneWidget);
+    expect(find.text('Schritt 2 von 3'), findsOneWidget);
+    expect(find.text('Dein Campus'), findsOneWidget);
 
     await tester.tap(find.text('Zurück'));
     await tester.pumpAndSettle();
-    expect(find.text('Schritt 1 von 5'), findsOneWidget);
+    expect(find.text('Schritt 1 von 3'), findsOneWidget);
+  });
+
+  testWidgets('asks only for what the app actually needs', (
+    WidgetTester tester,
+  ) async {
+    // Accent colour and the navigation bar are preferences, not decisions the
+    // app needs before it is usable. They live in the settings.
+    await pumpApp(tester);
+
+    for (int i = 0; i < 2; i++) {
+      await tester.tap(find.text('Weiter'));
+      await tester.pumpAndSettle();
+    }
+
+    expect(find.text('Aussehen'), findsNothing);
+    expect(find.text('Navigation'), findsNothing);
   });
 
   testWidgets('a choice made during setup is kept', (
@@ -135,21 +150,51 @@ void main() {
     final InMemoryKeyValueStore store = InMemoryKeyValueStore();
     final ProviderContainer container = await pumpApp(tester, store: store);
 
-    // Step 2 is appearance.
+    // Step 2 is the campus step. What is asserted here is that a choice made
+    // during setup is persisted — the controller is the thing under test, not
+    // whether a bundled asset happened to load within this frame budget.
+    await tester.tap(find.text('Weiter'));
+    await tester.pumpAndSettle();
+    expect(find.text('Dein Campus'), findsOneWidget);
+
+    await container
+        .read(settingsProvider.notifier)
+        .setPreferredCanteen('koethen-fasanerieallee');
+    await tester.pumpAndSettle();
+
+    expect(
+      container.read(settingsProvider).preferredCanteenSlug,
+      'koethen-fasanerieallee',
+    );
+    expect(
+      store.getString(PreferenceKeys.preferredCanteen),
+      'koethen-fasanerieallee',
+    );
+  });
+
+  testWidgets('choosing content does not throw the user back to step one', (
+    WidgetTester tester,
+  ) async {
+    // The global redirect sends every route back to the setup while it is
+    // unfinished. A step that navigated away was therefore bounced straight
+    // back — and rebuilt from the start, losing the reader's place.
+    await pumpApp(tester);
+
+    await tester.tap(find.text('Weiter'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Weiter'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.bySemanticsLabel('Petrol').first);
-    await tester.pumpAndSettle();
-
     expect(
-      container.read(settingsProvider).accentPalette,
-      AccentPalette.deepTeal,
+      find.text('Schritt 3 von 3'),
+      findsOneWidget,
+      reason: 'the content step',
     );
-    expect(
-      store.getString(PreferenceKeys.accentPalette),
-      AccentPalette.deepTeal.storageValue,
-    );
+    // The pickers are here, in the step — not behind a route that the
+    // redirect would bounce straight back to step one.
+    expect(find.text('News-Kanäle wählen'), findsOneWidget);
+    expect(find.text('Öffentliche Kalender wählen'), findsOneWidget);
+    expect(find.text('Schritt 1 von 3'), findsNothing);
   });
 
   testWidgets('an unavailable source is stated instead of blocking', (
@@ -159,17 +204,15 @@ void main() {
     // canteens to choose. The step must say so and stay passable.
     await pumpApp(tester);
 
-    for (int i = 0; i < 2; i++) {
-      await tester.tap(find.text('Weiter'));
-      await tester.pumpAndSettle();
-    }
+    await tester.tap(find.text('Weiter'));
+    await tester.pumpAndSettle();
 
     expect(find.text('Dein Campus'), findsOneWidget);
     expect(find.text('Es sind noch keine Mensen hinterlegt.'), findsOneWidget);
     // …and moving on still works.
     await tester.tap(find.text('Weiter'));
     await tester.pumpAndSettle();
-    expect(find.text('Schritt 4 von 5'), findsOneWidget);
+    expect(find.text('Schritt 3 von 3'), findsOneWidget);
   });
 
   testWidgets('the last step finishes and opens the dashboard', (
@@ -177,11 +220,11 @@ void main() {
   ) async {
     final ProviderContainer container = await pumpApp(tester);
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 2; i++) {
       await tester.tap(find.text('Weiter'));
       await tester.pumpAndSettle();
     }
-    expect(find.text('Schritt 5 von 5'), findsOneWidget);
+    expect(find.text('Schritt 3 von 3'), findsOneWidget);
 
     await tester.tap(find.text('Los geht’s'));
     await tester.pumpAndSettle();
@@ -194,7 +237,7 @@ void main() {
     await pumpApp(tester, locale: AppLocales.english);
     expect(find.text('Welcome'), findsOneWidget);
     expect(find.text('Skip all'), findsOneWidget);
-    expect(find.text('Step 1 of 5'), findsOneWidget);
+    expect(find.text('Step 1 of 3'), findsOneWidget);
   });
 
   testWidgets('survives a small phone with doubled text', (

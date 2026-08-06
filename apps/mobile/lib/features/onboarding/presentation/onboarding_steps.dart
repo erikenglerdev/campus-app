@@ -3,24 +3,28 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../app/app_routes.dart';
-import '../../../app/app_modules.dart';
-import '../../../app/navigation_config.dart';
 import '../../../core/network/loaded.dart';
 import '../../../core/prefs/settings_controller.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../l10n/l10n.dart';
+import '../../calendar/presentation/public_calendar_list.dart';
 import '../../campusmap/application/campus_map_providers.dart';
 import '../../campusmap/domain/map_catalog.dart';
 import '../../canteen/application/canteen_providers.dart';
 import '../../canteen/data/canteen_models.dart';
-import '../../settings/presentation/personalisation_tiles.dart';
-import '../../timetable/presentation/timetable_group_picker_sheet.dart';
+import '../../news/presentation/channel_picker_sheet.dart';
+import '../../timetable/application/timetable_providers.dart';
+import '../../timetable/data/timetable_models.dart';
 
 /// The steps of the first-run setup, in order.
-enum OnboardingStep { welcome, appearance, campus, content, navigation }
+///
+/// Appearance and the navigation bar used to be steps of their own. Both are
+/// preferences a student changes when they feel like it, not decisions the app
+/// needs before it can be useful — and asking for them up front made the setup
+/// twice as long as what it actually had to establish. They live in the
+/// settings, where they always did.
+enum OnboardingStep { welcome, campus, content }
 
 /// Renders one step.
 class OnboardingStepView extends StatelessWidget {
@@ -50,12 +54,6 @@ class OnboardingStepView extends StatelessWidget {
           ),
         ],
       ),
-      OnboardingStep.appearance => _StepScaffold(
-        title: l10n.onboardingAppearanceTitle,
-        body: l10n.onboardingAppearanceBody,
-        icon: Icons.palette_outlined,
-        children: const <Widget>[AccentColorTile(), ReducedMotionTile()],
-      ),
       OnboardingStep.campus => _StepScaffold(
         title: l10n.onboardingCampusTitle,
         body: l10n.onboardingCampusBody,
@@ -70,13 +68,7 @@ class OnboardingStepView extends StatelessWidget {
         title: l10n.onboardingContentTitle,
         body: l10n.onboardingContentBody,
         icon: Icons.rss_feed_outlined,
-        children: const <Widget>[_ContentLinks()],
-      ),
-      OnboardingStep.navigation => _StepScaffold(
-        title: l10n.onboardingNavigationTitle,
-        body: l10n.onboardingNavigationBody,
-        icon: Icons.space_dashboard_outlined,
-        children: const <Widget>[_NavigationStep()],
+        children: const <Widget>[_ContentPickers()],
       ),
     };
   }
@@ -211,114 +203,106 @@ class _DefaultBuildingStep extends ConsumerWidget {
   }
 }
 
-/// The timetable group, chosen through the picker the app already has.
+/// The timetable group — the same shape as the canteen and the building above.
+///
+/// A row that opened a separate picker made this one choice look different
+/// from the two beside it, for no reason a reader could see. The list can be
+/// long, so it is capped and searchable in the settings; here it simply
+/// scrolls with the rest of the step.
 class _TimetableGroupStep extends ConsumerWidget {
   const _TimetableGroupStep();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AppLocalizations l10n = context.l10n;
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: const Icon(Icons.schedule_outlined),
-      title: Text(l10n.onboardingOpenTimetableGroup),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () => showTimetableGroupPickerSheet(context),
+    final AsyncValue<Loaded<List<TimetableGroup>>> groups = ref.watch(
+      timetableGroupsProvider,
     );
+    final String? chosen = ref.watch(selectedTimetableGroupIdProvider);
+
+    return switch (groups) {
+      AsyncError<Loaded<List<TimetableGroup>>>() => _Unavailable(
+        label: l10n.settingsTimetableGroup,
+      ),
+      AsyncData<Loaded<List<TimetableGroup>>>(
+        :final Loaded<List<TimetableGroup>> value,
+      )
+          when value.value.isEmpty =>
+        _Unavailable(
+          label: l10n.settingsTimetableGroup,
+          message: l10n.timetableNoGroupsMessage,
+        ),
+      AsyncData<Loaded<List<TimetableGroup>>>(
+        :final Loaded<List<TimetableGroup>> value,
+      ) =>
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            _StepLabel(l10n.settingsTimetableGroup),
+            RadioGroup<String>(
+              groupValue: chosen,
+              onChanged: (String? id) =>
+                  ref.read(settingsProvider.notifier).setTimetableGroup(id),
+              child: Column(
+                children: <Widget>[
+                  for (final TimetableGroup group in value.value)
+                    RadioListTile<String>.adaptive(
+                      value: group.id,
+                      title: Text(group.shortName),
+                      // Long name and department, verbatim from the source —
+                      // exactly what the settings picker shows.
+                      subtitle: _groupSubtitle(group),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      _ => const _StepLoading(),
+    };
   }
 }
 
-/// News channels and public calendars, through their existing screens.
+/// News channels and public calendars, picked **inside** the setup.
 ///
-/// Deliberately links rather than re-implements: both pickers already exist,
-/// handle their own empty and offline states, and duplicating them inline
-/// would mean two versions of the same rules drifting apart.
-class _ContentLinks extends StatelessWidget {
-  const _ContentLinks();
+/// These used to be rows that pushed the settings screens. That could not
+/// work: while the setup is unfinished the router sends every other route
+/// straight back to it, so tapping either row bounced the reader to step one
+/// with everything they had answered still saved but out of sight.
+///
+/// The pickers themselves are reused unchanged — both already handle their own
+/// loading, empty and offline states, and a second copy of those rules would
+/// drift from the original the first time one of them changed.
+class _ContentPickers extends StatelessWidget {
+  const _ContentPickers();
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
-    return Column(
-      children: <Widget>[
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.rss_feed_outlined),
-          title: Text(l10n.onboardingOpenChannels),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => GoRouter.of(context).push(AppRoutes.channels),
-        ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.public),
-          title: Text(l10n.onboardingOpenCalendars),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => GoRouter.of(context).push(AppRoutes.calendarManage),
-        ),
-      ],
-    );
-  }
-}
-
-/// The four navigation modules, with the same rules as the settings editor:
-/// pick exactly four, and only modules that may be pinned are on offer.
-class _NavigationStep extends ConsumerStatefulWidget {
-  const _NavigationStep();
-
-  @override
-  ConsumerState<_NavigationStep> createState() => _NavigationStepState();
-}
-
-class _NavigationStepState extends ConsumerState<_NavigationStep> {
-  List<AppModule>? _draft;
-
-  List<AppModule> get _chosen =>
-      _draft ?? ref.read(settingsProvider).navigation.tabs;
-
-  void _set(AppModule module, {required bool selected}) {
-    final List<AppModule> next = _chosen.toList();
-    if (selected) {
-      if (next.length >= NavigationConfig.tabCount) return;
-      next.add(module);
-    } else {
-      next.remove(module);
-    }
-    setState(() => _draft = next);
-    if (next.length == NavigationConfig.tabCount) {
-      ref.read(settingsProvider.notifier).setNavigationTabs(next);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l10n = context.l10n;
-    final List<AppModule> chosen = _chosen;
-    final bool full = chosen.length >= NavigationConfig.tabCount;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        if (!full)
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Text(
-              l10n.settingsSelectExactlyFour,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ),
-        for (final AppModule module in AppModule.pinnableModules)
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            secondary: Icon(module.icon),
-            title: Text(module.title(l10n)),
-            value: chosen.contains(module),
-            onChanged: full && !chosen.contains(module)
-                ? null
-                : (bool? value) => _set(module, selected: value ?? false),
-          ),
+        _StepLabel(l10n.onboardingOpenChannels),
+        const ChannelPickerList(),
+        const SizedBox(height: AppSpacing.lg),
+        _StepLabel(l10n.onboardingOpenCalendars),
+        const PublicCalendarList(shrinkWrap: true),
       ],
     );
   }
+}
+
+/// Long name and department of a timetable group, both verbatim.
+Widget? _groupSubtitle(TimetableGroup group) {
+  final List<String> parts = <String?>[
+    group.longName,
+    group.department,
+  ].whereType<String>().toList(growable: false);
+  if (parts.isEmpty) return null;
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: <Widget>[for (final String part in parts) Text(part)],
+  );
 }
 
 class _StepLabel extends StatelessWidget {
