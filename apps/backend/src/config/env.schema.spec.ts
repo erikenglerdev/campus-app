@@ -11,7 +11,24 @@ describe('validateEnv', () => {
     expect(env.HOST).toBe('0.0.0.0');
     expect(env.CANTEEN_SYNC_CRON).toBe('0 */2 * * *');
     expect(env.CANTEEN_STALE_AFTER_MINUTES).toBe(240);
+    expect(env.WORKER_TIME_ZONE).toBe('UTC');
     expect(env.LOG_LEVEL).toBe('info');
+  });
+
+  it('accepts an explicit IANA timezone for worker schedules', () => {
+    expect(validateEnv({ ...BASE, WORKER_TIME_ZONE: 'Europe/Berlin' }).WORKER_TIME_ZONE).toBe(
+      'Europe/Berlin',
+    );
+  });
+
+  it('uses UTC when the worker timezone is present but empty', () => {
+    expect(validateEnv({ ...BASE, WORKER_TIME_ZONE: '' }).WORKER_TIME_ZONE).toBe('UTC');
+  });
+
+  it('rejects an invalid worker timezone', () => {
+    expect(() => validateEnv({ ...BASE, WORKER_TIME_ZONE: 'Europe/Berln' })).toThrow(
+      EnvValidationError,
+    );
   });
 
   it('rejects a non-PostgreSQL database url', () => {

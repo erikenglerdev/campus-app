@@ -20,6 +20,18 @@ const csv = z.string().transform((value) =>
     .filter((entry) => entry.length > 0),
 );
 
+const ianaTimeZone = z.string().min(1).refine(
+  (value) => {
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: value }).format();
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  { message: 'must be a valid IANA time zone' },
+);
+
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 
@@ -159,6 +171,10 @@ export const envSchema = z.object({
   /** API bounds: max calendars per aggregated/combined request, max date range. */
   PUBLIC_CALENDAR_API_MAX_CALENDARS: z.coerce.number().int().min(1).max(100).default(50),
   PUBLIC_CALENDAR_API_MAX_RANGE_DAYS: z.coerce.number().int().min(1).max(400).default(120),
+
+  // --- Worker scheduling --------------------------------------------------
+  /** Explicit wall-clock zone for every cron expression. */
+  WORKER_TIME_ZONE: ianaTimeZone.default('UTC'),
 
   // --- Observability -------------------------------------------------------
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),

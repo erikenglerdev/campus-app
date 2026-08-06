@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { CronJob } from 'cron';
+import type { CronJob } from 'cron';
 import { WorkerModule } from './worker.module';
 import { JsonLogger } from './common/logger/json-logger.service';
 import { ENV } from './config/app-config.module';
@@ -8,6 +8,7 @@ import { Env } from './config/env.schema';
 import { CanteenSyncService } from './modules/canteen/canteen-sync.service';
 import { PublicCalendarSyncService } from './modules/public-calendar/public-calendar-sync.service';
 import { TimetableSyncService } from './modules/timetable/timetable-sync.service';
+import { createWorkerCronJob } from './worker-cron';
 
 /**
  * Background worker — the second entrypoint of the same image.
@@ -28,6 +29,7 @@ class WorkerJob {
   constructor(
     private readonly name: string,
     private readonly cron: string,
+    private readonly timeZone: string,
     private readonly logger: Logger,
     private readonly run: (trigger: string) => Promise<void>,
   ) {}
@@ -55,11 +57,11 @@ class WorkerJob {
   }
 
   start(): void {
-    this.job = new CronJob(this.cron, () => {
+    this.job = createWorkerCronJob(this.cron, this.timeZone, () => {
       void this.trigger('scheduled');
     });
     this.job.start();
-    this.logger.log(`[${this.name}] scheduled with "${this.cron}"`);
+    this.logger.log(`[${this.name}] scheduled with "${this.cron}" in "${this.timeZone}"`);
   }
 
   stop(): void {
@@ -81,16 +83,22 @@ async function bootstrap(): Promise<void> {
   const canteen = app.get(CanteenSyncService);
   await canteen.seedCanteens();
 
-  const canteenJob = new WorkerJob('canteen', env.CANTEEN_SYNC_CRON, logger, async (trigger) => {
-    const outcomes = await canteen.syncAll();
-    for (const outcome of outcomes) {
-      logger.log(
-        `[canteen:${trigger}] ${outcome.canteenSlug}: ${outcome.status} ` +
-          `(received=${outcome.recordsReceived} upserted=${outcome.recordsUpserted} ` +
-          `rejected=${outcome.recordsRejected} withdrawn=${outcome.recordsRemoved})`,
-      );
-    }
-  });
+  const canteenJob = new WorkerJob(
+    'canteen',
+    env.CANTEEN_SYNC_CRON,
+    env.WORKER_TIME_ZONE,
+    logger,
+    async (trigger) => {
+      const outcomes = await canteen.syncAll();
+      for (const outcome of outcomes) {
+        logger.log(
+          `[canteen:${trigger}] ${outcome.canteenSlug}: ${outcome.status} ` +
+            `(received=${outcome.recordsReceived} upserted=${outcome.recordsUpserted} ` +
+            `rejected=${outcome.recordsRejected} withdrawn=${outcome.recordsRemoved})`,
+        );
+      }
+    },
+  );
   jobs.push(canteenJob);
 
   // --- Timetable -----------------------------------------------------------
@@ -101,6 +109,7 @@ async function bootstrap(): Promise<void> {
   const groupJob = new WorkerJob(
     'timetable-groups',
     env.WEBUNTIS_GROUP_SYNC_CRON,
+    env.WORKER_TIME_ZONE,
     logger,
     async (trigger) => {
       const context = await timetable.syncContext();
@@ -120,6 +129,7 @@ async function bootstrap(): Promise<void> {
   const entryJob = new WorkerJob(
     'timetable-entries',
     env.WEBUNTIS_ENTRY_SYNC_CRON,
+    env.WORKER_TIME_ZONE,
     logger,
     async (trigger) => {
       const window = timetable.windowFor();
@@ -146,6 +156,7 @@ async function bootstrap(): Promise<void> {
   const catalogJob = new WorkerJob(
     'public-calendar-catalog',
     env.PUBLIC_CALENDAR_CATALOG_SYNC_CRON,
+    env.WORKER_TIME_ZONE,
     logger,
     async (trigger) => {
       const outcome = await publicCalendar.syncCatalog();
@@ -159,6 +170,7 @@ async function bootstrap(): Promise<void> {
   const calendarEventsJob = new WorkerJob(
     'public-calendar-events',
     env.PUBLIC_CALENDAR_EVENT_SYNC_CRON,
+    env.WORKER_TIME_ZONE,
     logger,
     async (trigger) => {
       const outcomes = await publicCalendar.syncEvents();

@@ -162,6 +162,7 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://campus_app:${APP_DB_PASSWORD:?APP_DB_PASSWORD is required}@postgres:5432/campus_app_local?schema=public
+      WORKER_TIME_ZONE: ${WORKER_TIME_ZONE:-UTC}
       CANTEEN_SYNC_CRON: ${CANTEEN_SYNC_CRON:-0 */2 * * *}
       # Timetable jobs. Disabled by default: the source is a third party's
       # internal interface and automated use is not cleared yet.

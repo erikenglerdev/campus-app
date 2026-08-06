@@ -77,6 +77,12 @@ The host reverse proxy should now forward the configured public CMS URL to
 `CMS_BIND_ADDRESS:CMS_HOST_PORT` and the public API URL to
 `API_BIND_ADDRESS:API_HOST_PORT`.
 
+All worker cron expressions are evaluated in `WORKER_TIME_ZONE`. The generic
+configuration uses `UTC`; the eriklabs.eu DEV configuration deliberately uses
+`Europe/Berlin`, including its daylight-saving transitions. Invalid IANA zone
+names make the backend fail configuration validation instead of silently using
+the host timezone.
+
 ## Verify
 
 With the eriklabs.eu defaults:
