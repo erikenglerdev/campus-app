@@ -20,17 +20,20 @@ const csv = z.string().transform((value) =>
     .filter((entry) => entry.length > 0),
 );
 
-const ianaTimeZone = z.string().min(1).refine(
-  (value) => {
-    try {
-      new Intl.DateTimeFormat('en-US', { timeZone: value }).format();
-      return true;
-    } catch {
-      return false;
-    }
-  },
-  { message: 'must be a valid IANA time zone' },
-);
+const ianaTimeZone = z
+  .string()
+  .min(1)
+  .refine(
+    (value) => {
+      try {
+        new Intl.DateTimeFormat('en-US', { timeZone: value }).format();
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    { message: 'must be a valid IANA time zone' },
+  );
 
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
