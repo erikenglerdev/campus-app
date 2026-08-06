@@ -125,8 +125,14 @@ RUN mkdir -p /opt/app/public/uploads /opt/app/.tmp \
 #
 # Asserting it in the image build means a broken runtime contract fails here,
 # before publishing, instead of on the server.
+#
+# What is asserted is that the catalogue LOADS and VALIDATES, not how large it
+# happens to be. An exact room count once stood here and made every catalogue
+# change — a new room, a new floor — fail the image build for a reason that had
+# nothing to do with the packaging this check is about. How many rooms there
+# are is the catalogue's business, and the package's own tests own that number.
 RUN test -f dist/scripts/rooms-sync.js \
- && node -e "const m=require('@campus/map');const{catalog,problems}=m.loadCanonical();if(problems.length)throw new Error('catalogue invalid: '+problems.join('; '));if(catalog.rooms.length!==30)throw new Error('expected 30 demo rooms, found '+catalog.rooms.length);console.log('rooms-sync runtime contract ok: '+catalog.rooms.length+' rooms, mapVersion '+catalog.mapVersion)"
+ && node -e "const m=require('@campus/map');const{catalog,problems}=m.loadCanonical();if(problems.length)throw new Error('catalogue invalid: '+problems.join('; '));if(!catalog.rooms.length)throw new Error('catalogue loaded but carries no rooms — the deployed copy is manifest-only');console.log('rooms-sync runtime contract ok: '+catalog.rooms.length+' rooms, mapVersion '+catalog.mapVersion)"
 
 USER node
 
