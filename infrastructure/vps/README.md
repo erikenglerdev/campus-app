@@ -17,30 +17,43 @@ The database bootstrap is embedded in `compose.yaml`. PostgreSQL data and
 Strapi uploads live in named Docker volumes. Nginx and TLS termination remain
 outside Docker and forward to the loopback ports configured in `.env`.
 
+`generate-env-secrets.sh` is an optional first-install helper. It fills only
+empty credential assignments in `.env`, never prints their values and never
+overwrites an existing value. The running stack does not need the script.
+
 Use `.env.example` for a new installation. For the existing eriklabs.eu DEV
 layout, copy `.env.eriklabs-dev.example` to `.env` and fill the empty secrets
 only on the VPS.
 
 ## Download without cloning the repository
 
-Create an empty deployment directory on the VPS and download the two public,
-non-secret deployment files:
+Create an empty deployment directory on the VPS and download the two runtime
+files plus the optional, non-secret bootstrap helper:
 
 ```bash
 mkdir -p /root/dev/docker/campus
 cd /root/dev/docker/campus
 curl -fsSLO https://raw.githubusercontent.com/erikenglerdev/campus-app/main/infrastructure/vps/compose.yaml
 curl -fsSL https://raw.githubusercontent.com/erikenglerdev/campus-app/main/infrastructure/vps/.env.eriklabs-dev.example -o .env
+curl -fsSLO https://raw.githubusercontent.com/erikenglerdev/campus-app/main/infrastructure/vps/generate-env-secrets.sh
 chmod 600 .env
+chmod 700 generate-env-secrets.sh
 ```
 
 If the repository is private, copy the files over an authenticated channel
 instead. Do not place a GitHub token in a URL or shell history.
 
-Edit `.env`. Every credential is empty and has a generation or bootstrap note
-immediately above it. Set `CAMPUS_IMAGE_TAG` to the immutable
+Generate all first-install database and Strapi credentials locally on the VPS:
+
+```bash
+./generate-env-secrets.sh .env
+```
+
+The command is safe to repeat: non-empty values are preserved, and the script
+does not generate the later Strapi read-only API token. Edit `.env` and set
+`CAMPUS_IMAGE_TAG` to the immutable
 `sha-<full commit SHA>` tag from a successful Images workflow. CMS and backend
-must use the same tag.
+must use the same tag. Leave `STRAPI_API_TOKEN` empty until the first CMS start.
 
 Validate interpolation without printing the resolved secret-bearing config:
 
