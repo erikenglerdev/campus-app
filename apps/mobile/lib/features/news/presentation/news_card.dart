@@ -1,6 +1,8 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,6 +19,14 @@ import '../domain/article_age.dart';
 import '../domain/channel_handle.dart';
 import '../domain/news_preview.dart';
 import 'news_age_text.dart';
+
+/// The tallest a banner may be drawn, as width divided by height.
+///
+/// Editors upload what they have — square press photos, portrait posters — and
+/// a feed that honours every shape turns one article into a full screen before
+/// its headline. Anything wider than this keeps its own proportions; anything
+/// taller is cropped to it.
+const double _maxBannerRatio = 16 / 9;
 
 /// One article in the feed — title, channel handles, age and the article itself.
 ///
@@ -61,14 +71,19 @@ class NewsCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // The banner leads the card when the editors gave the article
-            // one. Its own aspect ratio is used where the CMS reported it, so
-            // a portrait photo is not cropped into a letterbox.
+            // The banner leads the card when the editors gave the article one.
+            // A wide photo keeps its own shape; a square or portrait one is
+            // cropped to [_maxBannerRatio] rather than swallowing the screen —
+            // a feed is a list of articles, and one 1:1 press photo is a whole
+            // phone height before the headline even starts.
             if (article.heroImage != null) ...<Widget>[
               RemoteImage(
                 url: article.heroImage!.url,
                 alternativeText: article.heroImage!.alternativeText,
-                aspectRatio: article.heroImage!.aspectRatio ?? 16 / 9,
+                aspectRatio: math.max(
+                  article.heroImage!.aspectRatio ?? _maxBannerRatio,
+                  _maxBannerRatio,
+                ),
               ),
               SizedBox(height: metrics.cardGap),
             ],

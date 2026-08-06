@@ -888,7 +888,6 @@
   "settingsNavigation": "Navigation bar",
   "settingsNavigationSubtitle": "Choose the four modules of the bar",
   "settingsNavigationHint": "More is fixed. Choose exactly four modules before it and drag to reorder.",
-  "settingsDashboardPending": "Coming in a later version",
   "settingsDefaultBuilding": "Default building",
   "settingsDefaultBuildingNone": "Not set",
   "settingsSectionData": "App data",

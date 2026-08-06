@@ -1385,8 +1385,6 @@
   "settingsNavigation": "Navigationsleiste",
   "settingsNavigationSubtitle": "Die vier Module der Leiste wählen",
   "settingsNavigationHint": "Mehr ist fest. Wähle genau vier Module davor und ordne sie per Ziehen.",
-  "settingsDashboard": "Karten auf „Heute\"",
-  "settingsDashboardPending": "Folgt in einer späteren Version",
   "settingsDefaultBuilding": "Standardgebäude",
   "settingsDefaultBuildingNone": "Nicht festgelegt",
   "settingsSectionData": "App-Daten",
