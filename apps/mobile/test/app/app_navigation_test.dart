@@ -24,6 +24,7 @@ Future<ProviderContainer> pumpApp(
   WidgetTester tester, {
   Locale locale = AppLocales.german,
   KeyValueStore? store,
+  bool userTestData = false,
 }) async {
   final ProviderContainer container = ProviderContainer(
     overrides: <Override>[
@@ -37,7 +38,13 @@ Future<ProviderContainer> pumpApp(
       apiClientProvider.overrideWithValue(
         fakeApiClient(
           FakeHttpAdapter(
-            (RequestOptions _) => FakeHttpResponse(envelope(<Object>[])),
+            (RequestOptions options) => FakeHttpResponse(
+              envelope(
+                options.path.endsWith('/environment')
+                    ? <String, Object?>{'userTestData': userTestData}
+                    : <Object>[],
+              ),
+            ),
           ),
         ),
       ),
@@ -161,4 +168,16 @@ void main() {
 
     expect(find.text('List'), findsOneWidget);
   });
+
+  testWidgets(
+    'discloses synthetic content once for the whole test environment',
+    (WidgetTester tester) async {
+      await pumpApp(tester, userTestData: true);
+
+      expect(
+        find.text('Testumgebung – Inhalte können synthetisch sein'),
+        findsOneWidget,
+      );
+    },
+  );
 }

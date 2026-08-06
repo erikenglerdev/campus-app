@@ -241,6 +241,7 @@ export class CanteenSyncService {
 
       for (const meal of meals) {
         const data = {
+          source: 'meine-mensa',
           canteenId,
           date: new Date(`${meal.date}T00:00:00.000Z`),
           counterId: meal.counterId,
@@ -274,6 +275,7 @@ export class CanteenSyncService {
 
       const withdrawn = await tx.meal.deleteMany({
         where: {
+          source: 'meine-mensa',
           canteenId,
           date: { gte: minDate, lte: maxDate },
           sourcePlanId: { notIn: keptIds },

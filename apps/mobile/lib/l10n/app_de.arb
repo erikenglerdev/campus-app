@@ -34,6 +34,10 @@
   "@navigationSemanticLabel": {
     "description": "Screenreader-Label der unteren Navigationsleiste."
   },
+  "testEnvironmentNotice": "Testumgebung – Inhalte können synthetisch sein",
+  "@testEnvironmentNotice": {
+    "description": "Globaler Hinweis, wenn der verbundene Server synthetische Inhalte für einen Nutzertest enthält."
+  },
   "actionRetry": "Erneut versuchen",
   "@actionRetry": {},
   "actionRefresh": "Aktualisieren",

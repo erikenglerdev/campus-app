@@ -26,6 +26,7 @@ x-backend-environment: &backend-environment
   STRAPI_TIMEOUT_MS: ${STRAPI_TIMEOUT_MS:-10000}
   STRAPI_RETRY_ATTEMPTS: ${STRAPI_RETRY_ATTEMPTS:-2}
   WORKER_TIME_ZONE: ${WORKER_TIME_ZONE:-UTC}
+  USER_TEST_DATA_ENABLED: '${USER_TEST_DATA_ENABLED:-false}'
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?Set CORS_ALLOWED_ORIGINS to an explicit comma-separated allowlist}
   CANTEEN_SOURCE_URL: ${CANTEEN_SOURCE_URL:-https://meine-mensa.de/api/food_plans}
   CANTEEN_HTTP_TIMEOUT_MS: ${CANTEEN_HTTP_TIMEOUT_MS:-15000}
@@ -237,6 +238,28 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${APP_DATABASE_USERNAME:?Set APP_DATABASE_USERNAME}:${APP_DATABASE_PASSWORD:?Set APP_DATABASE_PASSWORD}@db:${POSTGRES_CONTAINER_PORT:-5432}/${APP_DATABASE_NAME:?Set APP_DATABASE_NAME}?schema=${APP_DATABASE_SCHEMA:-public}
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    healthcheck:
+      disable: true
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - campus_internal
+    logging: *default-logging
+
+  # Deliberate, one-off user-test dataset management. The fixed entrypoint
+  # means compose-run arguments can only select preview/removal; writing still
+  # requires USER_TEST_DATA_ENABLED=true inside the deployment environment.
+  user-test-data:
+    <<: *backend-image
+    restart: 'no'
+    profiles: ['user-test-seed']
+    entrypoint: ['node', 'dist/cli/seed-user-test-data.js']
+    command: []
+    environment:
+      <<: *backend-environment
     depends_on:
       db-init:
         condition: service_completed_successfully

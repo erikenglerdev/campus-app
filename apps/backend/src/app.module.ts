@@ -10,6 +10,7 @@ import { MediaModule } from './modules/media/media.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
 import { StrapiModule } from './modules/strapi/strapi.module';
 import { TimetableModule } from './modules/timetable/timetable.module';
+import { UserTestDataModule } from './modules/user-test-data/user-test-data.module';
 
 /**
  * HTTP API composition.
@@ -31,6 +32,7 @@ import { TimetableModule } from './modules/timetable/timetable.module';
     PublicCalendarModule,
     RoomsModule,
     MediaModule,
+    UserTestDataModule,
   ],
 })
 export class AppModule {}

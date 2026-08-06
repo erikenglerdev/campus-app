@@ -179,6 +179,14 @@ export const envSchema = z.object({
   /** Explicit wall-clock zone for every cron expression. */
   WORKER_TIME_ZONE: ianaTimeZone.default('UTC'),
 
+  // --- Controlled user-test data ------------------------------------------
+  /**
+   * Explicit safety switch for the local, synthetic user-test seed. The same
+   * flag also makes the API advertise the environment to the mobile client.
+   * It is OFF everywhere unless a deployment deliberately opts in.
+   */
+  USER_TEST_DATA_ENABLED: booleanFromEnv.default(false),
+
   // --- Observability -------------------------------------------------------
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   /** Pretty console output for humans; JSON is the default and the server format. */

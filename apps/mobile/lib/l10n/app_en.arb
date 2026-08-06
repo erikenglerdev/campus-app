@@ -10,6 +10,7 @@
   "navSettings": "Settings",
   "navMore": "More",
   "navigationSemanticLabel": "Main navigation",
+  "testEnvironmentNotice": "Test environment – content may be synthetic",
   "actionRetry": "Try again",
   "actionRefresh": "Refresh",
   "actionClose": "Close",

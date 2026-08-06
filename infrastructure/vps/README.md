@@ -21,6 +21,11 @@ outside Docker and forward to the loopback ports configured in `.env`.
 empty credential assignments in `.env`, never prints their values and never
 overwrites an existing value. The running stack does not need the script.
 
+`manage-user-test-data.sh` is an optional, guarded helper for a controlled DEV
+user test. It previews, refreshes or removes only the synthetic Mensa and
+timetable rows owned by the `user-test` source. The app discloses the test
+environment globally; individual cards keep natural labels.
+
 Use `.env.example` for a new installation. For the existing eriklabs.eu DEV
 layout, copy `.env.eriklabs-dev.example` to `.env` and fill the empty secrets
 only on the VPS.
@@ -36,8 +41,10 @@ cd /root/dev/docker/campus
 curl -fsSLO https://raw.githubusercontent.com/erikenglerdev/campus-app/main/infrastructure/vps/compose.yaml
 curl -fsSL https://raw.githubusercontent.com/erikenglerdev/campus-app/main/infrastructure/vps/.env.eriklabs-dev.example -o .env
 curl -fsSLO https://raw.githubusercontent.com/erikenglerdev/campus-app/main/infrastructure/vps/generate-env-secrets.sh
+curl -fsSLO https://raw.githubusercontent.com/erikenglerdev/campus-app/main/infrastructure/vps/manage-user-test-data.sh
 chmod 600 .env
 chmod 700 generate-env-secrets.sh
+chmod 700 manage-user-test-data.sh
 ```
 
 If the repository is private, copy the files over an authenticated channel
@@ -121,6 +128,39 @@ catalogue sync:
 docker compose exec cms node dist/scripts/rooms-sync.js --dry-run
 docker compose exec cms node dist/scripts/rooms-sync.js
 ```
+
+## Controlled user-test dataset (DEV only)
+
+Set `USER_TEST_DATA_ENABLED=true` only on the temporary deployment used for the
+user test. The eriklabs.eu DEV example already opts in. The flag both unlocks
+the write operation and makes `GET /v1/environment` advertise the deployment,
+which displays the global bilingual disclosure in the app.
+
+After migrations and the API image are current, preview and seed the rolling
+dataset:
+
+```bash
+./manage-user-test-data.sh --dry-run
+./manage-user-test-data.sh --seed
+```
+
+The operation is idempotent. Repeating `--seed` moves the menu window to today
+and the timetable window to the current week, updates existing records and
+removes older rows from this seed only. It creates meals for both configured
+Köthen canteens and one selectable timetable group whose room references come
+from the current canonical fictional building catalogue. It does not create a
+Google calendar; configure the separate public test calendar in Strapi.
+
+To end the user test, remove the rows first and only then set
+`USER_TEST_DATA_ENABLED=false` and recreate API and worker:
+
+```bash
+./manage-user-test-data.sh --remove
+docker compose up -d --force-recreate api worker
+```
+
+The environment endpoint continues disclosing synthetic content while seeded
+rows remain, even if the flag is disabled too early.
 
 ## Normal rollout
 

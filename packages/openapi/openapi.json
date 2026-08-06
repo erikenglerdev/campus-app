@@ -852,6 +852,41 @@
           "media"
         ]
       }
+    },
+    "/v1/environment": {
+      "get": {
+        "operationId": "UserTestEnvironmentController_get_v1",
+        "parameters": [
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "de",
+                "en"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserTestEnvironmentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Return public deployment disclosure flags.",
+        "tags": [
+          "environment"
+        ]
+      }
     }
   },
   "info": {
@@ -872,6 +907,10 @@
     {
       "name": "health",
       "description": "Liveness and readiness probes"
+    },
+    {
+      "name": "environment",
+      "description": "Public deployment disclosure flags"
     },
     {
       "name": "news",
@@ -2520,6 +2559,33 @@
           "roomType",
           "mapVersion",
           "sortOrder"
+        ]
+      },
+      "UserTestEnvironmentDto": {
+        "type": "object",
+        "properties": {
+          "userTestData": {
+            "type": "boolean",
+            "description": "True when this deployment may contain synthetic user-test content. Clients must disclose that state globally."
+          }
+        },
+        "required": [
+          "userTestData"
+        ]
+      },
+      "UserTestEnvironmentResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/UserTestEnvironmentDto"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
         ]
       }
     }

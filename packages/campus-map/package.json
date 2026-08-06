@@ -13,7 +13,10 @@
       "types": "./src/index.d.ts",
       "default": "./src/index.mjs"
     },
-    "./catalog": "./catalog/campus-map.catalog.json",
+    "./catalog": {
+      "types": "./catalog/index.d.ts",
+      "default": "./catalog/campus-map.catalog.json"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {

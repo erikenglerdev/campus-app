@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/prefs/settings_controller.dart';
+import '../core/environment/app_environment_repository.dart';
 import '../core/theme/app_dimensions.dart';
+import '../core/widgets/test_environment_notice.dart';
 import '../l10n/l10n.dart';
 import 'app_modules.dart';
 import 'navigation_config.dart';
@@ -41,6 +43,8 @@ class AppShell extends ConsumerWidget {
       settingsProvider.select((AppSettings s) => s.navigation),
     );
     final List<AppModule> tabs = config.tabs;
+    final bool discloseUserTestData =
+        ref.watch(appEnvironmentProvider).value?.value.userTestData ?? false;
 
     /// Branch index of each bar entry: the four modules, then More.
     int branchOf(int barIndex) =>
@@ -53,7 +57,12 @@ class AppShell extends ConsumerWidget {
     if (selected == -1) selected = tabs.length;
 
     return Scaffold(
-      body: navigationShell,
+      body: Column(
+        children: <Widget>[
+          if (discloseUserTestData) const TestEnvironmentNotice(),
+          Expanded(child: navigationShell),
+        ],
+      ),
       bottomNavigationBar: Semantics(
         label: l10n.navigationSemanticLabel,
         container: true,

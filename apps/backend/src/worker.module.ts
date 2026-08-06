@@ -5,6 +5,7 @@ import { CanteenModule } from './modules/canteen/canteen.module';
 import { PublicCalendarModule } from './modules/public-calendar/public-calendar.module';
 import { StrapiModule } from './modules/strapi/strapi.module';
 import { TimetableModule } from './modules/timetable/timetable.module';
+import { UserTestDataModule } from './modules/user-test-data/user-test-data.module';
 
 /**
  * Composition for the worker process: configuration, database, and the sync
@@ -20,6 +21,7 @@ import { TimetableModule } from './modules/timetable/timetable.module';
     CanteenModule,
     TimetableModule,
     PublicCalendarModule,
+    UserTestDataModule,
   ],
 })
 export class WorkerModule {}

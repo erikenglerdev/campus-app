@@ -34,6 +34,7 @@ RUN pnpm install --frozen-lockfile --filter @campus/backend...
 FROM deps AS build
 
 COPY apps/backend apps/backend
+COPY packages/campus-map packages/campus-map
 
 # prisma.config.ts resolves env('DATABASE_URL') eagerly, so the variable has to
 # be SET for `prisma generate` — but it is never CONNECTED to at build time.
@@ -102,6 +103,7 @@ COPY --from=build --chown=node:node /opt/deploy/prisma.config.ts ./prisma.config
 # because the config resolves DATABASE_URL eagerly and would otherwise throw.
 RUN test -x /opt/app/node_modules/.bin/prisma \
  && test -d /opt/app/prisma/migrations \
+ && test -f /opt/app/dist/cli/seed-user-test-data.js \
  && node -e "require.resolve('dotenv/config')" \
  && DATABASE_URL='postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder?schema=public' \
     /opt/app/node_modules/.bin/prisma validate \

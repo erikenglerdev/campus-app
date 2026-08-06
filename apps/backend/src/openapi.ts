@@ -24,6 +24,7 @@ export function buildOpenApiConfig(builder: DocumentBuilder) {
     .setLicense('AGPL-3.0-only', 'https://www.gnu.org/licenses/agpl-3.0.html')
     .setContact('Campus Köthen App', 'https://github.com/erikenglerdev/campus-app', '')
     .addTag('health', 'Liveness and readiness probes')
+    .addTag('environment', 'Public deployment disclosure flags')
     .addTag('news', 'News channels and articles')
     .addTag('contacts', 'Contact areas and persons')
     .addTag('canteens', 'Canteens and menus')

@@ -23,11 +23,13 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "seed:canteens": "ts-node -r tsconfig-paths/register src/cli/seed-canteens.ts",
+    "seed:user-test-data": "ts-node -r tsconfig-paths/register src/cli/seed-user-test-data.ts",
     "sync:canteens": "ts-node -r tsconfig-paths/register src/cli/sync-canteens.ts",
     "sync:timetable": "ts-node -r tsconfig-paths/register src/cli/sync-timetable.ts",
     "openapi:generate": "ts-node -r tsconfig-paths/register src/cli/generate-openapi.ts"
   },
   "dependencies": {
+    "@campus/map": "workspace:*",
     "@nestjs/common": "^11.1.6",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.1.6",

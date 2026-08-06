@@ -118,6 +118,24 @@ Prüft Datenbank und Strapi kontrolliert mit Timeout. `200` wenn bereit, sonst `
 
 Swagger UI und OpenAPI-3-Dokument.
 
+### `GET /v1/environment`
+
+Öffentliche, nicht geheime Kennzeichnung der verbundenen Deployment-Umgebung:
+
+```jsonc
+{
+  "data": { "userTestData": true },
+  "meta": { "requestedLocale": "de", "resolvedLocale": "de", "translationFallback": false },
+}
+```
+
+`userTestData: true` verpflichtet den Client zu einem global sichtbaren Hinweis, dass Inhalte
+synthetisch sein können. Der Wert bleibt so lange aktiv, wie der Deployment-Schalter gesetzt ist
+**oder** noch vom kontrollierten User-Test-Seed angelegte Mensa-/Stundenplandaten existieren. Ein
+versehentlich zu früh deaktivierter Schalter kann den Hinweis daher nicht verbergen. Details zum
+Erstellen und Entfernen stehen in
+[`infrastructure/vps/README.md`](../infrastructure/vps/README.md#controlled-user-test-dataset-dev-only).
+
 ## 5. News
 
 ### `GET /v1/news/channels`

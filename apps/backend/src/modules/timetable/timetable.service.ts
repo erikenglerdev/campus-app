@@ -36,7 +36,7 @@ export class TimetableService {
   ) {}
 
   get featureEnabled(): boolean {
-    return this.env.WEBUNTIS_ENABLED;
+    return this.env.WEBUNTIS_ENABLED || this.env.USER_TEST_DATA_ENABLED;
   }
 
   private isStale(at: Date | null): boolean {

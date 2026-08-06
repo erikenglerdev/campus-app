@@ -12,6 +12,7 @@ describe('validateEnv', () => {
     expect(env.CANTEEN_SYNC_CRON).toBe('0 */2 * * *');
     expect(env.CANTEEN_STALE_AFTER_MINUTES).toBe(240);
     expect(env.WORKER_TIME_ZONE).toBe('UTC');
+    expect(env.USER_TEST_DATA_ENABLED).toBe(false);
     expect(env.LOG_LEVEL).toBe('info');
   });
 
@@ -101,5 +102,6 @@ describe('validateEnv', () => {
   it('parses boolean-ish flags', () => {
     expect(validateEnv({ ...BASE, CANTEEN_SYNC_ON_BOOT: 'true' }).CANTEEN_SYNC_ON_BOOT).toBe(true);
     expect(validateEnv({ ...BASE, CANTEEN_SYNC_ON_BOOT: '0' }).CANTEEN_SYNC_ON_BOOT).toBe(false);
+    expect(validateEnv({ ...BASE, USER_TEST_DATA_ENABLED: '1' }).USER_TEST_DATA_ENABLED).toBe(true);
   });
 });

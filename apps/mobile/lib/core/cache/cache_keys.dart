@@ -6,6 +6,9 @@
 /// Keys carry the locale where the cached document is locale dependent, so a
 /// language switch never shows the previous language's content.
 abstract final class CacheKeys {
+  /// Public deployment flags, including the mandatory user-test disclosure.
+  static const String appEnvironment = 'environment.public.v1';
+
   /// Full channel list.
   static String newsChannels(String locale) => 'news.channels.$locale';
 

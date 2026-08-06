@@ -48,6 +48,10 @@ model Canteen {
 model Meal {
   id String @id @default(uuid())
 
+  /// Owner of this operational row. Real imports and the controlled user-test
+  /// seed must never delete one another's data.
+  source String @default("meine-mensa")
+
   /// Stable upsert key: `data[].id` from the source. Guarantees that repeating
   /// an import updates rather than duplicates.
   sourcePlanId Int  @unique
@@ -80,6 +84,7 @@ model Meal {
   updatedAt       DateTime  @updatedAt
 
   @@index([canteenId, date])
+  @@index([source, canteenId, date])
   @@index([date])
   @@map("meals")
 }
