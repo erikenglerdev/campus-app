@@ -150,9 +150,13 @@ class _MapSurface extends ConsumerWidget {
       allRooms,
       (Room room) => room.roomKey == selectedKey,
     );
-    final List<Room> results = query.isEmpty
-        ? const <Room>[]
-        : searchRooms(allRooms, query);
+    final List<RoomSearchHit> results = query.isEmpty
+        ? const <RoomSearchHit>[]
+        : searchRoomHits(
+            allRooms,
+            query,
+            contacts: ref.watch(contactRoomIndexProvider),
+          );
 
     final bool versionMismatch =
         map != null &&
@@ -368,7 +372,7 @@ class _TopOverlay extends StatelessWidget {
   final String query;
   final TextEditingController search;
   final FocusNode searchFocus;
-  final List<Room> results;
+  final List<RoomSearchHit> results;
   final ValueChanged<Room> onSelect;
   final ValueChanged<String> onQueryChanged;
   final PlanKind planKind;
@@ -590,7 +594,7 @@ class _ResultsOverlay extends StatelessWidget {
     required this.emptyMessage,
   });
 
-  final List<Room> results;
+  final List<RoomSearchHit> results;
   final ValueChanged<Room> onSelect;
   final String emptyTitle;
   final String emptyMessage;
@@ -621,8 +625,8 @@ class _ResultsOverlay extends StatelessWidget {
               padding: EdgeInsets.zero,
               itemCount: results.length,
               itemBuilder: (BuildContext context, int index) => _RoomTile(
-                room: results[index],
-                onTap: () => onSelect(results[index]),
+                hit: results[index],
+                onTap: () => onSelect(results[index].room),
               ),
             ),
     );
@@ -959,20 +963,35 @@ class _ResetButton extends StatelessWidget {
 }
 
 class _RoomTile extends StatelessWidget {
-  const _RoomTile({required this.room, required this.onTap});
+  const _RoomTile({required this.hit, required this.onTap});
 
-  final Room room;
+  final RoomSearchHit hit;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
+    final Room room = hit.room;
+    final String where =
+        '${room.roomNumber} · ${roomTypeLabel(context, room.roomType)} · '
+        '${room.floorName}';
+
+    // A room that matched through a person is otherwise inexplicable: the
+    // typed name appears nowhere on the tile. The icon carries the difference
+    // as well, so it does not rest on the extra line alone.
+    final String? via = hit.isContactMatch ? hit.context : null;
+
     return ListTile(
-      leading: const Icon(Icons.meeting_room_outlined),
+      leading: Icon(
+        via == null
+            ? Icons.meeting_room_outlined
+            : Icons.person_search_outlined,
+      ),
       title: Text(room.primaryLabel),
       subtitle: Text(
-        '${room.roomNumber} · ${roomTypeLabel(context, room.roomType)} · '
-        '${room.floorName}',
+        via == null ? where : '$where\n${l10n.campusMapResultVia(via)}',
       ),
+      isThreeLine: via != null,
       trailing: const Icon(Icons.chevron_right),
       minTileHeight: AppSizes.minTouchTarget,
       onTap: onTap,

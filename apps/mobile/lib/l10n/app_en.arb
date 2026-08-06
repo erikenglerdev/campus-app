@@ -617,6 +617,58 @@
   "@campusMapNoResultsHint": {
     "description": "Hilfetext im Leerzustand der Suche."
   },
+  "calendarDetailWhen": "When",
+  "@calendarDetailWhen": {
+    "description": "Feldbeschriftung Zeitpunkt in der Termin-Detailansicht."
+  },
+  "calendarDetailSource": "Source",
+  "@calendarDetailSource": {
+    "description": "Feldbeschriftung Quelle in der Termin-Detailansicht."
+  },
+  "calendarDetailLocation": "Location",
+  "@calendarDetailLocation": {
+    "description": "Feldbeschriftung Ort in der Termin-Detailansicht."
+  },
+  "calendarDetailTitle": "Event details",
+  "@calendarDetailTitle": {
+    "description": "Titel der Termin-Detailansicht (Screenreader)."
+  },
+  "timetableTypeLabel": "Kind",
+  "@timetableTypeLabel": {
+    "description": "Feldbeschriftung Terminart."
+  },
+  "timetableGroupsLabel": "Groups",
+  "@timetableGroupsLabel": {
+    "description": "Feldbeschriftung Gruppen eines Stundenplantermins."
+  },
+  "moodleCourseLabel": "Course",
+  "@moodleCourseLabel": {
+    "description": "Feldbeschriftung Moodle-Kurs."
+  },
+  "timetableEntryDetailsTooltip": "Show details",
+  "@timetableEntryDetailsTooltip": {
+    "description": "Aktion, die die Detailansicht eines Termins öffnet."
+  },
+  "campusMapShowRoom": "Room {room} on the plan",
+  "@campusMapShowRoom": {
+    "description": "Beschriftung des kompakten Raum-Links in Detailansichten.",
+    "placeholders": {
+      "room": {
+        "type": "String",
+        "example": "B.202"
+      }
+    }
+  },
+  "campusMapResultVia": "Found via {contact}",
+  "@campusMapResultVia": {
+    "description": "Zusatzzeile in der Raum-Suche, wenn ein Raum über eine Person oder Anlaufstelle gefunden wurde.",
+    "placeholders": {
+      "contact": {
+        "type": "String",
+        "example": "Max Mustermann · Prüfungsamt"
+      }
+    }
+  },
   "campusMapBuildingLabel": "Building",
   "@campusMapBuildingLabel": {
     "description": "Feldbeschriftung Gebäude."

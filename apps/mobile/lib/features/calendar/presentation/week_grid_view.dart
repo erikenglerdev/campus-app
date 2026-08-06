@@ -9,6 +9,7 @@ import '../../../l10n/l10n.dart';
 import '../../timetable/application/timetable_week.dart';
 import '../domain/calendar_entry.dart';
 import '../domain/week_layout.dart';
+import 'calendar_entry_sheet.dart';
 
 /// A week as a time grid: one column per drawn day over an hour axis.
 ///
@@ -136,6 +137,10 @@ class _WeekGridViewState extends State<WeekGridView> {
       children: <Widget>[
         // All-day items get their own band: they have no place on a time axis,
         // and stretching one across the whole column would bury the rest.
+        //
+        // One chip per entry rather than one joined line: an all-day entry has
+        // details like any other, and a run-on string is the one place in the
+        // week where an entry could not be opened.
         if (allDay.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -145,6 +150,7 @@ class _WeekGridViewState extends State<WeekGridView> {
               AppSpacing.xs,
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
                 Text(
                   l10n.calendarWeekAllDay,
@@ -154,11 +160,19 @@ class _WeekGridViewState extends State<WeekGridView> {
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
-                  child: Text(
-                    allDay.map((CalendarEntry e) => e.title).join(' · '),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: text.bodySmall,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: <Widget>[
+                        for (final CalendarEntry entry in allDay)
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              right: AppSpacing.xs,
+                            ),
+                            child: _AllDayChip(entry: entry),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -425,47 +439,55 @@ class _DayColumn extends StatelessWidget {
                     ),
                   ),
                   excludeSemantics: true,
+                  button: true,
                   child: Card(
                     margin: EdgeInsets.zero,
                     color: colors.surfaceContainerHighest,
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.xxs),
-                      child: LayoutBuilder(
-                        builder:
-                            (BuildContext context, BoxConstraints constraints) {
-                              // A box is only as tall as its entry is long, and
-                              // the shortest is barely one line. Work out how
-                              // many whole lines fit and ellipsise the rest —
-                              // stacking the icon above the title would leave
-                              // the text a few pixels and cut the glyphs in
-                              // half, which reads as a rendering fault rather
-                              // than as a short appointment.
-                              final int lines = lineHeight <= 0
-                                  ? 1
-                                  : (constraints.maxHeight / lineHeight)
-                                        .floor()
-                                        .clamp(1, 4);
-                              return Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  // Icon and text, never colour alone.
-                                  Icon(
-                                    _iconFor(item.entry.source),
-                                    size: 12,
-                                    color: colors.onSurfaceVariant,
-                                  ),
-                                  const SizedBox(width: AppSpacing.xxs),
-                                  Expanded(
-                                    child: Text(
-                                      item.entry.title,
-                                      style: titleStyle,
-                                      maxLines: lines,
-                                      overflow: TextOverflow.ellipsis,
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () => showCalendarEntrySheet(context, item.entry),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.xxs),
+                        child: LayoutBuilder(
+                          builder:
+                              (
+                                BuildContext context,
+                                BoxConstraints constraints,
+                              ) {
+                                // A box is only as tall as its entry is long, and
+                                // the shortest is barely one line. Work out how
+                                // many whole lines fit and ellipsise the rest —
+                                // stacking the icon above the title would leave
+                                // the text a few pixels and cut the glyphs in
+                                // half, which reads as a rendering fault rather
+                                // than as a short appointment.
+                                final int lines = lineHeight <= 0
+                                    ? 1
+                                    : (constraints.maxHeight / lineHeight)
+                                          .floor()
+                                          .clamp(1, 4);
+                                return Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    // Icon and text, never colour alone.
+                                    Icon(
+                                      _iconFor(item.entry.source),
+                                      size: 12,
+                                      color: colors.onSurfaceVariant,
                                     ),
-                                  ),
-                                ],
-                              );
-                            },
+                                    const SizedBox(width: AppSpacing.xxs),
+                                    Expanded(
+                                      child: Text(
+                                        item.entry.title,
+                                        style: titleStyle,
+                                        maxLines: lines,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                        ),
                       ),
                     ),
                   ),
@@ -474,6 +496,39 @@ class _DayColumn extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// One all-day entry in the band above the grid.
+///
+/// Small, but a real button: it has a label, a tap target of its own and the
+/// same detail view every other entry has.
+class _AllDayChip extends StatelessWidget {
+  const _AllDayChip({required this.entry});
+
+  final CalendarEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+
+    return ActionChip(
+      // The band is the tightest row of the week; without this the chip would
+      // shrink to its text and fall short of a usable tap target.
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      avatar: Icon(
+        _DayColumn._iconFor(entry.source),
+        size: AppSizes.iconSmall,
+        color: colors.onSurfaceVariant,
+      ),
+      label: Text(
+        entry.title,
+        style: entry.isCancelled
+            ? const TextStyle(decoration: TextDecoration.lineThrough)
+            : null,
+      ),
+      onPressed: () => showCalendarEntrySheet(context, entry),
     );
   }
 }

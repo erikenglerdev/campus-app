@@ -3,6 +3,8 @@
 
 import 'package:meta/meta.dart';
 
+import 'calendar_entry_details.dart';
+
 /// Where a calendar entry originates.
 ///
 /// The set is the single extension point of the cross-source calendar: adding a
@@ -43,6 +45,7 @@ class CalendarEntry {
     this.calendarSlug,
     this.sourceLabel,
     this.colorArgb,
+    this.details,
   });
 
   final String id;
@@ -73,6 +76,12 @@ class CalendarEntry {
   /// Never the sole carrier of state — always paired with a label/icon.
   final int? colorArgb;
 
+  /// What the source still knows beyond the flattened fields above.
+  ///
+  /// Null only for an entry built without them; the agenda never needs it, and
+  /// the detail sheet degrades to the flattened fields rather than failing.
+  final CalendarEntryDetails? details;
+
   /// The local calendar day the entry falls on (midnight, local time).
   DateTime get day => DateTime(start.year, start.month, start.day);
 
@@ -90,7 +99,8 @@ class CalendarEntry {
       other.isCancelled == isCancelled &&
       other.calendarSlug == calendarSlug &&
       other.sourceLabel == sourceLabel &&
-      other.colorArgb == colorArgb;
+      other.colorArgb == colorArgb &&
+      other.details == details;
 
   @override
   int get hashCode => Object.hash(
@@ -106,6 +116,7 @@ class CalendarEntry {
     calendarSlug,
     sourceLabel,
     colorArgb,
+    details,
   );
 }
 

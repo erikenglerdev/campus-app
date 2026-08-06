@@ -5,6 +5,7 @@ import '../../../core/theme/hex_color.dart';
 import '../../moodle/domain/moodle_deadline.dart';
 import '../../timetable/data/timetable_models.dart';
 import '../domain/calendar_entry.dart';
+import '../domain/calendar_entry_details.dart';
 import '../domain/public_calendar.dart';
 
 /// Pure mapping + aggregation for the cross-source calendar.
@@ -15,31 +16,52 @@ import '../domain/public_calendar.dart';
 /// from another's.
 
 /// Maps a Campus-API timetable to calendar entries.
-List<CalendarEntry> timetableToCalendarEntries(Timetable timetable) {
-  final List<CalendarEntry> out = <CalendarEntry>[];
-  for (final TimetableDay day in timetable.days) {
-    for (final TimetableEntry entry in day.entries) {
-      final String location = entry.rooms
-          .map((TimetableRoom r) => r.label)
-          .join(', ');
-      final String teachers = entry.teachers
+List<CalendarEntry> timetableToCalendarEntries(Timetable timetable) =>
+    <CalendarEntry>[
+      for (final TimetableDay day in timetable.days)
+        for (final TimetableEntry entry in day.entries)
+          timetableEntryToCalendarEntry(entry),
+    ];
+
+/// Maps one timetable slot.
+///
+/// Public because the timetable screen shows the very same detail view the
+/// calendar does — a second mapper there would be a second answer to what a
+/// slot *is*, and the two would drift.
+CalendarEntry timetableEntryToCalendarEntry(TimetableEntry entry) {
+  final String location = entry.rooms
+      .map((TimetableRoom r) => r.label)
+      .join(', ');
+  final String teachers = entry.teachers
+      .map((TimetableTeacher t) => t.label)
+      .join(', ');
+
+  return CalendarEntry(
+    id: 'timetable:${entry.id}',
+    source: CalendarSource.timetable,
+    title: entry.displayTitle ?? '',
+    start: entry.start,
+    end: entry.end,
+    subtitle: teachers.isEmpty ? null : teachers,
+    location: location.isEmpty ? null : location,
+    isCancelled: entry.status == TimetableEntryStatus.cancelled,
+    // The flattened fields above are what the agenda draws; this is what the
+    // detail sheet needs back — one room per room, not one string.
+    details: TimetableCalendarDetails(
+      type: entry.type,
+      status: entry.status,
+      teachers: entry.teachers
           .map((TimetableTeacher t) => t.label)
-          .join(', ');
-      out.add(
-        CalendarEntry(
-          id: 'timetable:${entry.id}',
-          source: CalendarSource.timetable,
-          title: entry.displayTitle ?? '',
-          start: entry.start,
-          end: entry.end,
-          subtitle: teachers.isEmpty ? null : teachers,
-          location: location.isEmpty ? null : location,
-          isCancelled: entry.status == TimetableEntryStatus.cancelled,
-        ),
-      );
-    }
-  }
-  return out;
+          .toList(growable: false),
+      rooms: entry.rooms
+          .map((TimetableRoom r) => r.label)
+          .toList(growable: false),
+      groups: entry.groups
+          .map((TimetableGroup g) => g.shortName)
+          .toList(growable: false),
+      note: entry.note,
+    ),
+  );
 }
 
 /// Maps direct-from-Moodle deadlines to calendar entries.
@@ -54,6 +76,11 @@ List<CalendarEntry> moodleDeadlinesToCalendarEntries(
           title: d.title,
           start: d.dueAt,
           subtitle: d.courseName,
+          details: MoodleCalendarDetails(
+            courseName: d.courseName,
+            moduleName: d.moduleName,
+            eventType: d.eventType,
+          ),
         ),
       )
       .toList();
@@ -83,6 +110,11 @@ List<CalendarEntry> publicCalendarEventsToCalendarEntries(
       calendarSlug: e.calendarSlug,
       sourceLabel: calendar?.name ?? e.calendarSlug,
       colorArgb: parseHexColorArgb(calendar?.colorHex),
+      details: PublicCalendarDetails(
+        calendarName: calendar?.name ?? e.calendarSlug,
+        location: e.location,
+        description: e.description,
+      ),
     );
   }).toList();
 }

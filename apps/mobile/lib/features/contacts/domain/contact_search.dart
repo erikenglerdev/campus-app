@@ -90,9 +90,13 @@ String _roomForm(String value) =>
     normaliseContactTerm(value).replaceAll(RegExp('[^a-z0-9]'), '');
 
 /// Both foldings of one string, so a match can accept either.
+///
+/// Public because the campus-map search needs exactly these rules when it
+/// looks a room up through the person sitting in it — a second copy would be
+/// a second answer to "does ü match ue", and the two would drift.
 @immutable
-class _Needle {
-  _Needle(String term)
+class ContactTerm {
+  ContactTerm(String term)
     : expanded = normaliseContactTerm(term),
       plain = normaliseContactTerm(term, expandUmlauts: false),
       room = _roomForm(term);
@@ -121,7 +125,7 @@ List<ContactSearchHit> searchContacts(
   Iterable<ContactSearchArea> index,
   String term,
 ) {
-  final _Needle needle = _Needle(term);
+  final ContactTerm needle = ContactTerm(term);
   if (needle.isEmpty) return const <ContactSearchHit>[];
 
   final List<ContactSearchHit> hits = <ContactSearchHit>[];
@@ -153,7 +157,7 @@ List<ContactSearchHit> searchContacts(
 
 /// The first field that contains the term, so the result can show *why*.
 String? _firstMatch(
-  _Needle needle,
+  ContactTerm needle,
   List<String?> fields,
   List<SearchRoom> rooms,
 ) {

@@ -5,16 +5,52 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/locale/locale_providers.dart';
 import '../../../core/network/loaded.dart';
+import '../../contacts/application/contacts_providers.dart';
+import '../../contacts/data/contact_search_models.dart';
 import '../data/map_asset_loader.dart';
 import '../data/rooms_repository.dart';
 import '../domain/map_catalog.dart';
 import '../domain/room.dart';
+import '../domain/room_mention.dart';
+import 'room_search.dart';
 
 /// The room catalogue from the Campus API, cached for offline use.
 final FutureProvider<Loaded<List<Room>>> roomsProvider =
     FutureProvider<Loaded<List<Room>>>((Ref ref) async {
       final String locale = ref.watch(localeCodeProvider);
       return ref.watch(roomsRepositoryProvider).fetchRooms(locale: locale);
+    });
+
+/// The one place that turns a room *mentioned somewhere* into a room on the
+/// map — see [RoomResolver] for why it refuses everything it is not sure about.
+///
+/// Empty until the catalogue is there, so a screen that asks early gets "no
+/// link" rather than an exception or a wrong one.
+final Provider<RoomResolver> roomResolverProvider = Provider<RoomResolver>((
+  Ref ref,
+) {
+  final List<Room>? rooms = ref.watch(roomsProvider).value?.value;
+  return rooms == null
+      ? const RoomResolver.empty()
+      : RoomResolver.fromRooms(rooms);
+});
+
+/// Which rooms the public contact points and their people occupy.
+///
+/// Derived from the contact search index the contacts feature already loads, so
+/// looking up "who sits in which room" costs no extra request and no second
+/// matching rule. Deliberately never throws: the room search is only *widened*
+/// by this, and a contact index that failed to load must not take the plain
+/// room search down with it.
+final Provider<ContactRoomIndex> contactRoomIndexProvider =
+    Provider<ContactRoomIndex>((Ref ref) {
+      final List<ContactSearchArea>? areas = ref
+          .watch(contactSearchIndexProvider)
+          .value
+          ?.value;
+      return areas == null
+          ? const ContactRoomIndex.empty()
+          : ContactRoomIndex.fromAreas(areas);
     });
 
 /// Overridable so tests can supply a bundle without touching the asset system.

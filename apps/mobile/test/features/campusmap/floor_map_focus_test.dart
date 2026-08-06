@@ -165,6 +165,51 @@ void main() {
     expect(landed.dy, closeTo(viewport.height / 2, 1.0));
   });
 
+  testWidgets('a tiny room does not zoom the plan to the maximum', (
+    WidgetTester tester,
+  ) async {
+    // A broom cupboard: fitting it to the viewport would mean a scale far past
+    // 20, leaving nothing on screen but the room itself.
+    final GlobalKey<FloorMapViewState> key = await pumpMap(
+      tester,
+      selected: _room(
+        focus: const Offset(775, 570),
+        bounds: const Rect.fromLTWH(770, 565, 10, 10),
+      ),
+      viewport: const Size(1200, 400),
+    );
+
+    final double scale = key.currentState!.currentTransform.getMaxScaleOnAxis();
+    expect(
+      scale,
+      lessThanOrEqualTo(kMaxFocusScale + 0.001),
+      reason: 'the surroundings are what make a room findable',
+    );
+    expect(scale, greaterThan(1.0), reason: 'it should still zoom in at all');
+  });
+
+  testWidgets('the automatic cap does not limit pinching', (
+    WidgetTester tester,
+  ) async {
+    final GlobalKey<FloorMapViewState> key = await pumpMap(
+      tester,
+      selected: _room(
+        focus: const Offset(775, 570),
+        bounds: const Rect.fromLTWH(770, 565, 10, 10),
+      ),
+    );
+
+    final InteractiveViewer viewer = tester.widget<InteractiveViewer>(
+      find.byType(InteractiveViewer),
+    );
+    expect(
+      viewer.maxScale,
+      greaterThan(kMaxFocusScale),
+      reason: 'a closer look stays available on request',
+    );
+    expect(key.currentState, isNotNull);
+  });
+
   testWidgets('resetting returns to the untransformed overview', (
     WidgetTester tester,
   ) async {

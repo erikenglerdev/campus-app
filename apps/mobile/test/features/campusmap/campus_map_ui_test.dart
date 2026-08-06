@@ -16,7 +16,7 @@ import 'package:campus_koethen/features/campusmap/domain/map_catalog.dart';
 import 'package:campus_koethen/features/campusmap/data/map_asset_loader.dart';
 import 'package:campus_koethen/features/campusmap/presentation/campus_map_screen.dart';
 import 'package:campus_koethen/features/campusmap/presentation/floor_map_view.dart';
-import 'package:campus_koethen/features/campusmap/presentation/room_link_tile.dart';
+import 'package:campus_koethen/features/campusmap/presentation/room_link.dart';
 import 'package:campus_koethen/features/contacts/data/contact_models.dart';
 import 'package:campus_koethen/features/more/presentation/more_screen.dart';
 import 'package:campus_koethen/l10n/l10n.dart';
@@ -71,13 +71,54 @@ List<Map<String, dynamic>> get roomsFixture => <Map<String, dynamic>>[
 /// asset itself is still exercised end to end in map_catalog_test.dart.
 late final MapCatalog testCatalog;
 
-List<Override> mapOverrides(List<Map<String, dynamic>> rooms) => <Override>[
-  apiClientProvider.overrideWithValue(_api(rooms)),
+/// A fictional contact point whose staff sit in the rooms above.
+///
+/// Shaped like `/v1/contact-areas/search-index`, because the room search now
+/// reads that index to answer "which room does this person sit in".
+List<Map<String, dynamic>> get contactIndexFixture => <Map<String, dynamic>>[
+  <String, dynamic>{
+    'slug': 'demo-pruefungsamt',
+    'name': 'Demo-Prüfungsamt (fiktiv)',
+    'shortDescription': 'Beispielbereich',
+    'descriptionText': 'Nur zu Demonstrationszwecken.',
+    'rooms': <Map<String, dynamic>>[],
+    'persons': <Map<String, dynamic>>[
+      <String, dynamic>{
+        'name': 'Björn Demoperson',
+        'role': 'Beispielrolle',
+        'rooms': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'roomKey': 'demo-north-level2-b210',
+            'roomNumber': 'B.210',
+            'buildingName': 'Demogebäude Nord (fiktiv)',
+            'floorName': '2. Obergeschoss',
+          },
+        ],
+      },
+    ],
+  },
+];
+
+List<Override> mapOverrides(
+  List<Map<String, dynamic>> rooms, {
+  List<Map<String, dynamic>>? contacts,
+}) => <Override>[
+  apiClientProvider.overrideWithValue(_api(rooms, contacts)),
   mapCatalogProvider.overrideWith((Ref ref) => testCatalog),
 ];
 
-ApiClient _api(List<Map<String, dynamic>> rooms) => fakeApiClient(
+ApiClient _api(
+  List<Map<String, dynamic>> rooms,
+  List<Map<String, dynamic>>? contacts,
+) => fakeApiClient(
   FakeHttpAdapter((RequestOptions options) {
+    if (options.path.contains('/contact-areas/search-index')) {
+      // Answered even when a test passes none: an index that errors would
+      // leave Riverpod retrying in the background of every map test.
+      return FakeHttpResponse(
+        envelope(contacts ?? const <Map<String, dynamic>>[]),
+      );
+    }
     if (options.path.contains('/rooms')) {
       // The adapter encodes the body itself — pass the object, not a string.
       return FakeHttpResponse(envelope(rooms));
@@ -104,6 +145,7 @@ void useTallSurface(WidgetTester tester) {
 Future<void> pumpMap(
   WidgetTester tester, {
   List<Map<String, dynamic>>? rooms,
+  List<Map<String, dynamic>>? contacts,
   String? initialRoomKey,
   Locale locale = AppLocales.german,
 }) async {
@@ -112,7 +154,7 @@ Future<void> pumpMap(
     tester,
     CampusMapScreen(initialRoomKey: initialRoomKey),
     locale: locale,
-    overrides: mapOverrides(rooms ?? roomsFixture),
+    overrides: mapOverrides(rooms ?? roomsFixture, contacts: contacts),
   );
   await tester.pumpAndSettle();
 }
@@ -232,6 +274,55 @@ void main() {
 
     expect(dotted, isTrue);
     expect(plain, isTrue);
+  });
+
+  testWidgets('the bare number finds the room without its building letter', (
+    WidgetTester tester,
+  ) async {
+    await pumpMap(tester);
+
+    await tester.enterText(find.byType(TextField), '202');
+    await tester.pumpAndSettle();
+
+    expect(find.text('B.202'), findsWidgets);
+    expect(find.text('Großer Hörsaal'), findsNothing);
+  });
+
+  testWidgets('a person leads to their room, and says so', (
+    WidgetTester tester,
+  ) async {
+    await pumpMap(tester, contacts: contactIndexFixture);
+
+    await tester.enterText(find.byType(TextField), 'Demoperson');
+    await tester.pumpAndSettle();
+
+    // The room is offered even though the typed name is nowhere in it — so the
+    // row has to explain itself.
+    expect(find.text('B.210'), findsWidgets);
+    expect(
+      find.textContaining('Gefunden über Björn Demoperson'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('B.210').first);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Ausgewählt: B.210'), findsOneWidget);
+  });
+
+  testWidgets('the room search still works without a contact index', (
+    WidgetTester tester,
+  ) async {
+    // What an offline start looks like: no index, so no person search — but
+    // the plain room search is untouched.
+    await pumpMap(tester);
+
+    await tester.enterText(find.byType(TextField), 'Demoperson');
+    await tester.pumpAndSettle();
+    expect(find.text('Kein Raum gefunden'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'B.202');
+    await tester.pumpAndSettle();
+    expect(find.text('B.202'), findsWidgets);
   });
 
   testWidgets('a deep link preselects the room', (WidgetTester tester) async {

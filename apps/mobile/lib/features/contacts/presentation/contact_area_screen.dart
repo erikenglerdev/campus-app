@@ -17,7 +17,7 @@ import '../../../core/widgets/sheet_body.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/status_banner.dart';
 import '../../../l10n/l10n.dart';
-import '../../campusmap/presentation/room_link_tile.dart';
+import '../../campusmap/presentation/room_link.dart';
 import '../application/contacts_providers.dart';
 import '../data/contact_models.dart';
 

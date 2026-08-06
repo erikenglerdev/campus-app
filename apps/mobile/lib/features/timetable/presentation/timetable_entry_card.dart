@@ -7,6 +7,8 @@ import '../../../core/locale/formatters.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../l10n/l10n.dart';
+import '../../calendar/application/calendar_merge.dart';
+import '../../calendar/presentation/calendar_entry_sheet.dart';
 import '../data/timetable_models.dart';
 
 /// Localised label of an entry status. Foreign content is never translated —
@@ -43,6 +45,9 @@ String timetableTypeLabel(AppLocalizations l10n, TimetableEntryType type) =>
 /// Subject, teacher, room and group names come from the source system and are
 /// rendered verbatim in every language. Cancelled, changed and unknown states
 /// always show an icon *and* a text label and carry a screen reader label.
+///
+/// Tapping opens the same detail sheet the calendar uses — one slot has one
+/// detail view, whichever screen it was tapped on.
 class TimetableEntryCard extends StatelessWidget {
   const TimetableEntryCard({required this.entry, super.key});
 
@@ -70,57 +75,65 @@ class TimetableEntryCard extends StatelessWidget {
         timetableStatusLabel(l10n, entry.status),
       ),
       excludeSemantics: true,
+      button: true,
       child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                timeRange,
-                style: text.titleSmall?.copyWith(color: colors.primary),
-              ),
-              const SizedBox(height: AppSpacing.xxs),
-              Text(
-                title,
-                style: text.titleMedium?.copyWith(
-                  decoration: cancelled ? TextDecoration.lineThrough : null,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => showCalendarEntrySheet(
+            context,
+            timetableEntryToCalendarEntry(entry),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  timeRange,
+                  style: text.titleSmall?.copyWith(color: colors.primary),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.xxs),
-              Text(
-                timetableTypeLabel(l10n, entry.type),
-                style: text.bodySmall?.copyWith(color: colors.textSecondary),
-              ),
-              if (entry.status.needsAttention) ...<Widget>[
-                const SizedBox(height: AppSpacing.sm),
-                _StatusRow(status: entry.status),
-              ],
-              if (entry.teachers.isNotEmpty) ...<Widget>[
-                const SizedBox(height: AppSpacing.sm),
-                _DetailRow(
-                  icon: Icons.person_outline,
-                  label: l10n.timetableTeachersLabel,
-                  values: entry.teachers
-                      .map((TimetableTeacher teacher) => teacher.label)
-                      .toList(growable: false),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  title,
+                  style: text.titleMedium?.copyWith(
+                    decoration: cancelled ? TextDecoration.lineThrough : null,
+                  ),
                 ),
-              ],
-              if (entry.rooms.isNotEmpty) ...<Widget>[
-                const SizedBox(height: AppSpacing.xs),
-                _DetailRow(
-                  icon: Icons.meeting_room_outlined,
-                  label: l10n.timetableRoomsLabel,
-                  values: entry.rooms
-                      .map((TimetableRoom room) => room.label)
-                      .toList(growable: false),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  timetableTypeLabel(l10n, entry.type),
+                  style: text.bodySmall?.copyWith(color: colors.textSecondary),
                 ),
+                if (entry.status.needsAttention) ...<Widget>[
+                  const SizedBox(height: AppSpacing.sm),
+                  _StatusRow(status: entry.status),
+                ],
+                if (entry.teachers.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: AppSpacing.sm),
+                  _DetailRow(
+                    icon: Icons.person_outline,
+                    label: l10n.timetableTeachersLabel,
+                    values: entry.teachers
+                        .map((TimetableTeacher teacher) => teacher.label)
+                        .toList(growable: false),
+                  ),
+                ],
+                if (entry.rooms.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: AppSpacing.xs),
+                  _DetailRow(
+                    icon: Icons.meeting_room_outlined,
+                    label: l10n.timetableRoomsLabel,
+                    values: entry.rooms
+                        .map((TimetableRoom room) => room.label)
+                        .toList(growable: false),
+                  ),
+                ],
+                if (entry.note != null) ...<Widget>[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(entry.note!, style: text.bodySmall),
+                ],
               ],
-              if (entry.note != null) ...<Widget>[
-                const SizedBox(height: AppSpacing.sm),
-                Text(entry.note!, style: text.bodySmall),
-              ],
-            ],
+            ),
           ),
         ),
       ),

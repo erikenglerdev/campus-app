@@ -15,6 +15,7 @@ import '../../timetable/application/timetable_week.dart';
 import '../../timetable/presentation/timetable_group_picker_sheet.dart';
 import '../application/calendar_providers.dart';
 import '../domain/calendar_entry.dart';
+import 'calendar_entry_sheet.dart';
 import 'calendar_source_sheets.dart';
 import 'week_grid_view.dart';
 import 'week_strip.dart';
@@ -623,6 +624,7 @@ class _EntryTile extends StatelessWidget {
     ];
 
     return ListTile(
+      onTap: () => showCalendarEntrySheet(context, entry),
       leading: entry.colorArgb != null
           ? Container(
               width: AppSizes.icon,
@@ -653,6 +655,8 @@ class _EntryTile extends StatelessWidget {
         style: text.bodySmall,
       ),
       isThreeLine: subtitleParts.isNotEmpty,
+      trailing: const Icon(Icons.chevron_right),
+      minTileHeight: AppSizes.minTouchTarget,
     );
   }
 }

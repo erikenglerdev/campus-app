@@ -9,6 +9,8 @@ import 'package:campus_koethen/core/prefs/preference_keys.dart';
 import 'package:campus_koethen/core/prefs/settings_controller.dart';
 import 'package:campus_koethen/features/calendar/application/calendar_providers.dart';
 import 'package:campus_koethen/features/calendar/domain/calendar_entry.dart';
+import 'package:campus_koethen/features/calendar/domain/calendar_entry_details.dart';
+import 'package:campus_koethen/features/calendar/presentation/calendar_entry_sheet.dart';
 import 'package:campus_koethen/features/calendar/presentation/calendar_screen.dart';
 import 'package:campus_koethen/features/calendar/presentation/calendar_source_sheets.dart';
 import 'package:campus_koethen/features/calendar/presentation/week_grid_view.dart';
@@ -511,6 +513,77 @@ void _weekViewTests() {
 
     expect(labels, contains('Montag bis Freitag'));
     expect(labels, contains('Montag bis Sonntag'));
+  });
+
+  group('opening an entry from the agenda', () {
+    CalendarEntry demoEntry(DateTime day) => CalendarEntry(
+      id: 'publicCalendar:demo:1',
+      source: CalendarSource.publicCalendar,
+      title: 'Demotermin (fiktiv)',
+      start: DateTime(day.year, day.month, day.day, 10),
+      end: DateTime(day.year, day.month, day.day, 12),
+      sourceLabel: 'Demokalender (fiktiv)',
+      details: const PublicCalendarDetails(
+        calendarName: 'Demokalender (fiktiv)',
+      ),
+    );
+
+    Future<void> pumpWithEntry(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(390, 1200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await pumpScreen(
+        tester,
+        const CalendarScreen(),
+        overrides: <Override>[
+          apiClientProvider.overrideWithValue(_emptyApi()),
+          // The day is whatever the screen focuses on first, so the entry is
+          // built from it rather than from a fixed date.
+          calendarDataProvider.overrideWith(
+            (Ref ref, DateTime day) => CalendarData(
+              entries: <CalendarEntry>[demoEntry(day)],
+              enabledSources: const <CalendarSource>{
+                CalendarSource.publicCalendar,
+              },
+              timetableLoading: false,
+              hasTimetableError: false,
+              needsGroup: false,
+              moodleConnected: false,
+              hasMoodleError: false,
+              publicCalendarsLoading: false,
+              hasPublicCalendarError: false,
+            ),
+          ),
+        ],
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the day agenda opens the details', (
+      WidgetTester tester,
+    ) async {
+      await pumpWithEntry(tester);
+
+      await tester.tap(find.text('Demotermin (fiktiv)'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CalendarEntrySheet), findsOneWidget);
+    });
+
+    testWidgets('and so does the list view', (WidgetTester tester) async {
+      await pumpWithEntry(tester);
+      await tester.tap(find.text('Liste'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Demotermin (fiktiv)').first);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CalendarEntrySheet), findsOneWidget);
+    });
   });
 
   testWidgets('the grid starts on a Monday', (WidgetTester tester) async {

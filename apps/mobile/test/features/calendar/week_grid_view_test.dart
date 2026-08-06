@@ -1,8 +1,10 @@
 // Campus Köthen App · AGPL-3.0-only
 // Copyright © 2026 Erik Engler and Jona Loreen Sommer
 
+import 'package:campus_koethen/core/theme/app_dimensions.dart';
 import 'package:campus_koethen/features/calendar/domain/calendar_entry.dart';
 import 'package:campus_koethen/features/calendar/domain/week_layout.dart';
+import 'package:campus_koethen/features/calendar/presentation/calendar_entry_sheet.dart';
 import 'package:campus_koethen/features/calendar/presentation/week_grid_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -11,6 +13,18 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/pump_app.dart';
 
 final DateTime _monday = DateTime(2026, 5, 11);
+
+CalendarEntry _allDay(String title, {int dayOffset = 0}) {
+  final DateTime day = _monday.add(Duration(days: dayOffset));
+  return CalendarEntry(
+    id: title,
+    source: CalendarSource.publicCalendar,
+    title: title,
+    start: DateTime(day.year, day.month, day.day),
+    end: DateTime(day.year, day.month, day.day, 23, 59),
+    allDay: true,
+  );
+}
 
 CalendarEntry _entry({
   required String title,
@@ -309,5 +323,45 @@ void main() {
         WeekLayout.minimumVisibleMinutes * WeekGridView.hourHeight / 60;
     final RenderBox text = tester.renderObject<RenderBox>(find.text('Kurz'));
     expect(text.size.height, lessThanOrEqualTo(minimumBoxHeight));
+  });
+
+  group('opening an entry', () {
+    testWidgets('a timed entry opens its details', (WidgetTester tester) async {
+      await pumpGrid(tester, <CalendarEntry>[
+        _entry(title: 'Demotermin', dayOffset: 0, fromH: 10, toH: 12),
+      ]);
+
+      await tester.tap(find.text('Demotermin'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CalendarEntrySheet), findsOneWidget);
+    });
+
+    testWidgets('an all-day entry is a button of its own', (
+      WidgetTester tester,
+    ) async {
+      // The all-day band used to be one joined string: the only entries in the
+      // week that could not be opened.
+      await pumpGrid(tester, <CalendarEntry>[
+        _allDay('Ganztagstermin'),
+        _allDay('Zweiter Ganztagstermin', dayOffset: 1),
+      ]);
+
+      expect(find.byType(ActionChip), findsNWidgets(2));
+
+      final RenderBox chip = tester.renderObject<RenderBox>(
+        find.byType(ActionChip).first,
+      );
+      expect(
+        chip.size.height,
+        greaterThanOrEqualTo(AppSizes.minTouchTarget),
+        reason: 'a chip is still something a thumb has to hit',
+      );
+
+      await tester.tap(find.text('Ganztagstermin'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CalendarEntrySheet), findsOneWidget);
+    });
   });
 }

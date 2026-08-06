@@ -25,6 +25,14 @@ import '../domain/map_hit_test.dart';
 /// Rooms are tappable. The hit test runs against the bundled geometry, not
 /// against the SVG: the asset is a picture, and treating it as a document to
 /// query would tie the app to how the generator happens to emit it.
+/// How far the map may zoom in **by itself** when a room is selected.
+///
+/// Deliberately far below the manual limit: an automatic jump to the maximum
+/// zoom answers "where is this room" with a close-up of the room alone, without
+/// the corridor, the neighbouring numbers or the stairs that make it findable.
+/// Pinching past this stays possible — this caps what happens unasked.
+const double kMaxFocusScale = 3;
+
 class FloorMapView extends StatefulWidget {
   const FloorMapView({
     required this.floor,
@@ -129,7 +137,7 @@ class FloorMapViewState extends State<FloorMapView> {
       visible.width / (bounds.width * _planScale * padding),
       visible.height / (bounds.height * _planScale * padding),
     );
-    final double scale = fit.clamp(1.0, 6.0);
+    final double scale = fit.clamp(1.0, kMaxFocusScale);
 
     // The room's focus point expressed in the InteractiveViewer's CHILD
     // coordinates, i.e. including the centring offset.

@@ -226,10 +226,7 @@ Inhalt, kein Vorschaubild zwischen Formularfeldern.
 
 - **„Mehr → Lageplan"**, eigener Routenpfad. **Keine** sechste Bottom-Navigation.
 - **Schwebende Suchleiste** oben mit Zurück-Pfeil; Treffer erscheinen als
-  Overlay darunter. Gesucht wird über Raumnummer, **normalisierte** Raumnummer
-  (`B.201` und `B201` finden denselben Raum), Anzeigenamen sowie Gebäude- und
-  Etagenbezeichnung. Ranking: exakte Nummer → Nummernpräfix → Anzeigename →
-  Ort, danach deterministisch nach `sortOrder` und `roomKey`.
+  Overlay darunter. Siehe §7c.
 - **Demo-Badge** dauerhaft sichtbar; ein Tippen zeigt den vollständigen
   Hinweistext im Dialog. Der Democharakter ist damit nie verborgen.
 - **Antippbare Räume**: siehe §7b.
@@ -240,6 +237,12 @@ Inhalt, kein Vorschaubild zwischen Formularfeldern.
   Sheet, deshalb zentriert die Auswahl auf die Mitte des _sichtbaren_
   Ausschnitts (`FloorMapView.visiblePadding`) — sonst läge der gewählte Raum
   hinter einem Panel.
+- **Der automatische Zoom bleibt schwach.** Die Auswahl vergrößert höchstens auf
+  `kMaxFocusScale` (3,0), obwohl von Hand bis `maxScale` (8) gezoomt werden
+  kann. Ein automatischer Sprung auf die Maximalvergrößerung beantwortet „wo ist
+  dieser Raum" mit einer Nahaufnahme des Raums allein — ohne Flur, Nachbarnummern
+  und Treppenhaus, also ohne alles, woran man sich orientiert. Die Konstante steht
+  in `floor_map_view.dart` und ist getestet; Pinch-Zoom ist davon unberührt.
 - **Hervorhebung nie nur über Farbe**: kräftige Kontur **plus** Marker über dem
   Raum **plus** textliche Aussage „Ausgewählt: …" im Sheet; in der Liste
   zusätzlich ein eigenes Icon.
@@ -320,6 +323,79 @@ Die **Raumsuche** bleibt die barrierefreie Bedienung: Der Plan selbst ist für S
 weiterhin dekorativ (`excludeFromSemantics`), die Auswahl wird im Detail-Sheet im Klartext
 genannt.
 
+## 7c. Raumsuche
+
+Gesucht wird lokal über den gecachten Raumkatalog — kein Netzaufruf pro Tastendruck, und
+offline funktioniert es unverändert. Raumnummern werden **normalisiert** verglichen: alle
+Trennzeichen fallen weg, Groß-/Kleinschreibung ist egal. `B.202`, `B202`, `b 202` und `202`
+finden damit denselben Raum.
+
+Die Rangfolge ist die Aufzählung in `RoomMatchReason` — beste Erklärung zuerst:
+
+1. **exakte Nummer** — die Eingabe ist die Raumnummer, mit oder ohne Gebäudebuchstaben.
+   `202` zählt als exakt, weil ein Stundenplan „202" schreibt und an der Tür „B.202" steht;
+   sonst stünde `B.210` vor `B.21`.
+2. **Nummernpräfix** — `b2` findet `B.201`, `B.202`, …
+3. **Nummer enthält** die Eingabe.
+4. **Anzeigename** (redaktionell, aus `/v1/rooms`).
+5. **Gebäude- oder Etagenbezeichnung.**
+6. **Personen und Anlaufstellen** — siehe unten.
+
+Innerhalb einer Stufe wird deterministisch nach `sortOrder` und `roomKey` sortiert.
+
+**Suche über Personen und Anlaufstellen.** Wer den Namen einer Person kennt, aber nicht deren
+Raumnummer, findet den Raum trotzdem. Grundlage ist der **vorhandene** Kontakt-Suchindex
+(`GET /v1/contact-areas/search-index`), aus dem einmalig ein `ContactRoomIndex` gefaltet wird;
+gesucht wird darin mit **denselben** Umlautregeln wie in der Kontaktsuche (`ContactTerm`), damit
+„Björn", „Bjoern" und „bjorn" dasselbe treffen. Solche Treffer stehen immer **hinter** allen
+direkten und tragen eine Zusatzzeile „Gefunden über …" sowie ein eigenes Icon — ein Raum, in
+dem der eingetippte Text nirgends vorkommt, wäre sonst unerklärlich. Ein Raum erscheint auch
+dann nur **einmal**, wenn mehrere passende Personen darin sitzen.
+
+Der Index ist rein **additiv**: Solange er lädt oder wenn er fehlschlägt, verhält sich die
+Raumsuche exakt wie ohne ihn. Er ist nur enger, nie kaputt.
+
+## 7d. Zentrale Raumauflösung und Raum-Links
+
+`RoomResolver` (`campusmap/domain/room_mention.dart`) ist die **einzige** Stelle, die
+entscheidet, ob eine geschriebene Zeichenkette einen bestimmten Raum meint. Ein Raum-Link ist
+eine Anweisung — „tippe hier und du stehst vor der richtigen Tür" — und ein falscher schickt
+jemanden in das falsche Gebäude. Alles, was nicht sicher ist, löst deshalb zu **nichts** auf
+und bleibt einfacher Text.
+
+Zwei Strengegrade, vom Aufrufer je Feld angegeben:
+
+| `RoomMentionSource` | Wofür                                                                 | Regel                                                                                                                                                                |
+| ------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `designation`       | Felder, die einen Raum enthalten: Stundenplan-Raumliste, Kontakt-Raum | Der ganze Wert ist eine Raumbezeichnung. Die Kurzform (`202`) gilt — **außer** sie ist mehrdeutig (zwei Gebäude mit einer 202 ⇒ keine Auflösung).                    |
+| `freeText`          | Prosa aus öffentlichen Kalendern: `LOCATION`, `DESCRIPTION`, Titel    | Nur **vollständig qualifizierte** Nennungen (`B.202`). Eine nackte Zahl bleibt eine Zahl — sie kann ein Jahr, ein Preis, eine Hausnummer oder eine Modulnummer sein. |
+
+In beiden Fällen wird nur **exakt** aufgelöst: `B.2` wird nie zu `B.202`, und `INF202` ist kein
+Raum. Räume, die der Katalog nicht kennt, ergeben keinen Link.
+
+Die Oberfläche dazu steht einmal in `campusmap/presentation/room_link.dart`:
+`RoomLinkTarget` (aus `Room` **oder** `RoomReference`), `RoomLinkTile` für Listenzeilen,
+`RoomLinkButton` für Detailansichten und `RoomLinkSection` für Kontakte. Kennt der gebündelte
+Plan den `roomKey` nicht — eine ältere App mit einem neueren Katalog —, bleibt die Zeile
+lesbarer Text statt eines Links ins Leere. Aus einem Sheet heraus wird das Sheet **vor** der
+Navigation geschlossen, sonst verdeckte es genau den Raum, den es zeigen sollte.
+
+## 7e. Detailansichten von Terminen
+
+Stundenplan-Karten und Kalendereinträge öffnen **dieselbe** Detailansicht
+(`calendar/presentation/calendar_entry_sheet.dart`) — ein Termin hat eine Detailansicht,
+gleich von welchem Bildschirm aus er angetippt wurde. Erreichbar ist sie aus der Tagesagenda,
+der Liste, der Wochenansicht **und** aus dem Ganztagesband, in dem jeder Eintrag ein eigener
+Chip mit vollem Tap-Ziel ist statt einer zusammengefügten Zeile.
+
+Damit das geht, trägt `CalendarEntry` neben den flachgeklopften Anzeigefeldern ein typisiertes,
+quellenspezifisches `CalendarEntryDetails`: `TimetableCalendarDetails` (Art, Status,
+Lehrpersonen, Räume, Gruppen, Notiz), `MoodleCalendarDetails` (Kurs, Aktivität) und
+`PublicCalendarDetails` (Kalendername, Ort, Beschreibung). Jede Variante sagt selbst, welche
+ihrer Texte als **Raumbezeichnung** und welche als **Prosa** gelesen werden dürfen
+(`roomDesignations` / `roomProse`); die Detailansicht wendet nur an, was dort steht. Damit ist
+„niemals zum falschen Raum" eine Entscheidung im Modell statt einer pro Bildschirm.
+
 ## 8. Release-Gate: reale Gebäudepläne
 
 Der aktuelle Plan ist erfunden und damit unbedenklich. **Bevor** ein realer Gebäudeplan aufgenommen
@@ -356,3 +432,7 @@ Aussage über die Karte nie geraten wird.
 Keine Indoor-Navigation und keine Wegberechnung · keine Live-Position · keine Raumbelegung oder
 Buchung · keine realen Gebäude oder Räume · kein SVG-Upload nach oder -Abruf aus Strapi · kein
 direkter Strapi-Zugriff aus Flutter · kein CMS-Schreibzugang in der App · keine Analytics.
+
+Ebenso bewusst: **keine heuristische Raumverlinkung.** Kein Raten aus Teilnummern, keine
+Auswahl „des wahrscheinlichsten" Raums bei Mehrdeutigkeit, keine nackten Zahlen aus Freitext.
+Lieber kein Link als einer zur falschen Tür — siehe §7d.

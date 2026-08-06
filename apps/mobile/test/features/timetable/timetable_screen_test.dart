@@ -6,6 +6,7 @@ import 'package:campus_koethen/core/locale/locale_mode.dart';
 import 'package:campus_koethen/core/network/network_providers.dart';
 import 'package:campus_koethen/core/prefs/key_value_store.dart';
 import 'package:campus_koethen/core/prefs/preference_keys.dart';
+import 'package:campus_koethen/features/calendar/presentation/calendar_entry_sheet.dart';
 import 'package:campus_koethen/features/timetable/application/timetable_providers.dart';
 import 'package:campus_koethen/features/timetable/application/timetable_week.dart';
 import 'package:campus_koethen/features/timetable/presentation/timetable_screen.dart';
@@ -137,6 +138,20 @@ void main() {
   });
 
   group('agenda', () {
+    testWidgets('an appointment opens its details', (
+      WidgetTester tester,
+    ) async {
+      // The card is a summary; everything else about the slot — groups, the
+      // note, the way to the room — lives in the same sheet the calendar uses.
+      await pumpTimetable(tester);
+
+      await tester.tap(find.text('Mathematik 2'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CalendarEntrySheet), findsOneWidget);
+      expect(find.text('D-04/201'), findsWidgets);
+    });
+
     testWidgets('shows the appointments of the selected day', (
       WidgetTester tester,
     ) async {
