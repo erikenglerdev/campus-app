@@ -8,6 +8,7 @@ import {
   NewsListItemDto,
 } from './news.types';
 import { asString } from '../../common/util/coerce';
+import { publicMediaUrl } from '../media/media.path';
 
 /**
  * Strapi -> public DTO mapping.
@@ -47,7 +48,10 @@ function mapImage(value: unknown): ImageDto | null {
   if (!isRecord(value)) {
     return null;
   }
-  const url = httpsUrl(value['url']);
+  // Served by this API rather than linked straight to Strapi: the app must not
+  // talk to the CMS (CLAUDE.md §2.1), and the local upload provider publishes
+  // relative URLs that a mobile client cannot resolve at all.
+  const url = publicMediaUrl(value['url']);
   if (!url) {
     return null;
   }

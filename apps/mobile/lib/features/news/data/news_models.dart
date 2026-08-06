@@ -137,7 +137,10 @@ class NewsImage {
     final Map<String, dynamic>? map = asJsonMap(json);
     if (map == null) return null;
     final String? url = asString(map['url']);
-    if (url == null || !SafeLinkLauncher.isAllowed(url)) return null;
+    // A media path published by the API, not an outbound link. Running it past
+    // SafeLinkLauncher — which demands an absolute https URL — dropped every
+    // image the CMS ever delivered.
+    if (url == null || url.isEmpty) return null;
     return NewsImage(
       url: url,
       alternativeText: asString(map['alternativeText']),

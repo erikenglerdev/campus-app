@@ -75,8 +75,6 @@ class ContactPerson {
     final String? name = asString(map['name']);
     if (name == null) return null;
     final String? website = asString(map['website']);
-    final Map<String, dynamic>? image = asJsonMap(map['profileImage']);
-    final String? imageUrl = asString(image?['url']);
     return ContactPerson(
       name: name,
       role: asString(map['role']),
@@ -84,7 +82,10 @@ class ContactPerson {
       email: asString(map['email']),
       phone: asString(map['phone']),
       website: SafeLinkLauncher.isAllowed(website) ? website : null,
-      profileImageUrl: SafeLinkLauncher.isAllowed(imageUrl) ? imageUrl : null,
+      // A plain media path from the API, not a nested object and not an
+      // outbound link: SafeLinkLauncher guards things the user opens
+      // elsewhere, and running a relative path past it dropped every photo.
+      profileImageUrl: asString(map['profileImage']),
       rooms: RoomReference.listFromJson(map['rooms']),
     );
   }
@@ -99,6 +100,7 @@ class ContactArea {
     required this.sortOrder,
     this.shortDescription,
     this.iconKey,
+    this.imageUrl,
     this.generalEmail,
     this.phone,
     this.website,
@@ -116,6 +118,12 @@ class ContactArea {
   final String name;
   final String? shortDescription;
   final String? iconKey;
+
+  /// Media path published by the Campus API, or `null` when the area has no
+  /// picture. The icon carries the area perfectly well on its own, so this is
+  /// an enhancement and never a requirement.
+  final String? imageUrl;
+
   final int sortOrder;
 
   final String? generalEmail;
@@ -162,6 +170,7 @@ class ContactArea {
       name: asString(map['name']) ?? slug,
       shortDescription: asString(map['shortDescription']),
       iconKey: asString(map['iconKey']),
+      imageUrl: asString(map['image']),
       sortOrder: asInt(map['sortOrder']) ?? 0,
       generalEmail: asString(map['generalEmail']),
       phone: asString(map['phone']),

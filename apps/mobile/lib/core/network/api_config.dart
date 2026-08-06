@@ -23,6 +23,29 @@ abstract final class ApiConfig {
   static const Duration connectTimeout = Duration(seconds: 10);
   static const Duration receiveTimeout = Duration(seconds: 15);
 
+  /// Turns a media reference from the API into a URL that can be fetched.
+  ///
+  /// Editorial images are published as API-relative paths (`/v1/media/…`)
+  /// rather than absolute links: the CMS address is configuration and must
+  /// never travel in a payload (CLAUDE.md §2.4), and the app is forbidden from
+  /// talking to the CMS at all (§2.1). Resolving happens here, once, against
+  /// the very API the response came from.
+  ///
+  /// An absolute URL is passed through only when it is `https` — a plain-http
+  /// or otherwise odd link from a response is dropped rather than loaded.
+  static String? resolveMediaUrl(String? value) {
+    final String path = (value ?? '').trim();
+    if (path.isEmpty) return null;
+
+    if (path.startsWith('/')) {
+      return '${_stripTrailingSlash(baseUrl)}$path';
+    }
+
+    final Uri? parsed = Uri.tryParse(path);
+    if (parsed == null || !parsed.isAbsolute) return null;
+    return parsed.scheme == 'https' ? path : null;
+  }
+
   static String _stripTrailingSlash(String value) =>
       value.endsWith('/') ? value.substring(0, value.length - 1) : value;
 }

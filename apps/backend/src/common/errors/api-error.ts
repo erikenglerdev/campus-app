@@ -17,6 +17,7 @@ export type ApiErrorCode =
   | 'TIMETABLE_GROUP_NOT_FOUND'
   | 'PUBLIC_CALENDAR_NOT_FOUND'
   | 'ROOM_NOT_FOUND'
+  | 'MEDIA_NOT_FOUND'
   | 'UPSTREAM_UNAVAILABLE'
   | 'UPSTREAM_TIMEOUT'
   | 'INTERNAL_ERROR';
@@ -56,6 +57,10 @@ const MESSAGES: Record<ApiErrorCode, Messages> = {
     de: 'Der angeforderte Raum wurde nicht gefunden.',
     en: 'The requested room was not found.',
   },
+  MEDIA_NOT_FOUND: {
+    de: 'Das angeforderte Bild wurde nicht gefunden.',
+    en: 'The requested image was not found.',
+  },
   UPSTREAM_UNAVAILABLE: {
     de: 'Die Inhalte sind derzeit nicht verfügbar. Bitte später erneut versuchen.',
     en: 'Content is currently unavailable. Please try again later.',
@@ -79,6 +84,7 @@ const STATUS: Record<ApiErrorCode, HttpStatus> = {
   TIMETABLE_GROUP_NOT_FOUND: HttpStatus.NOT_FOUND,
   PUBLIC_CALENDAR_NOT_FOUND: HttpStatus.NOT_FOUND,
   ROOM_NOT_FOUND: HttpStatus.NOT_FOUND,
+  MEDIA_NOT_FOUND: HttpStatus.NOT_FOUND,
   UPSTREAM_UNAVAILABLE: HttpStatus.SERVICE_UNAVAILABLE,
   UPSTREAM_TIMEOUT: HttpStatus.GATEWAY_TIMEOUT,
   INTERNAL_ERROR: HttpStatus.INTERNAL_SERVER_ERROR,

@@ -60,7 +60,7 @@ describe('news mappers', () => {
       heroImage: {
         id: 9,
         documentId: 'doc_img',
-        url: 'https://cdn.example/hero.jpg',
+        url: '/uploads/hero_abc123.jpg',
         alternativeText: 'Ein Bild',
         width: 1600,
         height: 900,
@@ -81,7 +81,9 @@ describe('news mappers', () => {
         publishedAt: '2026-07-20T09:00:00.000Z',
         isPinned: true,
         heroImage: {
-          url: 'https://cdn.example/hero.jpg',
+          // Served by this API. The client never fetches from Strapi, and the
+          // relative path the CMS publishes would be unusable on a phone.
+          url: '/v1/media/uploads/hero_abc123.jpg',
           alternativeText: 'Ein Bild',
           width: 1600,
           height: 900,
@@ -106,10 +108,25 @@ describe('news mappers', () => {
       ).toBeNull();
     });
 
-    it('drops a hero image that is not served over https', () => {
+    it('drops a hero image that is not an upload of the CMS', () => {
+      // The media route only serves the upload directory; anything else would
+      // turn it into an open proxy.
       expect(
-        mapNewsListItem({ ...raw, heroImage: { url: 'http://cdn.example/x.jpg' } }).item.heroImage,
+        mapNewsListItem({ ...raw, heroImage: { url: 'https://cdn.example/etc/passwd' } }).item
+          .heroImage,
       ).toBeNull();
+      expect(
+        mapNewsListItem({ ...raw, heroImage: { url: '/uploads/../secret.jpg' } }).item.heroImage,
+      ).toBeNull();
+    });
+
+    it('never leaks the CMS address into a hero image', () => {
+      const item = mapNewsListItem({
+        ...raw,
+        heroImage: { url: 'https://cms.internal/uploads/hero.jpg' },
+      }).item;
+      expect(item.heroImage?.url).toBe('/v1/media/uploads/hero.jpg');
+      expect(JSON.stringify(item)).not.toContain('cms.internal');
     });
 
     it('handles a missing hero image, authors and channels', () => {

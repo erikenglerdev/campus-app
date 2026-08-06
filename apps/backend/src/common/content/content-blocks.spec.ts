@@ -144,12 +144,15 @@ describe('sanitizeBlocks', () => {
   });
 
   describe('images', () => {
-    it('keeps an https image with its metadata', () => {
+    it('publishes an image on this API, not on the CMS', () => {
+      // The client must never fetch from Strapi (CLAUDE.md §2.1), and the
+      // local upload provider hands back a relative path a phone cannot
+      // resolve at all.
       const { blocks } = sanitizeBlocks([
         {
           type: 'image',
           image: {
-            url: 'https://cdn.example/pic.png',
+            url: '/uploads/pic_abc123.png',
             alternativeText: 'Alt',
             width: 800,
             height: 600,
@@ -158,16 +161,24 @@ describe('sanitizeBlocks', () => {
       ]);
       expect(blocks[0]).toEqual({
         type: 'image',
-        url: 'https://cdn.example/pic.png',
+        url: '/v1/media/uploads/pic_abc123.png',
         alternativeText: 'Alt',
         width: 800,
         height: 600,
       });
     });
 
-    it('drops an image whose url is not https', () => {
+    it('rewrites a remote provider URL onto this API too', () => {
+      const { blocks } = sanitizeBlocks([
+        { type: 'image', image: { url: 'https://cdn.example/uploads/pic.png' } },
+      ]);
+      expect(blocks[0]).toMatchObject({ url: '/v1/media/uploads/pic.png' });
+      expect(JSON.stringify(blocks)).not.toContain('cdn.example');
+    });
+
+    it('drops an image that is not in the upload directory', () => {
       const { blocks, droppedBlockTypes } = sanitizeBlocks([
-        { type: 'image', image: { url: 'http://cdn.example/pic.png' } },
+        { type: 'image', image: { url: 'https://cdn.example/etc/passwd' } },
       ]);
       expect(blocks).toEqual([]);
       expect(droppedBlockTypes).toEqual(['image']);

@@ -197,6 +197,12 @@ Sortierung: `isPinned` DESC, dann `publishedAt` DESC, dann `slug` ASC (determini
 ```
 
 `heroImage` ist `null`, wenn kein freigegebenes Bild hinterlegt ist.
+
+**Bild-URLs sind API-relativ**, zum Beispiel `/v1/media/uploads/hero_5a141d.jpg`. Der Client löst sie
+gegen dieselbe Campus API auf, die er ohnehin anspricht. Absolute Links auf das CMS gibt es bewusst
+nicht: Die App darf nicht mit Strapi sprechen (CLAUDE.md §2.1), und die Adresse des CMS ist
+Konfiguration, kein Nutzdatum (§2.4). Dasselbe gilt für `image` eines Kontaktbereichs, `profileImage`
+einer Kontaktperson und jeden `image`-Block im Artikeltext.
 `sourceUrl` ist immer eine validierte **HTTPS**-URL oder `null`.
 
 **`content` in der Liste.** Jeder Listeneintrag trägt seinen **serverseitig bereinigten**
@@ -837,7 +843,37 @@ dann gar nichts. Eine Raumreferenz enthält nie eine Strapi-ID.
 | `ROOM_NOT_FOUND`    | 404                                       |
 | `VALIDATION_FAILED` | 400 (ungültiger `buildingKey`/`floorKey`) |
 
-## 11. Was der Client garantiert nicht braucht
+## 11. Redaktionelle Bilder
+
+### `GET /v1/media/uploads/:filename`
+
+Liefert ein redaktionelles Bild aus der Mediathek des CMS — der einzige Endpunkt dieser API, der
+Bytes statt JSON zurückgibt.
+
+Er existiert, damit die App **niemals** mit Strapi sprechen muss (CLAUDE.md §2.1). Strapis lokaler
+Upload-Provider veröffentlicht ohnehin nur **relative** URLs, die auf einem Telefon nicht auflösbar
+wären. Alle Bildfelder der API — `heroImage`, `image` eines Kontaktbereichs, `profileImage` einer
+Kontaktperson und jeder `image`-Block — verweisen deshalb hierher.
+
+Regeln, die der Endpunkt durchsetzt:
+
+- **Nur** Dateien unmittelbar unter `/uploads/`. Kein Unterverzeichnis, kein `..` in irgendeiner
+  Schreibweise, keine Query, kein Fragment, keine Prozentkodierung.
+- **Nur Bilder** (`image/png`, `image/jpeg`, `image/webp`, `image/gif`, `image/avif`,
+  `image/svg+xml`). Alles andere wäre ein allgemeiner Dateiproxy für die gesamte Mediathek.
+- Keine Weiterleitungen, harte Größengrenze, `X-Content-Type-Options: nosniff`.
+- `Cache-Control: public, max-age=86400` — ein ausgetauschtes Bild bekommt vom CMS einen neuen
+  Dateinamen, sodass ein langer Cache nichts veraltet.
+
+Antwortet ein Pfad nicht diesen Regeln, ist die Antwort `404 MEDIA_NOT_FOUND` — bewusst dieselbe
+wie für eine schlicht nicht vorhandene Datei.
+
+| Code                   | Status |
+| ---------------------- | ------ |
+| `MEDIA_NOT_FOUND`      | 404    |
+| `UPSTREAM_UNAVAILABLE` | 503    |
+
+## 12. Was der Client garantiert nicht braucht
 
 - keine Strapi-URL, kein Strapi-Token
 - keine `location_id` und keine Kenntnis der Preisfeld-Nummerierung der Quelle
@@ -847,7 +883,7 @@ dann gar nichts. Eine Raumreferenz enthält nie eine Strapi-ID.
 - keine `RRULE`-Auswertung — Wiederholungen kommen bereits expandiert an
 - keine Kartengeometrie: das SVG und die roomKey→Geometrie-Zuordnung sind gebündelte App-Assets
 
-## 12. Nicht Teil dieser API
+## 13. Nicht Teil dieser API
 
 Die persönlichen Dienste **E-Mail**, **Noten** und **Moodle** laufen ausdrücklich **nicht** über
 die Campus API. Die App spricht dafür direkt mit dem jeweiligen offiziellen Anbieter, damit weder

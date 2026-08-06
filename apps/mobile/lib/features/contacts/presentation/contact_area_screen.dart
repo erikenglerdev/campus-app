@@ -78,6 +78,16 @@ class _AreaDetail extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
         ],
+        // The area's own picture, above its name. Absent for most areas, and
+        // that is fine — the icon identifies them on its own.
+        if (area.imageUrl != null) ...<Widget>[
+          RemoteImage(
+            url: area.imageUrl!,
+            alternativeText: area.name,
+            aspectRatio: 16 / 9,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+        ],
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[

@@ -9,6 +9,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/content_blocks_view.dart';
+import '../../../core/widgets/remote_image.dart';
 import '../../../l10n/l10n.dart';
 import '../application/news_feed_ui_providers.dart';
 import '../data/news_models.dart';
@@ -60,6 +61,18 @@ class NewsCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            // The banner leads the card when the editors gave the article
+            // one. Its own aspect ratio is used where the CMS reported it, so
+            // a portrait photo is not cropped into a letterbox.
+            if (article.heroImage != null) ...<Widget>[
+              RemoteImage(
+                url: article.heroImage!.url,
+                alternativeText: article.heroImage!.alternativeText,
+                aspectRatio: article.heroImage!.aspectRatio ?? 16 / 9,
+              ),
+              SizedBox(height: metrics.cardGap),
+            ],
+
             // The pin keeps its own line above the headline. It is rare, and
             // beside a headline it would be the thing that squeezes it.
             if (article.isPinned)

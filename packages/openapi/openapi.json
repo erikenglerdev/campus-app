@@ -826,6 +826,32 @@
           "rooms"
         ]
       }
+    },
+    "/v1/media/uploads/{filename}": {
+      "get": {
+        "description": "Images only, from the CMS upload directory only. The path is validated against a strict allowlist before anything is fetched, so it cannot be pointed at another target. Cached for a day: editorial images are replaced by uploading a new file, which changes the name.",
+        "operationId": "MediaController_get_v1",
+        "parameters": [
+          {
+            "name": "filename",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "foto_5a141d3978.jpeg",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "An editorial image from the CMS.",
+        "tags": [
+          "media"
+        ]
+      }
     }
   },
   "info": {
@@ -1293,6 +1319,12 @@
             "type": "string",
             "example": "students-council"
           },
+          "image": {
+            "type": "string",
+            "nullable": true,
+            "example": "/v1/media/uploads/team_5a141d.jpg",
+            "description": "Image of the area, served by THIS API — the client never fetches from the CMS. Null when no image is set; the icon carries the area on its own in that case."
+          },
           "sortOrder": {
             "type": "number"
           },
@@ -1334,6 +1366,7 @@
           "name",
           "shortDescription",
           "iconKey",
+          "image",
           "sortOrder",
           "generalEmail",
           "phone",
@@ -1613,6 +1646,11 @@
           "iconKey": {
             "type": "string"
           },
+          "image": {
+            "type": "string",
+            "nullable": true,
+            "example": "/v1/media/uploads/team_5a141d.jpg"
+          },
           "sortOrder": {
             "type": "number"
           },
@@ -1671,6 +1709,7 @@
           "name",
           "shortDescription",
           "iconKey",
+          "image",
           "sortOrder",
           "generalEmail",
           "phone",

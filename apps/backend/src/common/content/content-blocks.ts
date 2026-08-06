@@ -1,3 +1,4 @@
+import { publicMediaUrl } from '../../modules/media/media.path';
 /**
  * Sanitiser for Strapi "blocks" rich text — see docs/api.md §5.
  *
@@ -92,17 +93,6 @@ function isSafeLinkUrl(url: unknown): url is string {
   }
 }
 
-function isHttpsUrl(url: unknown): url is string {
-  if (typeof url !== 'string' || url.length === 0) {
-    return false;
-  }
-  try {
-    return new URL(url).protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
-
 function sanitizeTextNode(node: Record<string, unknown>): TextNode | null {
   if (typeof node['text'] !== 'string') {
     return null;
@@ -162,8 +152,11 @@ function clampHeadingLevel(level: unknown): number {
 function sanitizeImage(block: Record<string, unknown>): ImageBlock | null {
   // Strapi nests the file under `image`; tolerate a flattened shape too.
   const image = isRecord(block['image']) ? block['image'] : block;
-  const url = image['url'];
-  if (!isHttpsUrl(url)) {
+  // Rewritten onto this API's own media route. An editorial image inside an
+  // article is the same case as a banner: the client must not fetch it from
+  // Strapi, and the local provider's relative URL would be unusable anyway.
+  const url = publicMediaUrl(image['url']);
+  if (url === null) {
     return null;
   }
   return {

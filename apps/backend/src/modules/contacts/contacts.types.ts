@@ -32,6 +32,17 @@ export class ContactAreaListItemDto {
   @ApiProperty() name!: string;
   @ApiProperty() shortDescription!: string;
   @ApiProperty({ example: 'students-council' }) iconKey!: string;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '/v1/media/uploads/team_5a141d.jpg',
+    description:
+      'Image of the area, served by THIS API — the client never fetches from the CMS. Null when ' +
+      'no image is set; the icon carries the area on its own in that case.',
+  })
+  image!: string | null;
+
   @ApiProperty() sortOrder!: number;
 
   @ApiProperty({ type: String, nullable: true }) generalEmail!: string | null;
@@ -55,6 +66,10 @@ export class ContactAreaDetailDto {
   @ApiProperty() name!: string;
   @ApiProperty() shortDescription!: string;
   @ApiProperty() iconKey!: string;
+
+  @ApiProperty({ type: String, nullable: true, example: '/v1/media/uploads/team_5a141d.jpg' })
+  image!: string | null;
+
   @ApiProperty() sortOrder!: number;
 
   @ApiProperty({ type: String, nullable: true }) generalEmail!: string | null;

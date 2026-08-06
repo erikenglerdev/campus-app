@@ -144,6 +144,57 @@ describe('ContactsService', () => {
       expect(item.phone).toBe('+49 3496 000');
     });
 
+    it('publishes an area image on this API, never on the CMS', () => {
+      // Strapi's local provider hands back a relative path, which is why no
+      // image ever reached the app; and the client must not talk to the CMS
+      // at all (CLAUDE.md §2.1).
+      const client = makeClient(() => ({
+        data: [area('x', { image: { url: '/uploads/team_5a141d.jpg' } })],
+      }));
+
+      return new ContactsService(client).listAreas(de).then((result) => {
+        expect(result.data[0]!.image).toBe('/v1/media/uploads/team_5a141d.jpg');
+      });
+    });
+
+    it('has a null image when the area has none', async () => {
+      const client = makeClient(() => ({ data: [area('x')] }));
+
+      const item = (await new ContactsService(client).listAreas(de)).data[0]!;
+
+      expect(item.image).toBeNull();
+    });
+
+    it('drops an image that is not an upload of the CMS', async () => {
+      const client = makeClient(() => ({
+        data: [area('x', { image: { url: 'https://cdn.example/etc/passwd' } })],
+      }));
+
+      const item = (await new ContactsService(client).listAreas(de)).data[0]!;
+
+      expect(item.image).toBeNull();
+    });
+
+    it('publishes a person photo on this API too', async () => {
+      const client = makeClient(() => ({
+        data: [
+          area('x', {
+            persons: [
+              {
+                name: 'Testperson',
+                isActive: true,
+                profileImage: { url: '/uploads/face_abc.jpg' },
+              },
+            ],
+          }),
+        ],
+      }));
+
+      const detail = await new ContactsService(client).getArea(de, 'x');
+
+      expect(detail.data.persons[0]!.profileImage).toBe('/v1/media/uploads/face_abc.jpg');
+    });
+
     it('never leaks Strapi internals', async () => {
       const client = makeClient(() => ({
         data: [area('x', { documentId: 'doc_1', localizations: [{ id: 2 }] })],

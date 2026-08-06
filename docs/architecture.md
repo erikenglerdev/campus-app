@@ -96,7 +96,10 @@ Verstöße gegen diese Regeln sind Blocker, keine Stilfragen.
   ([campus-map.md](campus-map.md)).
 - Slugs sind **nicht** lokalisiert und unique — das ist ein eigenes CI-Gate, damit der stabile
   Bezeichner nicht pro Locale auseinanderläuft.
-- Uploads im persistenten Volume unter `/opt/app/public/uploads`.
+- Uploads im persistenten Volume unter `/opt/app/public/uploads`. Ausgeliefert werden sie **nicht**
+  direkt an die App, sondern über `GET /v1/media/uploads/:filename` der Campus API — die App spricht
+  nie mit Strapi (G2), und der lokale Provider veröffentlicht ohnehin nur relative URLs. Der
+  Endpunkt lässt ausschließlich Bilder aus genau diesem Verzeichnis durch.
 - Rollen: Redaktion (ohne Publish), Herausgeber (mit Publish), Super-Admin separat.
   Für den Start genügt ein manuell angelegter Super-Admin; SMTP folgt später.
 - Health: `GET /_health`.

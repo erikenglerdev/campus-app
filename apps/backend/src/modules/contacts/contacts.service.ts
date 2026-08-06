@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { blocksToPlainText, sanitizeBlocks } from '../../common/content/content-blocks';
 import { ApiError } from '../../common/errors/api-error';
+import { publicMediaUrl } from '../media/media.path';
 import { LocaleResolution } from '../../common/locale/locale';
 import { StrapiClient, StrapiListResponse, StrapiRequestError } from '../strapi/strapi.client';
 import {
@@ -65,7 +66,10 @@ function mapPerson(raw: unknown, locale: Locale): ContactPersonDto | null {
   if (!name) {
     return null;
   }
-  const image = isRecord(raw['profileImage']) ? httpsUrl(raw['profileImage']['url']) : null;
+  // Strapi's local provider publishes a RELATIVE url, which httpsUrl() would
+  // drop — that is why no photo ever reached the app. The image is served by
+  // this API instead, so the client never talks to Strapi (CLAUDE.md §2.1).
+  const image = isRecord(raw['profileImage']) ? publicMediaUrl(raw['profileImage']['url']) : null;
   return {
     name,
     role: str(raw['role']),
@@ -86,6 +90,8 @@ function mapAreaBase(raw: Raw): Omit<ContactAreaListItemDto, 'personCount'> {
     name: asString(raw['name']),
     shortDescription: asString(raw['shortDescription']),
     iconKey: asString(raw['iconKey'], 'contact'),
+    // Served by this API, like every other editorial image.
+    image: isRecord(raw['image']) ? publicMediaUrl(raw['image']['url']) : null,
     sortOrder: typeof raw['sortOrder'] === 'number' ? raw['sortOrder'] : 0,
     generalEmail: email(raw['generalEmail']),
     phone: str(raw['phone']),
@@ -110,6 +116,7 @@ function sharedFields(canonical: Raw): Raw {
   return {
     slug: canonical['slug'],
     iconKey: canonical['iconKey'],
+    image: canonical['image'],
     sortOrder: canonical['sortOrder'],
     isActive: canonical['isActive'],
     isDemoContent: canonical['isDemoContent'],
@@ -184,7 +191,10 @@ export class ContactsService {
       pagination: { pageSize: 100 },
       // Persons are populated only to count the active ones; no personal data
       // beyond that reaches the list response.
-      populate: { persons: { fields: ['name', 'isActive'] } },
+      populate: {
+        persons: { fields: ['name', 'isActive'] },
+        image: { fields: ['url'] },
+      },
     };
 
     const canonical = await this.fetch({ ...baseQuery, locale: CANONICAL_LOCALE });
@@ -309,6 +319,7 @@ export class ContactsService {
         },
       },
       rooms: { fields: [...ROOM_REFERENCE_FIELDS] },
+      image: { fields: ['url'] },
     };
 
     const canonical = (

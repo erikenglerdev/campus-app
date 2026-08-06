@@ -13,10 +13,16 @@ von ihnen direkt zu (siehe [architecture.md](architecture.md), Grenze G1).
 
 | Quelle                           | Art                                 | Verbraucher   | Status                                     |
 | -------------------------------- | ----------------------------------- | ------------- | ------------------------------------------ |
-| Strapi 5 (eigene Instanz)        | REST, Read-only-Token               | Campus API    | aktiv                                      |
+| Strapi 5 (eigene Instanz)        | REST + Mediathek, Read-only-Token   | Campus API    | aktiv                                      |
 | `meine-mensa.de/api/food_plans`  | öffentliche REST-Schnittstelle      | Campus Worker | aktiv                                      |
 | `hsa.webuntis.com` (View-API)    | interne API der öffentlichen Web-UI | Campus Worker | umgesetzt, `WEBUNTIS_ENABLED=false`        |
 | `calendar.google.com` (ICS-Feed) | öffentlicher ICS-Feed (RFC 5545)    | Campus Worker | umgesetzt, `PUBLIC_CALENDAR_ENABLED=false` |
+
+**Redaktionelle Bilder** kommen ebenfalls aus Strapi, erreichen die App aber nie direkt: Die Campus
+API liefert sie unter `GET /v1/media/uploads/:filename` aus und veröffentlicht in allen DTOs
+ausschließlich diesen API-relativen Pfad. Strapis lokaler Provider gibt nur relative URLs zurück,
+die auf einem Telefon ohnehin nicht auflösbar wären — und die Adresse des CMS bleibt Konfiguration
+statt Nutzdatum ([api.md](api.md) §11).
 
 Die beiden geflaggten Quellen sind **vollständig implementiert und getestet**, aber serverseitig
 abgeschaltet, bis die Nutzung organisatorisch entschieden ist. Details in §4 und §5.

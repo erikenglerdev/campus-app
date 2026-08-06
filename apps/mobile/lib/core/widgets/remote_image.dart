@@ -3,10 +3,16 @@
 
 import 'package:flutter/material.dart';
 
+import '../network/api_config.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_dimensions.dart';
 
-/// Displays an editorial image from an `https` URL.
+/// Displays an editorial image the Campus API published.
+///
+/// [url] is whatever the API delivered — normally an API-relative media path
+/// (`/v1/media/…`). Resolving it happens **here** rather than at every call
+/// site, so no screen can forget it and none of them has to know where the
+/// images live.
 ///
 /// A failing image is *not* an error state: it collapses to nothing so a
 /// broken asset can never block an article. There are deliberately no canteen
@@ -26,8 +32,13 @@ class RemoteImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppColors colors = context.colors;
+    final String? resolved = ApiConfig.resolveMediaUrl(url);
+    // An unusable reference is nothing to apologise for — the layout simply
+    // does without the picture.
+    if (resolved == null) return const SizedBox.shrink();
+
     final Widget image = Image.network(
-      url,
+      resolved,
       fit: BoxFit.cover,
       width: double.infinity,
       semanticLabel: alternativeText,
